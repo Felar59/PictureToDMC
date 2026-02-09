@@ -26,3 +26,13 @@ Pixel Embroidery Converter is a web application that transforms any image into a
 ## Usage
 
 https://picturetodmc.onrender.com/
+
+---
+
+## Render
+
+![Broderie DMC Example](BroderieDMC (2).png)
+
+![Preview 1](image (1).png)
+![Preview 2](image (2).png)
+![Preview 3](image (3).png)
