@@ -26,7 +26,59 @@ Pixel Embroidery Converter is a web application that transforms any image into a
 
 ## Usage
 
-https://picturetodmc.onrender.com/
+- **VPS (current)** — http://164.132.99.194:8080
+- Render (previous) — https://picturetodmc.onrender.com/
+
+---
+
+## Deployment
+
+Every push to `main` builds the frontend and ships it with the backend to the
+VPS over SSH (`.github/workflows/deploy.yml`). Roughly 40 seconds end to end.
+
+| | |
+| --- | --- |
+| Host | `164.132.99.194`, SSH on port **2007** |
+| Public URL | **http://164.132.99.194:8080** |
+| nginx | listens on `:8080`, proxies to `127.0.0.1:8001` |
+| Service | `picturetodmc.service` (uvicorn, 1 worker) |
+| Code | `/var/www/picturetodmc/app` |
+| Virtualenv | `/var/www/picturetodmc/venv` (Python 3.13 via `uv`) |
+
+The box also runs **emoji-art** on ports 80/443. The two share the `deploy`
+user but nothing else; this site got a port rather than a hostname because it
+has no domain yet. Give it one and the nginx `:8080` block becomes a normal
+443 server block.
+
+### Server install (once)
+
+```bash
+ssh-keygen -t ed25519 -f ci_key -N "" -C "github-actions-picturetodmc"
+scp -P 2007 -r deploy ci_key.pub ubuntu@164.132.99.194:/home/ubuntu/
+ssh -p 2007 ubuntu@164.132.99.194 \
+    'sudo bash /home/ubuntu/deploy/setup-vps.sh /home/ubuntu/ci_key.pub'
+gh secret set SSH_PRIVATE_KEY < ci_key      # the private half, in this repo
+```
+
+`setup-vps.sh` is idempotent — re-run it after editing anything in `deploy/`.
+
+**Why `uv`:** the VPS ships Python 3.14 only, and none of the pinned versions
+(`pillow==11.3.0` above all) publish wheels for it. `uv` fetches a standalone
+3.13 into `/opt/uv-python`; the system interpreter is left alone.
+
+**Why one uvicorn worker:** `PythonDCA/main.py` keeps the active conversion in
+a module-level global (`main_instance`), so a second worker would answer
+`/download` with somebody else's pattern. Fix that before scaling out.
+
+### Day-to-day
+
+```bash
+ssh -p 2007 ubuntu@164.132.99.194
+systemctl status picturetodmc
+journalctl -u picturetodmc -f
+gh run list --limit 5        # deployment history
+gh workflow run Deploy       # redeploy without a commit
+```
 
 ---
 
