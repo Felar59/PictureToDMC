@@ -1,0 +1,83 @@
+name: Deploy
+
+# Every push to main builds the frontend and ships it, with the Python
+# backend, to the VPS over SSH. Server-side install lives in deploy/setup-vps.sh
+# and only has to be run once.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deployment at a time; a newer push supersedes one in flight.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+env:
+  SSH_HOST: 164.132.99.194
+  SSH_PORT: "2007"
+  SSH_USER: deploy
+  APP_ROOT: /var/www/picturetodmc
+  SERVICE: picturetodmc
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build      # tsc -b && vite build -> ../PythonDCA/dist
+
+      - name: Fail if the build produced nothing
+        run: test -f PythonDCA/dist/index.html
+
+      - name: Configure the deploy key
+        run: |
+          install -d -m 700 ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      # --delete so a file removed from the repo disappears from the server.
+      # dist/ is rebuilt above, so it is part of what gets shipped.
+      - name: Upload backend and built frontend
+        run: |
+          rsync -az --delete \
+            --exclude '__pycache__' --exclude '*.pyc' \
+            -e "ssh -i ~/.ssh/id_deploy -p $SSH_PORT -o StrictHostKeyChecking=yes" \
+            PythonDCA/ "$SSH_USER@$SSH_HOST:$APP_ROOT/app/PythonDCA/"
+
+      # uv resolves from the lockless requirements.txt; it is a no-op when
+      # nothing changed, so this costs a second on a normal deploy.
+      - name: Install dependencies and restart
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -euo pipefail <<'REMOTE'
+            export UV_PYTHON_INSTALL_DIR=/opt/uv-python
+            uv pip install --python /var/www/picturetodmc/venv/bin/python \
+              -r /var/www/picturetodmc/app/PythonDCA/requirements.txt --quiet
+            sudo /usr/bin/systemctl restart picturetodmc
+          REMOTE
+
+      - name: Smoke test
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -euo pipefail <<'REMOTE'
+            for i in $(seq 1 30); do
+              if curl -fsS -o /dev/null http://127.0.0.1:8001/; then break; fi
+              [ "$i" = 30 ] && { echo "app never came up"; sudo journalctl -u picturetodmc -n 40 --no-pager; exit 1; }
+              sleep 1
+            done
+            # The homepage is static; this proves the DMC chart loaded too.
+            curl -fsS -X POST http://127.0.0.1:8001/add_color \
+              -H 'Content-Type: application/json' -d '{"colorNum":"350"}' | grep -q 'Coral' \
+              && echo "OK  chart loaded, app responding"
+          REMOTE

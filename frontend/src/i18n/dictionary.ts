@@ -1,0 +1,490 @@
+// Bilingual copy. `en` is the source of truth for the key set; `fr` is
+// typed against it so a missing or misspelled key fails the build.
+//
+// Interpolated strings are functions rather than "{n}" placeholders — the
+// types then guarantee every call site passes the right arguments.
+
+export const en = {
+  lang: { label: "Language", fr: "Français", en: "English", switchTo: "Passer en français" },
+
+  nav: {
+    howItWorks: "How it works",
+    gallery: "Gallery",
+    faq: "FAQ",
+    convert: "Convert a photo",
+    start: "Start a pattern",
+    menu: "Menu",
+  },
+
+  home: {
+    badge: "100% free · no account needed",
+    heroTitleBefore: "Turn any photo into a ",
+    heroTitleAccent: "cross-stitch",
+    heroTitleAfter: " pattern",
+    heroLead:
+      "Upload a picture and we'll match every stitch to a real DMC thread color — then hand you a chart that's ready to hoop.",
+    ctaUpload: "Upload a photo",
+    ctaSample: "See a sample pattern",
+    heroNote: "from photo to chart in about a minute ↷",
+    demoPhoto: "your photo",
+    demoPattern: "your pattern",
+    demoPhotoPlaceholder: "drop a photo — pet, portrait, flowers…",
+    demoMatched: (n: number) => `matched to ${n} DMC threads`,
+
+    stepsKicker: "as easy as one, two, three (and four)",
+    stepsTitle: "How it works",
+    steps: [
+      {
+        title: "Upload a photo",
+        body: "Any JPG or PNG — pets and portraits work beautifully.",
+      },
+      {
+        title: "Adjust the pattern",
+        body: "Choose the width in stitches and how many thread colors. Swap any thread you don't like.",
+      },
+      {
+        title: "Download your chart",
+        body: "A printable chart with the grid, the legend and the exact DMC threads to buy.",
+      },
+      {
+        title: "Stitch & enjoy",
+        body: "Pop it in a hoop and get comfy. The fun part is yours.",
+      },
+    ],
+
+    features: [
+      {
+        title: "Swap any thread",
+        body: "Don't like a matched color? Tap it and pick from the 589 official DMC shades.",
+      },
+      {
+        title: "Use your own threads",
+        body: "Already have a thread box? Give us your DMC codes and we'll only use those.",
+      },
+      {
+        title: "See every color",
+        body: "Hover a thread in the list and every stitch in that color lights up on the pattern.",
+      },
+    ],
+
+    faqKicker: "the things people ask first",
+    faqTitle: "Good to know",
+    faq: [
+      {
+        q: "Is it really free?",
+        a: "Yes — every pattern, every download, no account and no watermark. There's nothing to buy here.",
+      },
+      {
+        q: "What happens to my photo?",
+        a: "It's sent to our server, converted, and held in memory only while you're working on it. It is never written to disk and never shared.",
+      },
+      {
+        q: "How many thread colors should I pick?",
+        a: "Between 8 and 15 suits most photos. Fewer reads bolder and stitches faster; more keeps the detail but means more thread changes.",
+      },
+      {
+        q: "Which files can I upload?",
+        a: "JPG and PNG. Transparent PNGs work too — the transparent parts are simply left unstitched.",
+      },
+    ],
+
+    ctaKicker: "ready when you are",
+    ctaTitle: "Start your first pattern",
+    ctaButton: "Upload a photo — it's free",
+  },
+
+  gallery: {
+    kicker: "made by people like you",
+    title: "The stitch gallery",
+    lead: "Finished pieces stitched from patterns made here. Share yours when the last thread is knotted — we'd love to see it.",
+    filters: {
+      all: "All",
+      pets: "Pets",
+      portraits: "Portraits",
+      flowers: "Flowers",
+      landscapes: "Landscapes",
+      little: "Little ones",
+    },
+    sampleNote:
+      "Example patterns for now — finished pieces from the community land here when sharing opens.",
+    example: "Example pattern",
+    stitches: (w: number, h: number) => `${w} × ${h} st`,
+    colors: (n: number) => `${n} colors`,
+    more: (n: number) => `+${n}`,
+    getPattern: "Get this pattern →",
+    shareTitle: "Finished a piece?",
+    shareBody: "Snap a photo of it in the hoop and add it to the gallery.",
+    shareCta: "Share your stitch",
+    shareNote: "no account needed — just a photo",
+    showMore: "Show more pieces",
+    soon: "Sharing opens with accounts — coming soon.",
+    empty: "Nothing in this category yet. Yours could be the first!",
+  },
+
+  converter: {
+    title: "Convert a photo",
+    lead: "Settings on the left, your fabric in the middle, your threads on the right.",
+    startOver: "Start over",
+
+    upload: {
+      drop: "Drop your photo here",
+      browseBefore: "or ",
+      browse: "browse your files",
+      browseAfter: " · JPG or PNG",
+      hint: "pets, portraits, gardens, holiday snaps — anything!",
+      replace: "Choose another photo",
+    },
+
+    settings: { heading: "Pattern settings" },
+
+    size: {
+      stitchesWide: "Stitches wide",
+      note: (w: number, h: number) => `Roughly ${w} × ${h} stitches once converted.`,
+      unknown: "The height follows your photo's proportions.",
+    },
+
+    colors: {
+      threadColors: "Thread colors",
+      outline: "Black outline",
+      outlineOn: "Outline on",
+      outlineOff: "Outline off",
+    },
+
+    custom: {
+      heading: "Your own threads",
+      open: "Use my own threads",
+      title: "Your own threads",
+      toggle: "Use my threads",
+      toggleOn: "Your threads only",
+      toggleOff: "All 589 DMC shades",
+      listLabel: "Your DMC codes",
+      emptyList: "No thread added yet",
+      add: "Add",
+      remove: "Remove",
+      reset: "Clear all",
+      inputLabel: "Enter a DMC code",
+      placeholder: "e.g. 15, or 123, 16, 186",
+      validate: "OK",
+      cancel: "Cancel",
+      notFound: "No such DMC code",
+      already: "Already in your list",
+      close: "Close",
+    },
+
+    canvas: {
+      original: "Original",
+      pattern: "Pattern",
+      empty: "Your pattern will appear here",
+      emptyHint: "upload a photo and press Create the pattern",
+      note: "changes preview instantly — nothing is saved until you download",
+      building: "Matching your threads…",
+    },
+
+    threads: {
+      heading: "Your threads",
+      count: (n: number) => `${n} colors`,
+      empty: "Your DMC threads will be listed here.",
+      hints: "Hover a thread to find it on the pattern · tap the wheel to swap it",
+      swapAria: (code: string) => `Swap DMC ${code}`,
+    },
+
+    create: "Create the pattern",
+    recreate: "Update the pattern",
+
+    detail: {
+      title: "Thread details",
+      alternatives: "Suggested alternatives",
+      findSimilar: "Find a similar thread",
+      setColor: "Pick a specific code",
+      replace: "Use this one",
+      buy: "Buy this DMC thread",
+      close: "Close",
+    },
+
+    download: {
+      heading: "Download",
+      grid: "Grid",
+      gridHint: "Draw the counting grid over the chart",
+      legend: "Legend",
+      legendHint: "List the DMC codes under the chart",
+      background: "Background color",
+      button: "Download the chart (PNG)",
+      working: "Preparing…",
+      note: "free forever — happy stitching!",
+    },
+
+    errors: {
+      noImage: "Pick a photo first!",
+      notEnoughCustom:
+        "You asked for more colors than you have threads. Add more threads, or lower the color count.",
+      tooFewColors:
+        "This photo doesn't have enough distinct colors for that many threads. Try lowering the color count.",
+      generic: "Something went wrong on our side. Try again in a moment.",
+      network: "Couldn't reach the server. Check your connection and try again.",
+      download: "The chart couldn't be generated. Try again.",
+      retry: "Try again",
+      dismiss: "Dismiss",
+    },
+  },
+
+  footer: {
+    tagline: "· made for stitchers",
+    about: "About",
+    faq: "FAQ",
+    contact: "Contact",
+    privacy: "Privacy",
+    madeBy: "Made by",
+  },
+
+  notFound: {
+    title: "This page slipped off the hoop",
+    body: "The page you're after doesn't exist — or hasn't been stitched yet.",
+    home: "Back to the homepage",
+  },
+}
+
+/** Shape every locale must satisfy. Deliberately no `as const` on `en` —
+ *  values widen to `string`, so `fr` must match the key set, not the words. */
+export type Copy = typeof en
+
+export const fr: Copy = {
+  lang: { label: "Langue", fr: "Français", en: "English", switchTo: "Switch to English" },
+
+  nav: {
+    howItWorks: "Comment ça marche",
+    gallery: "Galerie",
+    faq: "FAQ",
+    convert: "Convertir une photo",
+    start: "Créer une grille",
+    menu: "Menu",
+  },
+
+  home: {
+    badge: "100 % gratuit · sans compte",
+    heroTitleBefore: "Transformez une photo en grille de ",
+    heroTitleAccent: "point de croix",
+    heroTitleAfter: "",
+    heroLead:
+      "Envoyez une image : chaque point est associé à une vraie couleur de fil DMC, et vous repartez avec une grille prête à mettre au tambour.",
+    ctaUpload: "Choisir une photo",
+    ctaSample: "Voir un exemple",
+    heroNote: "de la photo à la grille en une minute ↷",
+    demoPhoto: "votre photo",
+    demoPattern: "votre grille",
+    demoPhotoPlaceholder: "une photo — animal, portrait, fleurs…",
+    demoMatched: (n: number) => `associée à ${n} fils DMC`,
+
+    stepsKicker: "aussi simple que un, deux, trois (et quatre)",
+    stepsTitle: "Comment ça marche",
+    steps: [
+      {
+        title: "Envoyez une photo",
+        body: "Un JPG ou un PNG — les animaux et les portraits rendent très bien.",
+      },
+      {
+        title: "Réglez la grille",
+        body: "Choisissez la largeur en points et le nombre de fils. Remplacez ceux qui ne vous plaisent pas.",
+      },
+      {
+        title: "Téléchargez la grille",
+        body: "Une grille imprimable avec le quadrillage, la légende et les références DMC à acheter.",
+      },
+      {
+        title: "Brodez tranquillement",
+        body: "Mettez-la au tambour et installez-vous. Le plus agréable est pour vous.",
+      },
+    ],
+
+    features: [
+      {
+        title: "Changez n'importe quel fil",
+        body: "Une couleur ne vous plaît pas ? Cliquez dessus et choisissez parmi les 589 références DMC.",
+      },
+      {
+        title: "Utilisez vos propres fils",
+        body: "Vous avez déjà une boîte à fils ? Donnez-nous vos références DMC, nous n'utiliserons que celles-là.",
+      },
+      {
+        title: "Repérez chaque couleur",
+        body: "Survolez un fil dans la liste : tous les points de cette couleur s'allument sur la grille.",
+      },
+    ],
+
+    faqKicker: "les questions qui reviennent",
+    faqTitle: "Bon à savoir",
+    faq: [
+      {
+        q: "C'est vraiment gratuit ?",
+        a: "Oui — toutes les grilles, tous les téléchargements, sans compte et sans filigrane. Il n'y a rien à acheter ici.",
+      },
+      {
+        q: "Que devient ma photo ?",
+        a: "Elle est envoyée à notre serveur, convertie, et gardée en mémoire uniquement pendant que vous travaillez dessus. Elle n'est jamais écrite sur disque ni partagée.",
+      },
+      {
+        q: "Combien de fils choisir ?",
+        a: "Entre 8 et 15 convient à la plupart des photos. Moins donne un rendu plus graphique et se brode plus vite ; plus garde le détail mais multiplie les changements de fil.",
+      },
+      {
+        q: "Quels fichiers puis-je envoyer ?",
+        a: "Du JPG et du PNG. Les PNG transparents fonctionnent aussi — les zones transparentes sont simplement laissées vides.",
+      },
+    ],
+
+    ctaKicker: "quand vous voulez",
+    ctaTitle: "Créez votre première grille",
+    ctaButton: "Choisir une photo — c'est gratuit",
+  },
+
+  gallery: {
+    kicker: "brodé par des gens comme vous",
+    title: "La galerie",
+    lead: "Des ouvrages terminés, brodés à partir de grilles créées ici. Partagez le vôtre une fois le dernier nœud fait — on adore les voir.",
+    filters: {
+      all: "Tout",
+      pets: "Animaux",
+      portraits: "Portraits",
+      flowers: "Fleurs",
+      landscapes: "Paysages",
+      little: "Les petits",
+    },
+    sampleNote:
+      "Des exemples pour l'instant — les ouvrages de la communauté arriveront ici dès l'ouverture du partage.",
+    example: "Exemple de grille",
+    stitches: (w: number, h: number) => `${w} × ${h} pts`,
+    colors: (n: number) => `${n} couleurs`,
+    more: (n: number) => `+${n}`,
+    getPattern: "Obtenir cette grille →",
+    shareTitle: "Un ouvrage terminé ?",
+    shareBody: "Prenez-le en photo dans son tambour et ajoutez-le à la galerie.",
+    shareCta: "Partager votre broderie",
+    shareNote: "sans compte — juste une photo",
+    showMore: "Voir plus d'ouvrages",
+    soon: "Le partage arrivera avec les comptes — bientôt.",
+    empty: "Rien dans cette catégorie pour l'instant. Le vôtre pourrait être le premier !",
+  },
+
+  converter: {
+    title: "Convertir une photo",
+    lead: "Les réglages à gauche, votre toile au milieu, vos fils à droite.",
+    startOver: "Tout recommencer",
+
+    upload: {
+      drop: "Déposez votre photo ici",
+      browseBefore: "ou ",
+      browse: "parcourez vos fichiers",
+      browseAfter: " · JPG ou PNG",
+      hint: "animaux, portraits, jardins, photos de vacances — tout marche !",
+      replace: "Choisir une autre photo",
+    },
+
+    settings: { heading: "Réglages de la grille" },
+
+    size: {
+      stitchesWide: "Points en largeur",
+      note: (w: number, h: number) => `Environ ${w} × ${h} points après conversion.`,
+      unknown: "La hauteur suit les proportions de votre photo.",
+    },
+
+    colors: {
+      threadColors: "Nombre de fils",
+      outline: "Contour noir",
+      outlineOn: "Contour activé",
+      outlineOff: "Contour désactivé",
+    },
+
+    custom: {
+      heading: "Vos propres fils",
+      open: "Utiliser mes fils",
+      title: "Vos propres fils",
+      toggle: "Utiliser mes fils",
+      toggleOn: "Vos fils uniquement",
+      toggleOff: "Les 589 références DMC",
+      listLabel: "Vos références DMC",
+      emptyList: "Aucun fil ajouté pour l'instant",
+      add: "Ajouter",
+      remove: "Supprimer",
+      reset: "Tout effacer",
+      inputLabel: "Entrez une référence DMC",
+      placeholder: "ex. 15, ou 123, 16, 186",
+      validate: "OK",
+      cancel: "Annuler",
+      notFound: "Référence DMC introuvable",
+      already: "Déjà dans votre liste",
+      close: "Fermer",
+    },
+
+    canvas: {
+      original: "Original",
+      pattern: "Grille",
+      empty: "Votre grille apparaîtra ici",
+      emptyHint: "envoyez une photo puis cliquez sur Créer la grille",
+      note: "l'aperçu se met à jour tout de suite — rien n'est enregistré tant que vous ne téléchargez pas",
+      building: "Association des fils en cours…",
+    },
+
+    threads: {
+      heading: "Vos fils",
+      count: (n: number) => `${n} couleurs`,
+      empty: "Vos fils DMC s'afficheront ici.",
+      hints: "Survolez un fil pour le repérer sur la grille · cliquez sur la roue pour le remplacer",
+      swapAria: (code: string) => `Remplacer le DMC ${code}`,
+    },
+
+    create: "Créer la grille",
+    recreate: "Mettre à jour la grille",
+
+    detail: {
+      title: "Détail du fil",
+      alternatives: "Alternatives suggérées",
+      findSimilar: "Trouver un fil proche",
+      setColor: "Choisir une référence précise",
+      replace: "Utiliser celui-ci",
+      buy: "Acheter ce fil DMC",
+      close: "Fermer",
+    },
+
+    download: {
+      heading: "Téléchargement",
+      grid: "Quadrillage",
+      gridHint: "Tracer la grille de comptage sur l'image",
+      legend: "Légende",
+      legendHint: "Lister les références DMC sous la grille",
+      background: "Couleur de fond",
+      button: "Télécharger la grille (PNG)",
+      working: "Préparation…",
+      note: "gratuit pour toujours — bonne broderie !",
+    },
+
+    errors: {
+      noImage: "Choisissez d'abord une photo !",
+      notEnoughCustom:
+        "Vous demandez plus de couleurs que vous n'avez de fils. Ajoutez des fils, ou baissez le nombre de couleurs.",
+      tooFewColors:
+        "Cette photo n'a pas assez de couleurs distinctes pour autant de fils. Essayez de baisser le nombre de couleurs.",
+      generic: "Quelque chose s'est mal passé de notre côté. Réessayez dans un instant.",
+      network: "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+      download: "La grille n'a pas pu être générée. Réessayez.",
+      retry: "Réessayer",
+      dismiss: "Fermer",
+    },
+  },
+
+  footer: {
+    tagline: "· fait pour les brodeuses et brodeurs",
+    about: "À propos",
+    faq: "FAQ",
+    contact: "Contact",
+    privacy: "Confidentialité",
+    madeBy: "Créé par",
+  },
+
+  notFound: {
+    title: "Cette page a glissé du tambour",
+    body: "La page que vous cherchez n'existe pas — ou n'a pas encore été brodée.",
+    home: "Retour à l'accueil",
+  },
+}
+
+export const dictionaries = { en, fr }
+export type Lang = keyof typeof dictionaries

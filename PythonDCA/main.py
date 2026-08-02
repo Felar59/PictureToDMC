@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 import os
 import base64
@@ -10,13 +9,14 @@ from .picture import Picture
 from .csvValues import dataChart
 from PIL import Image, ImageDraw, ImageFilter, ImageChops, ImageFont
 import numpy as np
-from math import sqrt
 import colorsys
 
 class Main():
     def __init__(self, picture64, colorsAmount, datas):
-        self.datas = dataChart()
-        self.datas.createRGBcol()
+        # Reuse the chart the app loaded at startup. Building a new dataChart()
+        # here re-read the .xlsx twice and rebuilt the RGB column on every
+        # single upload, for an identical result.
+        self.datas = datas
         self.colorCount = colorsAmount
         self.picture = Picture(picture64, colorsAmount)
         self.finalPic = Image.new("RGBA", self.picture.get_size(), color=(255,255,255, 1)) 
@@ -30,32 +30,63 @@ class Main():
         return f"#{r:02X}{g:02X}{b:02X}"
 
     def createDMCimage(self, colorsList = []):
+        """Match every pixel to a DMC thread.
+
+        KMeans has already reduced the photo to `colorCount` colours, so there
+        are only a handful of distinct values however big the image is. We
+        resolve each one once — in the same raster order the old per-pixel loop
+        met them, which is what decides who claims a shade first — then paint
+        the whole image in one lookup instead of a Python loop over megapixels.
+        """
         self.usedColor = []
         self.colors = []
-        for y in range(self.picture.get_size()[1]):
-            for x in range(self.picture.get_size()[0]):
-                self.find_closest_pix(x, y, colorsList)
+
+        arr = np.asarray(self.picture.im, dtype=np.uint8)
+        rgb, alpha = arr[:, :, :3], arr[:, :, 3]
+        h, w = alpha.shape
+        visible = alpha >= 150
+
+        # One integer per pixel, so "distinct colour" is a 1-D problem.
+        packed = (
+            (rgb[:, :, 0].astype(np.uint32) << 16)
+            | (rgb[:, :, 1].astype(np.uint32) << 8)
+            | rgb[:, :, 2].astype(np.uint32)
+        )
+
+        visiblePacked = packed[visible]
+        out = np.zeros((h, w, 4), dtype=np.uint8)
+
+        if visiblePacked.size:
+            # np.unique sorts; re-sorting its first-occurrence indices recovers
+            # the raster order the original loop used.
+            _, firstSeen = np.unique(visiblePacked, return_index=True)
+            keysInOrder = visiblePacked[np.sort(firstSeen)]
+
+            resolved = np.empty((keysInOrder.size, 4), dtype=np.uint8)
+            for i, key in enumerate(keysInOrder):
+                source = (int(key >> 16) & 0xFF, int(key >> 8) & 0xFF, int(key) & 0xFF)
+                if source in self.optimiseDico:
+                    color = self.optimiseDico[source]
+                else:
+                    num, name, color = self.datas.findClosestColor(
+                        source, self.usedColor, colorsList
+                    )
+                    self.optimiseDico[source] = color
+                    self.colors.append((color, str(num)))
+                    # Define list to send
+                    self.values.append((str(num), str(name), self.rgb_to_hex(color)))
+                    self.usedColor.append(num)
+                resolved[i] = (color[0], color[1], color[2], 255)
+
+            order = np.argsort(keysInOrder)
+            lookup = np.searchsorted(keysInOrder[order], packed)
+            np.clip(lookup, 0, keysInOrder.size - 1, out=lookup)
+            out = resolved[order][lookup]
+            out[~visible] = (0, 0, 0, 0)
+
+        self.finalPic = Image.fromarray(out, "RGBA")
+        self.PicPix = self.finalPic.load()
         self.values = self.sortColors()
-
-    def find_closest_pix(self, x, y, colorsList):
-        r, g, b, a = self.picture.get_pix(x, y)
-        if a < 150:
-            self.PicPix[x, y] = (0, 0, 0, 0)
-        elif (r, g, b) in self.optimiseDico.keys():
-            self.PicPix[x, y] = self.optimiseDico[(r, g, b)]
-        else:
-            num, name, color = self.datas.findClosestColor((r, g, b), self.usedColor, colorsList)
-            self.optimiseDico[(r, g, b)] = color
-            self.PicPix[x, y] = color
-
-            colorHex = self.rgb_to_hex(color)
-
-            self.colors.append((color, str(num)))
-
-            # Define list to send
-            self.values.append((str(num), str(name), colorHex))
-            self.usedColor.append(num)
-
 
     def sortColors(self):
         def rgb_to_hsv_key(color_tuple):
@@ -67,12 +98,12 @@ class Main():
             self.colors,
             key=lambda x: rgb_to_hsv_key(x[0])
         )
-        newValues = []
-        for i in range(len(sorted_colors)):
-            for j in range(len(self.values)):
-                if sorted_colors[i][1] == self.values[j][0]:
-                    newValues.append(self.values[j])
-        return newValues
+        # DMC numbers are unique within a pattern, so one dict lookup replaces
+        # the inner scan over self.values.
+        byNumber = {}
+        for value in self.values:
+            byNumber.setdefault(value[0], value)
+        return [byNumber[num] for _, num in sorted_colors if num in byNumber]
     
 
     def ResizeFinalPic(self, endSize, Outline):
@@ -154,11 +185,11 @@ class Main():
         if grid:
             self.createGrid(grid_every, heavy_every, scale, heavy_width, grid_width)
 
-        pixels = self.editPicture.load()
-        for y in range(self.editPicture.height):
-            for x in range(self.editPicture.width):
-                if pixels[x, y][3] < 100:
-                    pixels[x, y] = backcolor
+        # Flood everything see-through with the chosen background. Assigning a
+        # 3-tuple through PIL forced alpha to 255, so we do the same here.
+        canvas = np.array(self.editPicture)
+        canvas[canvas[:, :, 3] < 100] = (backcolor[0], backcolor[1], backcolor[2], 255)
+        self.editPicture = Image.fromarray(canvas, "RGBA")
 
         if legend:
             self.addLegend()
@@ -216,9 +247,6 @@ class Main():
             draw.text((x, y), text, font=font, fill=(0, 0, 0))
 
     def replaceColor(self, colorA, colorB):
-        width, height = self.finalPic.size
-        pixels = self.finalPic.load()
-
         self.values = [c for c in self.values if colorA["num"] != c[0]]
         self.values.append((colorB["num"], colorB["name"], colorB["hex"]))
 
@@ -226,34 +254,51 @@ class Main():
         self.colors.append((self.datas.from_Hex_to_Rgb(colorB["hex"]), colorB["num"]))
 
         colorA, colorB = self.datas.from_Hex_to_Rgb(colorA["hex"]), self.datas.from_Hex_to_Rgb(colorB["hex"])
-        for y in range(height):
-            for x in range(width):
-                if colorA == pixels[x, y][:3]:
-                    pixels[x, y] = colorB
+
+        canvas = np.array(self.finalPic)
+        # Matches on RGB only and forces alpha to 255, exactly as the per-pixel
+        # assignment did.
+        hit = (
+            (canvas[:, :, 0] == colorA[0])
+            & (canvas[:, :, 1] == colorA[1])
+            & (canvas[:, :, 2] == colorA[2])
+        )
+        canvas[hit] = (colorB[0], colorB[1], colorB[2], 255)
+
+        self.finalPic = Image.fromarray(canvas, "RGBA")
+        self.PicPix = self.finalPic.load()
 
         return self.finalPic
 
     def createMask(self):
+        """One white silhouette per thread, for the hover highlight.
+
+        Same rule as before: a pixel counts if it isn't transparent and isn't
+        pure black (that's the outline). Built with one boolean pass per thread
+        rather than a Python loop over width x height x colours.
+        """
         width, height = self.editPicture1.size
-        pixels = self.editPicture1.load()
-        mask_dict = {}
-        mask_pixels_dict = {}
+        canvas = np.array(self.editPicture1)
+        r, g, b, a = canvas[:, :, 0], canvas[:, :, 1], canvas[:, :, 2], canvas[:, :, 3]
+        stitched = (a != 0) & ~((r == 0) & (g == 0) & (b == 0))
 
-        for i in range(len(self.values)):
-            mask = Image.new("RGBA", (width, height), color=(255,255,255, 1))
-            mask_dict[str(self.values[i][0])] = mask
-            mask_pixels_dict[str(self.values[i][0])] = mask.load()
+        blank = np.empty((height, width, 4), dtype=np.uint8)
+        blank[:] = (255, 255, 255, 1)
+        arrays = {str(value[0]): blank.copy() for value in self.values}
 
+        # Dict-first, like the original: when two threads share an RGB the last
+        # one registered owns those pixels.
         color_to_num = {color: num for color, num in self.colors}
 
-        for y in range(height):
-            for x in range(width):
-                r, g, b, a = pixels[x, y]
-                if a != 0 and (r,g,b) != (0, 0, 0):
-                    colorNum = color_to_num.get((r, g, b))
-                    mask_pixels_dict[str(colorNum)][x, y] = (255, 255, 255, 255)
+        for color, num in color_to_num.items():
+            target = arrays.get(str(num))
+            if target is None:
+                continue
+            target[stitched & (r == color[0]) & (g == color[1]) & (b == color[2])] = (
+                255, 255, 255, 255,
+            )
 
-        return mask_dict
+        return {num: Image.fromarray(data, "RGBA") for num, data in arrays.items()}
                 
 
 app = FastAPI()

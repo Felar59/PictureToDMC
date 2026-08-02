@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Picture to DMC — design tokens
+   Source: "Picture to DMC - Design System" (claude.ai/design).
+   No pure white, no pure black: everything sits on warm linen so the
+   DMC accent colors can be genuinely colorful without noise.
+------------------------------------------------------------------- */
+
+@theme {
+  /* Warm neutrals — backgrounds & text */
+  --color-blanc: #FCFBF7;
+  /* cards */
+  --color-linen: #F6F0E4;
+  /* page background */
+  --color-aida: #EDE3D0;
+  /* stitch canvas */
+  --color-taupe: #C9BBA6;
+  /* borders */
+  --color-cocoa: #6B5A48;
+  /* secondary text */
+  --color-ink: #33261A;
+  /* primary text */
+
+  /* Text tints between cocoa and ink */
+  --color-bark: #4A3C2D;
+  --color-clay: #5D4E3E;
+  --color-stone: #8A7663;
+  --color-sand: #A8947C;
+  --color-quill: #B0755E;
+  /* handwritten asides */
+
+  /* Border tints, lightest to darkest */
+  --color-edge: #EDE3D0;
+  --color-edge-2: #E8DECC;
+  --color-edge-3: #E4D9C6;
+  --color-edge-4: #E0D4BC;
+  --color-edge-5: #D8CBB4;
+
+  /* Accents — real DMC threads. Coral is the ONLY color that asks for a click. */
+  --color-coral: #E0574B;
+  /* DMC 350 · primary action */
+  --color-coral-deep: #C9463C;
+  --color-coral-deeper: #A83A31;
+  --color-coral-soft: #F0938A;
+  --color-coral-wash: #FDF2ED;
+  --color-coral-edge: #EFB9B1;
+  --color-coral-dash: #DBA79E;
+
+  --color-golden: #E3B04B;
+  /* DMC 728 · highlights */
+  --color-golden-deep: #DA9A26;
+  --color-golden-wash: #FBF4E2;
+  --color-golden-edge: #EDD49A;
+
+  --color-nile: #6FAE7C;
+  /* DMC 913 · success */
+  --color-nile-deep: #4F9260;
+  --color-nile-wash: #EEF5EC;
+  --color-nile-edge: #B4D4BA;
+
+  --color-sky: #7FB5C8;
+  /* DMC 519 · info */
+  --color-sky-deep: #5E93A8;
+  --color-sky-wash: #EDF4F7;
+  --color-sky-edge: #B7D4DF;
+
+  --color-lavender: #A387C6;
+  /* DMC 209 · decoration */
+
+  /* Type */
+  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
+  --font-body: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-hand: "Shantell Sans", "Segoe Script", cursive;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Radii — 12 chip · 16 field · 20/24 card · pill */
+  --radius-chip: 12px;
+  --radius-field: 16px;
+  --radius-card: 20px;
+  --radius-card-lg: 24px;
+
+  /* Shadows — always warm cocoa at <=14%, always diffuse.
+     Fabric never casts a hard shadow. */
+  --shadow-soft: 0 2px 10px rgba(83, 63, 42, .06);
+  --shadow-card: 0 3px 16px rgba(83, 63, 42, .07);
+  --shadow-card-sm: 0 3px 14px rgba(83, 63, 42, .08);
+  --shadow-lift: 0 6px 22px rgba(83, 63, 42, .14);
+  --shadow-panel: 0 6px 24px rgba(83, 63, 42, .12);
+  --shadow-screen: 0 8px 32px rgba(83, 63, 42, .13);
+  --shadow-coral: 0 5px 16px rgba(224, 87, 75, .32);
+  --shadow-coral-sm: 0 3px 10px rgba(224, 87, 75, .3);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-linen);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -.3px;
+    text-wrap: pretty;
+  }
+
+  /* Focus ring: coral, never the browser default blue. */
+  :focus-visible {
+    outline: 3px solid var(--color-coral);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Aida fabric texture.
+   --aida-size matches the rendered stitch size so a preview sitting on
+   the weave lines up with it. --aida-ink controls how present it is.
+------------------------------------------------------------------- */
+@utility aida {
+  background-image:
+    repeating-linear-gradient(0deg,
+      rgba(139, 115, 85, var(--aida-ink, .08)) 0,
+      rgba(139, 115, 85, var(--aida-ink, .08)) 1px,
+      transparent 1px,
+      transparent var(--aida-size, 13px)),
+    repeating-linear-gradient(90deg,
+      rgba(139, 115, 85, var(--aida-ink, .08)) 0,
+      rgba(139, 115, 85, var(--aida-ink, .08)) 1px,
+      transparent 1px,
+      transparent var(--aida-size, 13px));
+}
+
+/* A floss bobbin: highlight along the top, shade along the bottom. */
+@utility bobbin {
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, .09),
+    inset 0 3px 0 rgba(255, 255, 255, .22);
+}
+
+@utility bobbin-sm {
+  box-shadow:
+    inset 0 -5px 0 rgba(0, 0, 0, .09),
+    inset 0 2px 0 rgba(255, 255, 255, .18);
+}
+
+/* Wavy golden underline — once per page, on the key noun. */
+@utility underline-stitch {
+  text-decoration: underline wavy var(--color-golden) 3px;
+  text-underline-offset: 8px;
+}
+
+/* Dotted underline for tertiary / link buttons. */
+@utility underline-dotted-soft {
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 5px;
+}
+
+/* ------------------------------------------------------------------
+   Animations
+------------------------------------------------------------------- */
+@keyframes shine {
+  0% {
+    transform: translateX(-120%) rotate(-15deg);
+  }
+
+  100% {
+    transform: translateX(220%) rotate(-15deg);
+  }
+}
+
+.animate-shine {
+  animation: shine 1.8s ease-in-out infinite;
+}
+
+@keyframes mask-glow {
+
+  0%,
+  100% {
+    opacity: .25;
+  }
+
+  50% {
+    opacity: .95;
+  }
+}
+
+.animate-mask-glow {
+  animation: mask-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes stitch-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-stitch-in {
+  animation: stitch-in .35s ease-out both;
+}
+
+/* Warm, thin scrollbars inside panels. */
+.scroll-linen {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-taupe) transparent;
+}
+
+.scroll-linen::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scroll-linen::-webkit-scrollbar-thumb {
+  background: var(--color-taupe);
+  border-radius: 999px;
+}
+
+.scroll-linen::-webkit-scrollbar-track {
+  background: transparent;
+}
