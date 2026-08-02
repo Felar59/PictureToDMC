@@ -26,7 +26,7 @@ Pixel Embroidery Converter is a web application that transforms any image into a
 
 ## Usage
 
-- **VPS (current)** — http://164.132.99.194:8080
+- **VPS (current)** — https://164-132-99-194.sslip.io
 - Render (previous) — https://picturetodmc.onrender.com/
 
 ---
@@ -39,16 +39,29 @@ VPS over SSH (`.github/workflows/deploy.yml`). Roughly 40 seconds end to end.
 | | |
 | --- | --- |
 | Host | `164.132.99.194`, SSH on port **2007** |
-| Public URL | **http://164.132.99.194:8080** |
-| nginx | listens on `:8080`, proxies to `127.0.0.1:8001` |
+| Public URL | **https://164-132-99-194.sslip.io** |
+| nginx | `:443` (TLS) proxies to `127.0.0.1:8001`; `:80` and `:8080` redirect to it |
+| Certificate | Let's Encrypt, renewed by `certbot.timer` |
 | Service | `picturetodmc.service` (uvicorn, 1 worker) |
 | Code | `/var/www/picturetodmc/app` |
 | Virtualenv | `/var/www/picturetodmc/venv` (Python 3.13 via `uv`) |
 
 The box also runs **emoji-art** on ports 80/443. The two share the `deploy`
 user but nothing else; this site got a port rather than a hostname because it
-has no domain yet. Give it one and the nginx `:8080` block becomes a normal
-443 server block.
+has no domain yet.
+
+**HTTPS without a domain.** `164-132-99-194.sslip.io` is free wildcard DNS that
+resolves straight back to this IP. It is a real name, so Let's Encrypt signs it
+— a genuinely trusted certificate, no purchase, no browser warning. When you
+pick a real domain, point its A record here and re-run:
+
+```bash
+sudo bash deploy/enable-https.sh votre-domaine.fr felix@r2s.fr
+```
+
+That is the whole migration. Certificates use the *webroot* plugin rather than
+`--nginx`, because the nginx installer rewrites whichever config it finds and
+the only other port-80 block on this box belongs to emoji-art.
 
 ### Server install (once)
 
