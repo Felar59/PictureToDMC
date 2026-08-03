@@ -17,52 +17,59 @@ function surface(w: number, h: number): [HTMLCanvasElement, CanvasRenderingConte
   return [canvas, ctx]
 }
 
-/** The preview: one square per stitch, nothing else. */
-export function renderPattern(
-  pattern: Pattern,
-  opts: { cellSize?: number; background?: string | null } = {},
-): HTMLCanvasElement {
-  const cell = opts.cellSize ?? 8
-  const [canvas, ctx] = surface(pattern.width * cell, pattern.height * cell)
+/**
+ * The preview, at exactly one pixel per stitch.
+ *
+ * The screen size is then a CSS transform with `image-rendering: pixelated`,
+ * which is both crisper and far cheaper than drawing scaled-up rectangles: a
+ * single putImageData writes the whole grid, where fillRect-per-cell costs one
+ * canvas call per stitch. Nothing is encoded — the previous version produced a
+ * PNG and base64'd it on every render, including every hover.
+ */
+export function patternImageData(pattern: Pattern): ImageData {
+  const image = new ImageData(pattern.width, pattern.height)
+  const out = image.data
 
-  if (opts.background) {
-    ctx.fillStyle = opts.background
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  // Unpack thread colours once rather than per pixel.
+  const r = new Uint8Array(pattern.threads.length)
+  const g = new Uint8Array(pattern.threads.length)
+  const b = new Uint8Array(pattern.threads.length)
+  pattern.threads.forEach((thread, i) => {
+    r[i] = thread.rgb[0]
+    g[i] = thread.rgb[1]
+    b[i] = thread.rgb[2]
+  })
+
+  for (let i = 0; i < pattern.cells.length; i++) {
+    const t = pattern.cells[i]
+    if (t < 0) continue // leave it transparent
+    out[i * 4] = r[t]
+    out[i * 4 + 1] = g[t]
+    out[i * 4 + 2] = b[t]
+    out[i * 4 + 3] = 255
   }
 
-  for (let y = 0; y < pattern.height; y++) {
-    for (let x = 0; x < pattern.width; x++) {
-      const t = pattern.cells[y * pattern.width + x]
-      if (t < 0) continue
-      ctx.fillStyle = pattern.threads[t].hex
-      ctx.fillRect(x * cell, y * cell, cell, cell)
-    }
-  }
-
-  return canvas
+  return image
 }
 
 /**
  * White where a given thread is stitched, transparent everywhere else.
  *
- * The old version had the server build one full-resolution PNG per thread and
- * base64 them all into a single JSON response — megabytes, downloaded whether
- * or not anyone hovered. Here it is a loop over the grid, on demand.
+ * The old build had the server render one full-size PNG per thread and base64
+ * them all into a single JSON response — megabytes, downloaded whether or not
+ * anyone ever hovered. This is one pass over the grid, on demand.
  */
-export function renderHighlight(
-  pattern: Pattern,
-  threadIndex: number,
-  cellSize = 8,
-): HTMLCanvasElement {
-  const [canvas, ctx] = surface(pattern.width * cellSize, pattern.height * cellSize)
-  ctx.fillStyle = "#FFFFFF"
-  for (let y = 0; y < pattern.height; y++) {
-    for (let x = 0; x < pattern.width; x++) {
-      if (pattern.cells[y * pattern.width + x] !== threadIndex) continue
-      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize)
-    }
+export function highlightImageData(pattern: Pattern, threadIndex: number): ImageData {
+  const image = new ImageData(pattern.width, pattern.height)
+  const out = image.data
+  for (let i = 0; i < pattern.cells.length; i++) {
+    if (pattern.cells[i] !== threadIndex) continue
+    out[i * 4] = 255
+    out[i * 4 + 1] = 255
+    out[i * 4 + 2] = 255
+    out[i * 4 + 3] = 255
   }
-  return canvas
+  return image
 }
 
 export type ChartOptions = {

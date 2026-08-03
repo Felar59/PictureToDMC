@@ -39,24 +39,29 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
   const { width, height, data } = await sampleToGrid(source, opts.stitchWidth)
 
   // Split visible from empty before clustering: transparent regions must not
-  // drag a centroid towards whatever colour the encoder left underneath them.
-  const visibleIndex: number[] = []
-  for (let i = 0; i < width * height; i++) {
-    if (data[i * 4 + 3] >= ALPHA_FLOOR) visibleIndex.push(i)
+  // drag a centroid towards whatever colour the encoder left under them.
+  // Typed arrays, sized once — a growing number[] boxes every index, and a
+  // 200-stitch pattern has 30 000 of them.
+  const cellCount = width * height
+  const cells = new Int16Array(cellCount).fill(-1)
+  const visibleIndex = new Int32Array(cellCount)
+  let visibleCount = 0
+  for (let i = 0; i < cellCount; i++) {
+    if (data[i * 4 + 3] >= ALPHA_FLOOR) visibleIndex[visibleCount++] = i
   }
 
-  const cells = new Int16Array(width * height).fill(-1)
-  if (visibleIndex.length === 0) {
+  if (visibleCount === 0) {
     return { width, height, cells, threads: [], counts: [] }
   }
 
-  const points = new Float64Array(visibleIndex.length * 3)
-  visibleIndex.forEach((src, n) => {
-    const lab = rgbToLab(data[src * 4], data[src * 4 + 1], data[src * 4 + 2])
+  const points = new Float64Array(visibleCount * 3)
+  for (let n = 0; n < visibleCount; n++) {
+    const src = visibleIndex[n] * 4
+    const lab = rgbToLab(data[src], data[src + 1], data[src + 2])
     points[n * 3] = lab[0]
     points[n * 3 + 1] = lab[1]
     points[n * 3 + 2] = lab[2]
-  })
+  }
 
   const { centroids, labels } = kmeans(points, opts.colorCount)
   const k = centroids.length / 3
@@ -67,10 +72,10 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
   const threads = assignThreads(clusterLabs, opts.palette)
 
   const counts = new Array<number>(k).fill(0)
-  visibleIndex.forEach((src, n) => {
-    cells[src] = labels[n]
+  for (let n = 0; n < visibleCount; n++) {
+    cells[visibleIndex[n]] = labels[n]
     counts[labels[n]]++
-  })
+  }
 
   return sortByShade({ width, height, cells, threads, counts })
 }
@@ -86,26 +91,26 @@ async function sampleToGrid(
   source: Blob,
   stitchWidth: number,
 ): Promise<{ width: number; height: number; data: Uint8ClampedArray }> {
-  const probe = await createImageBitmap(source)
-  const ratio = probe.height / probe.width
+  // Decode ONCE. The obvious version asks createImageBitmap for the natural
+  // size to work out the aspect ratio, then asks again with resize options —
+  // which decodes a 12 Mpx JPEG twice and made the decode, not the clustering,
+  // the most expensive step in the pipeline. One decode, then let drawImage
+  // scale it.
+  const bitmap = await createImageBitmap(source)
   const width = Math.max(1, Math.round(stitchWidth))
-  const height = Math.max(1, Math.round(width * ratio))
-  probe.close()
-
-  const bitmap = await createImageBitmap(source, {
-    resizeWidth: width,
-    resizeHeight: height,
-    resizeQuality: "high",
-  })
+  const height = Math.max(1, Math.round((width * bitmap.height) / bitmap.width))
 
   const canvas = document.createElement("canvas")
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
-  if (!ctx) throw new Error("canvas 2d context unavailable")
+  if (!ctx) {
+    bitmap.close()
+    throw new Error("canvas 2d context unavailable")
+  }
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = "high"
-  ctx.drawImage(bitmap, 0, 0)
+  ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, width, height)
   bitmap.close()
 
   return { width, height, data: ctx.getImageData(0, 0, width, height).data }

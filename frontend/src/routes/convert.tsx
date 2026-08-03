@@ -12,14 +12,10 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { convert, type Pattern } from "@/engine/convert"
 import { findThread, type Thread } from "@/engine/dmc"
-import { renderHighlight, renderPattern } from "@/engine/render"
 import { clearSession, loadSession, saveSession } from "@/engine/storage"
 import { useI18n } from "@/i18n"
 
 type ErrorKey = keyof ReturnType<typeof useI18n>["t"]["converter"]["errors"]
-
-/** Preview cell size. The chart export uses its own, larger, value. */
-const PREVIEW_CELL = 8
 
 export default function Convert() {
   const { t } = useI18n()
@@ -151,19 +147,10 @@ export default function Convert() {
     void clearSession()
   }
 
-  // Preview and hover overlay, both drawn from the pattern in memory.
-  const previewUrl = useMemo(
-    () => (pattern ? renderPattern(pattern, { cellSize: PREVIEW_CELL }).toDataURL() : null),
-    [pattern],
-  )
-
-  const hoveredIndex = pattern ? pattern.threads.findIndex((c) => c.num === hovered) : -1
-  const maskUrl = useMemo(
-    () =>
-      pattern && hoveredIndex >= 0
-        ? renderHighlight(pattern, hoveredIndex, PREVIEW_CELL).toDataURL()
-        : undefined,
-    [pattern, hoveredIndex],
+  // The canvas draws the pattern itself now, so there is nothing to encode here.
+  const hoveredIndex = useMemo(
+    () => (pattern && hovered ? pattern.threads.findIndex((c) => c.num === hovered) : -1),
+    [pattern, hovered],
   )
 
   // Revoke the object URL we created for a restored photo.
@@ -291,9 +278,9 @@ export default function Convert() {
         <div className="flex flex-col gap-6 lg:border-x-2 lg:border-dashed lg:border-edge-2 lg:px-7">
           {photo ? (
             <PatternCanvas
-              pattern={previewUrl}
+              pattern={pattern}
               original={photo.dataUrl}
-              maskSrc={maskUrl}
+              highlightIndex={hoveredIndex}
               view={view}
               onViewChange={setView}
               busy={busy}

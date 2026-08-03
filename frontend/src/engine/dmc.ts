@@ -42,23 +42,31 @@ export function assignThreads(clusters: Lab[], palette: Thread[] = THREADS): Thr
   const k = clusters.length
   if (k === 0) return []
 
-  type Pair = { cluster: number; thread: number; d: number }
-  const pairs: Pair[] = []
+  // Flat typed arrays, not an array of {cluster, thread, d} objects: at 20
+  // clusters against 589 threads that literal was 11 780 heap allocations per
+  // conversion, all of them garbage a millisecond later.
+  const n = palette.length
+  const total = k * n
+  const dist = new Float64Array(total)
   for (let c = 0; c < k; c++) {
-    for (let t = 0; t < palette.length; t++) {
-      pairs.push({ cluster: c, thread: t, d: labDist2(clusters[c], palette[t].lab) })
-    }
+    const lab = clusters[c]
+    for (let t = 0; t < n; t++) dist[c * n + t] = labDist2(lab, palette[t].lab)
   }
-  pairs.sort((a, b) => a.d - b.d)
+
+  const order = new Int32Array(total)
+  for (let i = 0; i < total; i++) order[i] = i
+  order.sort((a, b) => dist[a] - dist[b])
 
   const out = new Array<Thread | undefined>(k)
-  const takenThread = new Set<number>()
+  const takenThread = new Uint8Array(n)
   let placed = 0
-  for (const p of pairs) {
-    if (placed === k) break
-    if (out[p.cluster] || takenThread.has(p.thread)) continue
-    out[p.cluster] = palette[p.thread]
-    takenThread.add(p.thread)
+  for (let i = 0; i < total && placed < k; i++) {
+    const pair = order[i]
+    const cluster = (pair / n) | 0
+    const thread = pair - cluster * n
+    if (out[cluster] || takenThread[thread]) continue
+    out[cluster] = palette[thread]
+    takenThread[thread] = 1
     placed++
   }
 

@@ -6,22 +6,24 @@ const MARK_RATIO = 913 / 888
 /**
  * The brand mark: an embroidery hoop with a threaded needle.
  *
- * Served from /icon-256.png rather than the 889 KB original — it never
- * renders above ~120px, and the source stays at /Icon.png for anything
- * that needs full resolution later (og:image, print).
+ * WebP, not PNG. It appears in the header on every page, and PNG is the wrong
+ * container for a soft-shaded illustration — the same 256px image is 98 KB as
+ * PNG and 22 KB as WebP. 256px covers the largest use (104px on the 404 page)
+ * at 2x DPR. The 889 KB master stays in src/assets and is never shipped.
  *
- * Decorative by default: every place it appears, the wordmark or an
- * aria-label next to it already carries the name.
+ * Decorative by default: everywhere it appears, the wordmark or a neighbouring
+ * aria-label already carries the name.
  */
 export function BrandMark({ size = 40, className }: { size?: number; className?: string }) {
   return (
     <img
-      src="/icon-256.png"
+      src="/icon-256.webp"
       alt=""
       aria-hidden="true"
       width={size}
       height={Math.round(size * MARK_RATIO)}
       draggable={false}
+      decoding="async"
       className={cn("shrink-0 select-none object-contain", className)}
       style={{ width: size, height: "auto" }}
     />
