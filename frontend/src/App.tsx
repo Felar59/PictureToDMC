@@ -1,9 +1,9 @@
 import { Suspense, lazy, useEffect } from "react"
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom"
 
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
-import { AccountPanelProvider } from "@/community/account-panel"
+import { useAuth } from "@/community/auth-context"
 import { AuthProvider } from "@/community/auth-provider"
 import { I18nProvider } from "@/i18n/provider"
 import Home from "@/routes/home"
@@ -12,6 +12,7 @@ import Home from "@/routes/home"
 // conversions and the 589-thread chart — which the landing page never touches;
 // bundled together, every first visit downloaded it anyway. Home stays eager
 // because it is what most people land on.
+const Account = lazy(() => import("@/routes/account"))
 // Not linked from anywhere: the bench for tuning the fabric shader.
 const Atelier = lazy(() => import("@/routes/atelier"))
 const Convert = lazy(() => import("@/routes/convert"))
@@ -19,6 +20,29 @@ const Gallery = lazy(() => import("@/routes/gallery"))
 const NotFound = lazy(() => import("@/routes/not-found"))
 const Piece = lazy(() => import("@/routes/piece"))
 const Profile = lazy(() => import("@/routes/profile"))
+
+/**
+ * A brand-new account is sent to /compte once.
+ *
+ * It carries whatever name Google reported, which plenty of people do not want on
+ * a craft gallery, so the choice is offered the first time and never again — the
+ * server records it, so this cannot loop. A redirect rather than a dialog, because
+ * the account page is a page now: it can be linked to, reloaded and gone back
+ * from, none of which a modal manages.
+ */
+function AccountSetup() {
+  const { user } = useAuth()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!user || user.setUp) return
+    if (pathname === "/compte") return
+    void navigate("/compte?bienvenue", { replace: true })
+  }, [user, pathname, navigate])
+
+  return null
+}
 
 /** Top of the page on navigation, the anchor when there's a hash. */
 function ScrollManager() {
@@ -44,11 +68,8 @@ export default function App() {
     <I18nProvider>
       <AuthProvider>
       <BrowserRouter>
-      {/* Mounted once, above the routes: the header renders UserMenu twice, and
-          the panel has to be able to open itself on whatever page someone lands
-          on after their first sign-in. */}
-      <AccountPanelProvider>
         <ScrollManager />
+        <AccountSetup />
         <div className="min-h-screen flex flex-col">
           <SiteHeader />
           <main className="flex-1">
@@ -60,6 +81,7 @@ export default function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/convert" element={<Convert />} />
                 <Route path="/atelier" element={<Atelier />} />
+                <Route path="/compte" element={<Account />} />
                 <Route path="/gallery" element={<Gallery />} />
                 {/* French paths: the audience is French-first, and a
                     readable URL is part of feeling at home. */}
@@ -71,7 +93,6 @@ export default function App() {
           </main>
           <SiteFooter />
         </div>
-      </AccountPanelProvider>
       </BrowserRouter>
       </AuthProvider>
     </I18nProvider>

@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
-import { useAccountPanel } from "./account-panel-context"
 import { useAuth } from "./auth-context"
 
 /** Signed-out: one button. Signed-in: avatar with a small menu. */
 export function UserMenu({ className }: { className?: string }) {
   const { t } = useI18n()
   const { user, googleEnabled, signIn, signOut } = useAuth()
-  const account = useAccountPanel()
   const [open, setOpen] = useState(false)
   const hostRef = useRef<HTMLDivElement | null>(null)
 
@@ -71,17 +70,14 @@ export function UserMenu({ className }: { className?: string }) {
           </div>
 
           <div className="pt-2 flex flex-col">
-            <button
-              type="button"
+            <Link
+              to="/compte"
               role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                account.open()
-              }}
-              className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2 cursor-pointer"
+              onClick={() => setOpen(false)}
+              className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2"
             >
               {t.account.panel}
-            </button>
+            </Link>
             <button
               type="button"
               role="menuitem"

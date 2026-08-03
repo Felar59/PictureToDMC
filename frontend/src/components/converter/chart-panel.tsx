@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 import { DownloadGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
@@ -121,6 +121,22 @@ export function ChartPanel({
   const [outlineColor, setOutlineColor] = useState("#141008")
   const [busy, setBusy] = useState(false)
 
+  // The chart is a file someone keeps, so its own text follows the site language.
+  // Memoised because it feeds the preview's redraw: a fresh object every render
+  // would redraw the chart on every render.
+  const wording = useMemo(
+    () => ({
+      legendTitle: t.chart.legendTitle(
+        pattern.threads.length,
+        pattern.stitched,
+        pattern.width,
+        pattern.height,
+      ),
+      countSuffix: t.chart.countSuffix,
+    }),
+    [t, pattern],
+  )
+
   const settledColor = useSettled(backcolor, SETTLE_MS)
   const settledOutline = useSettled(outlineColor, SETTLE_MS)
 
@@ -140,6 +156,7 @@ export function ChartPanel({
           outline,
           outlineColor: settledOutline,
           background: settledColor,
+          ...wording,
         }),
       )
       setFailed(false)
@@ -149,7 +166,7 @@ export function ChartPanel({
       setPreview(null)
       setFailed(true)
     }
-  }, [pattern, grid, legend, outline, settledOutline, settledColor])
+  }, [pattern, grid, legend, outline, settledOutline, settledColor, wording])
 
   useEffect(drawPreview, [drawPreview])
 
@@ -176,6 +193,7 @@ export function ChartPanel({
         outline,
         outlineColor,
         background: backcolor,
+        ...wording,
       })
       const blob = await canvasToBlob(canvas)
       const url = URL.createObjectURL(blob)

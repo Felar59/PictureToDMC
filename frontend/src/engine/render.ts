@@ -164,6 +164,12 @@ export type ChartOptions = {
   background?: string
   /** Heavier rule every N stitches, the usual counting aid. */
   heavyEvery?: number
+  /** The line above the legend. Passed in rather than built here, because this
+   *  module has no locale and a French user should not download an English
+   *  chart. */
+  legendTitle?: string
+  /** What a stitch count is called — "pts", "st". Same reason. */
+  countSuffix?: string
 }
 
 /**
@@ -185,8 +191,10 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     const artW = pattern.width * cell
     const artH = pattern.height * cell
     const margin = Math.round(cell * 1.5)
-    const legendCols = Math.max(1, Math.min(4, Math.floor(artW / 190)))
-    const legendRowH = Math.max(26, Math.round(cell * 1.6))
+    // Wider than before: a column now holds a swatch, a reference, a name and a
+    // count, and four columns of that on a narrow chart left no room for names.
+    const legendCols = Math.max(1, Math.min(3, Math.floor(artW / 290)))
+    const legendRowH = Math.max(30, Math.round(cell * 1.8))
     const legendRows = legend ? Math.ceil(pattern.threads.length / legendCols) : 0
     const legendH = legend ? legendRows * legendRowH + margin * 2 : 0
     return {
@@ -269,15 +277,24 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     ctx.stroke()
 
     // Heavy decade rules, drawn after so they sit on top of the fine ones.
+    //
+    // The four edges always get one, whether or not they land on a decade. A
+    // 52-wide pattern was ruled at 0, 10 ... 50 and then finished on a hairline,
+    // so the chart was framed on the left and top and simply stopped on the right
+    // and bottom. A grid you count on has to be closed.
     ctx.lineWidth = 2
     ctx.strokeStyle = "rgba(20,16,12,.85)"
     ctx.beginPath()
-    for (let x = 0; x <= pattern.width; x += heavyEvery) {
+    const verticals = new Set<number>([0, pattern.width])
+    for (let x = 0; x <= pattern.width; x += heavyEvery) verticals.add(x)
+    const horizontals = new Set<number>([0, pattern.height])
+    for (let y = 0; y <= pattern.height; y += heavyEvery) horizontals.add(y)
+    for (const x of verticals) {
       const px = margin + x * cell
       ctx.moveTo(px, margin)
       ctx.lineTo(px, margin + artH)
     }
-    for (let y = 0; y <= pattern.height; y += heavyEvery) {
+    for (const y of horizontals) {
       const py = margin + y * cell
       ctx.moveTo(margin, py)
       ctx.lineTo(margin + artW, py)
@@ -286,18 +303,49 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
   }
 
   if (legend && pattern.threads.length) {
+    /* The shopping list, and the one part of the chart that is read rather than
+       counted — so it is set like a list and not like a grid. Each row is a
+       swatch, the reference, the thread's name, and how many stitches of it you
+       need, with the counts right-aligned in their column so the eye can run down
+       them. The names are clipped to the space left rather than allowed to collide
+       with the count, which is what happened when every field was laid out from
+       the left. */
     const top = margin * 2 + artH
-    ctx.strokeStyle = "rgba(20,16,12,.45)"
-    ctx.lineWidth = 2
+    const bodySize = Math.max(11, Math.round(legendRowH * 0.4))
+    const headSize = Math.max(10, Math.round(legendRowH * 0.34))
+    const swatch = Math.round(legendRowH * 0.58)
+    const gap = Math.round(swatch * 0.55)
+    const colW = artW / legendCols
+
+    const ink = "#33261A"
+    const faded = "rgba(51,38,26,.55)"
+
+    ctx.textBaseline = "middle"
+    ctx.textAlign = "left"
+
+    // A header, so the block says what it is on a printed page with no context.
+    ctx.font = `800 ${headSize}px "Nunito Sans", system-ui, sans-serif`
+    ctx.fillStyle = faded
+    ctx.fillText(opts.legendTitle ?? "DMC", margin, top - margin * 0.55)
+
+    // The rule under the header, lighter than the grid so it separates without
+    // competing with it.
+    ctx.strokeStyle = "rgba(20,16,12,.3)"
+    ctx.lineWidth = 1.5
     ctx.beginPath()
-    ctx.moveTo(margin, top - margin / 2)
-    ctx.lineTo(canvas.width - margin, top - margin / 2)
+    ctx.moveTo(margin, top - margin * 0.2)
+    ctx.lineTo(canvas.width - margin, top - margin * 0.2)
     ctx.stroke()
 
-    const colW = artW / legendCols
-    const swatch = Math.round(legendRowH * 0.62)
-    ctx.textBaseline = "middle"
-    ctx.font = `600 ${Math.round(legendRowH * 0.44)}px "Nunito Sans", system-ui, sans-serif`
+    // Every reference is aligned on the same column, so the names start together
+    // however wide the numbers are.
+    ctx.font = `800 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
+    let codeW = 0
+    for (const thread of pattern.threads) {
+      codeW = Math.max(codeW, ctx.measureText(thread.num).width)
+    }
+    const suffix = opts.countSuffix ?? "pts"
+    const countW = ctx.measureText(`0000 ${suffix}`).width
 
     pattern.threads.forEach((thread, i) => {
       const col = i % legendCols
@@ -305,21 +353,51 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
       const x = margin + col * colW
       const y = top + row * legendRowH + legendRowH / 2
 
+      // A hairline under each row, kept inside the column so the columns read as
+      // columns rather than as one wide table.
+      if (row > 0) {
+        ctx.strokeStyle = "rgba(20,16,12,.09)"
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(x, Math.round(y - legendRowH / 2) + 0.5)
+        ctx.lineTo(x + colW - gap, Math.round(y - legendRowH / 2) + 0.5)
+        ctx.stroke()
+      }
+
+      // The swatch carries a border of its own: a pale thread on pale paper is
+      // otherwise an empty square.
       ctx.fillStyle = thread.hex
       ctx.fillRect(x, y - swatch / 2, swatch, swatch)
-      ctx.strokeStyle = "rgba(20,16,12,.55)"
+      ctx.strokeStyle = "rgba(20,16,12,.45)"
       ctx.lineWidth = 1
       ctx.strokeRect(x + 0.5, y - swatch / 2 + 0.5, swatch - 1, swatch - 1)
 
-      ctx.fillStyle = "#33261A"
-      const label = `DMC ${thread.num}`
-      ctx.fillText(label, x + swatch + 8, y)
-      ctx.fillStyle = "rgba(51,38,26,.6)"
-      ctx.fillText(
-        `${pattern.counts[i]} pts`,
-        x + swatch + 8 + ctx.measureText(label).width + 10,
-        y,
-      )
+      const codeX = x + swatch + gap
+      ctx.font = `800 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
+      ctx.fillStyle = ink
+      ctx.fillText(thread.num, codeX, y)
+
+      // Counts right-aligned at the column's edge, so they line up down the page.
+      ctx.textAlign = "right"
+      ctx.font = `600 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
+      ctx.fillStyle = faded
+      ctx.fillText(`${pattern.counts[i]} ${suffix}`, x + colW - gap, y)
+      ctx.textAlign = "left"
+
+      // Whatever room is left goes to the name, clipped rather than allowed to
+      // run into the count.
+      const nameX = codeX + codeW + gap
+      const nameRoom = x + colW - gap - countW - gap - nameX
+      if (nameRoom > bodySize * 2) {
+        ctx.save()
+        ctx.beginPath()
+        ctx.rect(nameX, y - legendRowH / 2, nameRoom, legendRowH)
+        ctx.clip()
+        ctx.font = `500 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
+        ctx.fillStyle = faded
+        ctx.fillText(thread.name, nameX, y)
+        ctx.restore()
+      }
     })
   }
 

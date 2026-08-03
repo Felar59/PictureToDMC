@@ -112,6 +112,9 @@ export const en = {
     iconSoon: "For now it's drawn from your account. Marks to choose from are coming.",
     saveFailed: "That wasn't saved. Try again.",
     saving: "Saving…",
+    saved: "saved",
+    publicPage: "See my page",
+    signInFirst: "Sign in to see your account.",
     save: "Save",
     cancel: "Cancel",
     signedInAs: "Signed in as",
@@ -212,6 +215,9 @@ export const en = {
     previewFailed: "Draw the preview again — your download works either way.",
     refresh: "Refresh the preview",
     outlineColor: "Outline colour",
+    legendTitle: (colours: number, stitches: number, w: number, h: number) =>
+      `DMC · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
+    countSuffix: "st",
     threads: (n: number) => (n === 1 ? "1 thread to buy" : `${n} threads to buy`),
   },
 
@@ -496,6 +502,9 @@ export const fr: Copy = {
     iconSoon: "Pour l'instant elle est tirée de votre compte. Des marques à choisir arrivent.",
     saveFailed: "Ça n'a pas été enregistré. Réessayez.",
     saving: "Enregistrement…",
+    saved: "enregistré",
+    publicPage: "Voir ma page",
+    signInFirst: "Connectez-vous pour voir votre compte.",
     save: "Enregistrer",
     cancel: "Annuler",
     signedInAs: "Connecté en tant que",
@@ -599,6 +608,9 @@ export const fr: Copy = {
       "Redessinez l'aperçu — le téléchargement fonctionne dans tous les cas.",
     refresh: "Rafraîchir l'aperçu",
     outlineColor: "Couleur du liseré",
+    legendTitle: (colours: number, stitches: number, w: number, h: number) =>
+      `DMC · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
+    countSuffix: "pts",
     threads: (n: number) => (n === 1 ? "1 fil à acheter" : `${n} fils à acheter`),
   },
 
