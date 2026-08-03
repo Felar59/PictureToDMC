@@ -4,7 +4,7 @@ import { Tag } from "@/components/ui/pill"
 import type { Pattern } from "@/engine/convert"
 import { useI18n } from "@/i18n"
 import { CARD_ASPECT, PRODUCTS, type ProductMock } from "./products"
-import { useStitchedBitmap } from "./use-stitched-bitmap"
+import { useStitchPainter, type StitchPainter } from "./use-stitch-painter"
 
 /**
  * "See it stitched" — the motif on four things stitchers actually make.
@@ -16,23 +16,24 @@ import { useStitchedBitmap } from "./use-stitched-bitmap"
  */
 
 /**
- * One product's copy of the motif.
+ * One product's motif, painted at the size it is actually shown.
  *
- * The shaded render is shared, so this is a plain 2D canvas that blits from it —
- * a canvas can only live in one place, and there are four products. Sized and
- * placed as a percentage of the photograph rather than in pixels, so it tracks
- * the image at every card width without a second measurement.
+ * The canvas measures itself and asks the painter for exactly that many device
+ * pixels, so nothing is resampled — the previous version shared one large render
+ * across all four, and shrinking a picture made of one-pixel highlights by four
+ * times looks like a compression artefact rather than like thread.
  *
- * Bare stitches come out transparent from either renderer, so the cloth in the
- * photograph shows through them, which is how it would really look.
+ * Sized and placed as a percentage of the photograph, so it tracks the image at
+ * every card width. Bare stitches come out transparent from either renderer, so
+ * the cloth in the photograph shows through them.
  */
 function Motif({
-  source,
+  painter,
   flatImage,
   spot,
   ratio,
 }: {
-  source: HTMLCanvasElement | null
+  painter: StitchPainter | null
   flatImage: ImageData | null
   spot: ProductMock["spot"]
   /** Pattern width over height. */
@@ -43,20 +44,28 @@ function Motif({
   useEffect(() => {
     const canvas = ref.current
     if (!canvas) return
-    if (source) {
-      canvas.width = source.width
-      canvas.height = source.height
-      canvas.getContext("2d")?.drawImage(source, 0, 0)
-      return
-    }
+
     if (flatImage) {
       canvas.width = flatImage.width
       canvas.height = flatImage.height
       canvas.getContext("2d")?.putImageData(flatImage, 0, 0)
+      return
     }
-  }, [source, flatImage])
+    if (!painter) return
 
-  if (!source && !flatImage) return null
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const paint = () => {
+      const css = canvas.clientWidth
+      if (css > 0) painter.paint(canvas, css * dpr)
+    }
+    paint()
+    // The card is fluid, so the right size is only known once it is laid out.
+    const observer = new ResizeObserver(paint)
+    observer.observe(canvas)
+    return () => observer.disconnect()
+  }, [painter, flatImage])
+
+  if (!painter && !flatImage) return null
 
   // The long side takes the allowance and the short side follows, so a portrait
   // pattern never spills past the area the product can carry.
@@ -68,9 +77,9 @@ function Motif({
       ref={ref}
       aria-hidden="true"
       style={{
-        // Only the flat fallback wants hard pixel edges. The shaded render is a
-        // picture of thread and should be resampled like one.
-        imageRendering: source ? "auto" : "pixelated",
+        // Only the flat fallback wants hard pixel edges. The shaded render is
+        // drawn at its display size, so it needs no scaling at all.
+        imageRendering: flatImage ? "pixelated" : "auto",
         position: "absolute",
         left: `${spot.x * 100}%`,
         top: `${spot.y * 100}%`,
@@ -85,8 +94,8 @@ function Motif({
 export function ProductPreview({ pattern }: { pattern: Pattern }) {
   const { t } = useI18n()
 
-  // Rendered as thread once, on a single WebGL context, and copied four times.
-  const { source, flatImage } = useStitchedBitmap(pattern)
+  // One WebGL context, painting each product at its own size.
+  const { painter, flatImage } = useStitchPainter(pattern)
   const ratio = pattern.width / pattern.height
 
   return (
@@ -120,7 +129,7 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <Motif
-                  source={source}
+                  painter={painter}
                   flatImage={flatImage}
                   spot={product.spot}
                   ratio={ratio}

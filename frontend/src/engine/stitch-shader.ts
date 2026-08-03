@@ -74,7 +74,7 @@ export const DEFAULT_PARAMS: StitchParams = {
   weaveContrast: 0.5,
   holeSize: 0.16,
   holeDepth: 0.38,
-  clothFuzz: 0.25,
+  clothFuzz: 0.18,
 
   coverage: 0.54,
   legWidth: 0.21,
@@ -87,21 +87,21 @@ export const DEFAULT_PARAMS: StitchParams = {
 
   plyFreq: 7,
   plyDepth: 0.2,
-  fibreNoise: 0.12,
+  fibreNoise: 0.1,
 
   lightAngle: 2.3,
   lightHeight: 0.55,
   diffuse: 0.9,
   ambient: 0.55,
-  specular: 0.4,
+  specular: 0.3,
   shininess: 18,
   sheen: 0.45,
 
   shadowStrength: 0.45,
   shadowSpread: 0.1,
 
-  valueJitter: 0.07,
-  hueJitter: 0.015,
+  valueJitter: 0.045,
+  hueJitter: 0.008,
   saturation: 1,
   gamma: 1,
 }
@@ -333,6 +333,24 @@ void main() {
 
   vec2 cell = floor(p);
   float aa = 1.0 / max(uCellPx, 1.0);           // one screen pixel, in cell units
+
+  /* How much fine detail is worth drawing at this size.
+     Below roughly six pixels per stitch the ply ripple, the fibres, the specular
+     and the per-stitch jitter each land on one or two pixels, which the eye reads
+     as dirt rather than as thread. They fade out, leaving a soft solid stitch.
+     Note this only rescues the *middle* of the range: below about three pixels a
+     stitch cannot be drawn at all, because one screen pixel is then wider than
+     the cell and the antialiasing swamps the shape. Callers must supersample and
+     downscale rather than ask for that — see use-stitch-painter. */
+  float detail = smoothstep(3.5, 10.0, uCellPx);
+  float ply = uPlyDepth * detail;
+  float fibres = uFibreNoise * detail;
+  float spec = uSpecular * detail;
+  float wob = detail;
+  // A thinner leg reads as a lattice once the cloth between stitches is only a
+  // pixel or two wide, so coverage is nudged up as the detail goes down.
+  float legW = uLegWidth * mix(1.18, 1.0, detail);
+  float tint = mix(0.3, 1.0, detail);
   vec3 lightDir = normalize(vec3(cos(uLightAngle), sin(uLightAngle), uLightHeight));
 
   for (int oy = -1; oy <= 1; oy++) {
@@ -347,9 +365,9 @@ void main() {
       vec3 h2 = hash33(c * 1.7 - 3.0);
 
       // Where this stitch actually sits, and how long its legs came out.
-      vec2 centre = c + 0.5 + (h.xy - 0.5) * 2.0 * uJitterPos;
-      float len = uCoverage * (1.0 + (h.z - 0.5) * 2.0 * uJitterLen);
-      float ang = (h2.x - 0.5) * 2.0 * uJitterAngle;
+      vec2 centre = c + 0.5 + (h.xy - 0.5) * 2.0 * uJitterPos * wob;
+      float len = uCoverage * (1.0 + (h.z - 0.5) * 2.0 * uJitterLen * wob);
+      float ang = (h2.x - 0.5) * 2.0 * uJitterAngle * wob;
       float ca = cos(ang), sa = sin(ang);
       mat2 rot = mat2(ca, -sa, sa, ca);
 
@@ -369,9 +387,9 @@ void main() {
 
         // A twisted strand: the ply spirals, so the silhouette breathes along
         // its length instead of being a capsule.
-        float ply = sin(s.y * uPlyFreq * 6.2831853 + h2.z * 6.2831853);
-        float fibres = (valueNoise(q * 34.0 + c * 11.0) - 0.5) * uFibreNoise;
-        float w = uLegWidth * (1.0 + ply * uPlyDepth * 0.25 + fibres * 0.3);
+        float twist = sin(s.y * uPlyFreq * 6.2831853 + h2.z * 6.2831853);
+        float fibre = (valueNoise(q * 34.0 + c * 11.0) - 0.5) * fibres;
+        float w = legW * (1.0 + twist * ply * 0.25 + fibre * 0.3);
 
         float cov = 1.0 - smoothstep(w - aa, w + aa, s.x);
         if (cov <= 0.001) {
@@ -385,7 +403,7 @@ void main() {
         float prof = pow(max(1.0 - across * across, 0.0), uRoundness * 0.5);
         // Legs on top ride higher, so the crossing reads.
         float lift = (leg == 0 ? topIsFirst : 1.0 - topIsFirst) * 0.35;
-        float height = clothH + 0.25 + prof * (0.5 + uPlyDepth * ply * 0.15) + lift;
+        float height = clothH + 0.25 + prof * (0.5 + ply * twist * 0.15) + lift;
 
         if (height > bestH) {
           bestH = height;
@@ -395,7 +413,7 @@ void main() {
           // "q" is already in the stitch's rotated frame, so "perp" is too.
           vec2 perp = vec2(-dir.y, dir.x);
           float slope = across * prof * 2.4;
-          float ripple = cos(s.y * uPlyFreq * 6.2831853 + h2.z * 6.2831853) * uPlyDepth * 0.6;
+          float ripple = cos(s.y * uPlyFreq * 6.2831853 + h2.z * 6.2831853) * ply * 0.6;
           float side = dot(q, perp) >= 0.0 ? 1.0 : -1.0;
           // Back out of the stitch's frame so the light hits it from the screen's
           // direction, not the thread's.
@@ -403,11 +421,11 @@ void main() {
           bestDir = dir * transpose(rot);
 
           vec3 tc = thread.rgb;
-          tc = hueShift(tc, (h.x - 0.5) * 2.0 * uHueJitter * 6.2831853);
-          tc *= 1.0 + (h.y - 0.5) * 2.0 * uValueJitter;
+          tc = hueShift(tc, (h.x - 0.5) * 2.0 * uHueJitter * tint * 6.2831853);
+          tc *= 1.0 + (h.y - 0.5) * 2.0 * uValueJitter * tint;
           float lum = dot(tc, vec3(0.2126, 0.7152, 0.0722));
           bestCol = mix(vec3(lum), tc, uSaturation);
-          bestGrad += vec2(fibres) * 0.5;
+          bestGrad += vec2(fibre) * 0.5;
         }
         shadow = max(shadow, 0.6);
       }
@@ -420,13 +438,13 @@ void main() {
     float lambert = max(dot(n, lightDir), 0.0);
     vec3 view = vec3(0.0, 0.0, 1.0);
     vec3 halfway = normalize(lightDir + view);
-    float spec = pow(max(dot(n, halfway), 0.0), uShininess);
+    float gloss = pow(max(dot(n, halfway), 0.0), uShininess);
 
     // Floss is anisotropic: it catches light along the strand, not across it.
     float along = abs(dot(normalize(bestDir), lightDir.xy));
-    spec *= mix(1.0, along, uSheen);
+    gloss *= mix(1.0, along, uSheen);
 
-    lit = bestCol * (uAmbient + uDiffuse * lambert) + vec3(spec) * uSpecular;
+    lit = bestCol * (uAmbient + uDiffuse * lambert) + vec3(gloss) * spec;
   }
 
   float alpha;
