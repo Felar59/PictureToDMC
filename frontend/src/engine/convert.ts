@@ -1,5 +1,5 @@
 import { rgbToLab } from "./color"
-import { assignThreads, type Thread } from "./dmc"
+import { assignThreads, findThread, type Thread } from "./dmc"
 import { kmeans } from "./quantize"
 
 /** A finished pattern: a grid of thread indices plus the threads themselves. */
@@ -100,9 +100,10 @@ async function sampleToGrid(
   const width = Math.max(1, Math.round(stitchWidth))
   const height = Math.max(1, Math.round((width * bitmap.height) / bitmap.width))
 
-  const canvas = document.createElement("canvas")
-  canvas.width = width
-  canvas.height = height
+  // OffscreenCanvas, not document.createElement: this whole pipeline runs
+  // inside a Web Worker, where there is no document. It works on the main
+  // thread too, so there is one code path rather than two.
+  const canvas = new OffscreenCanvas(width, height)
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
   if (!ctx) {
     bitmap.close()
@@ -114,6 +115,48 @@ async function sampleToGrid(
   bitmap.close()
 
   return { width, height, data: ctx.getImageData(0, 0, width, height).data }
+}
+
+/* ------------------------------------------------------------------ */
+/* Crossing the worker boundary                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * What actually travels back from the worker.
+ *
+ * Not the Pattern itself: its `threads` carry precomputed Lab triples, and
+ * structured-cloning 20 of those per conversion copies data the main thread
+ * already has in THREADS. Sending the references and rehydrating is smaller,
+ * and it keeps thread objects identity-equal to the chart entries so React can
+ * compare them cheaply.
+ */
+export type PatternWire = {
+  width: number
+  height: number
+  cells: Int16Array
+  threadNums: string[]
+  counts: number[]
+}
+
+export function toWire(pattern: Pattern): PatternWire {
+  return {
+    width: pattern.width,
+    height: pattern.height,
+    cells: pattern.cells,
+    threadNums: pattern.threads.map((t) => t.num),
+    counts: pattern.counts,
+  }
+}
+
+export function fromWire(wire: PatternWire): Pattern {
+  return {
+    width: wire.width,
+    height: wire.height,
+    cells: wire.cells,
+    // A code always resolves — it came out of THREADS in the first place.
+    threads: wire.threadNums.map((num) => findThread(num)).filter((t): t is Thread => Boolean(t)),
+    counts: wire.counts,
+  }
 }
 
 /**

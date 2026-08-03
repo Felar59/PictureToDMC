@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { PixelGrid } from "@/components/brand/pixel-grid"
 import type { Pattern } from "@/engine/convert"
@@ -10,13 +10,14 @@ import { ReplacePhotoButton, type LoadedPhoto } from "./photo-dropzone"
 
 export type CanvasView = "original" | "pattern"
 
-/**
- * Displayed width of the preview. Fixed rather than user-adjustable: the
- * pattern is nearest-neighbour pixel art, so a zoom control only ever traded a
- * crisp image for a blurry one, and the chart you stitch from is the downloaded
- * PNG, not this.
- */
-const CANVAS_WIDTH = 450
+/** Never draw wider than this, however much room there is. */
+const MAX_WIDTH = 560
+/** A portrait pattern may be twice as tall as it is wide, and no more. Past
+ *  that the preview pushes the whole workbench off the screen, so the width
+ *  shrinks to bring the height back under the cap. */
+const MAX_ASPECT = 2
+/** Tailwind p-6 on the aida frame, per side. */
+const AIDA_PADDING = 24
 
 /** Draws an ImageData into a canvas sized to match it. */
 function useImageData(data: ImageData | null) {
@@ -31,6 +32,40 @@ function useImageData(data: ImageData | null) {
   }, [data])
 
   return ref
+}
+
+/**
+ * Live display size: fills the column's width, capped at MAX_WIDTH, and never
+ * taller than twice its width.
+ *
+ * ResizeObserver rather than a media query — the middle column's width depends
+ * on the three-column grid, not on the viewport, and it changes when the
+ * browser window is dragged. Watching the element means the canvas resizes as
+ * it happens instead of snapping at breakpoints.
+ */
+function useFittedSize(ratio: number) {
+  const hostRef = useRef<HTMLDivElement | null>(null)
+  const [available, setAvailable] = useState(MAX_WIDTH)
+
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    const measure = () => setAvailable(host.clientWidth || MAX_WIDTH)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
+
+  // The aida frame around the canvas is p-6, so 48px of it is not drawable.
+  let width = Math.max(120, Math.min(available - AIDA_PADDING * 2, MAX_WIDTH))
+  let height = width * ratio
+  if (ratio > MAX_ASPECT) {
+    height = width * MAX_ASPECT
+    width = height / ratio
+  }
+
+  return { hostRef, width: Math.round(width), height: Math.round(height) }
 }
 
 export function PatternCanvas({
@@ -56,6 +91,12 @@ export function PatternCanvas({
   aspect?: number
 }) {
   const { t } = useI18n()
+
+  // Ratio of whatever is on screen: the pattern's own grid when there is one,
+  // otherwise the photo's, so the placeholder occupies the same box the result
+  // will.
+  const ratio = pattern ? pattern.height / pattern.width : 1 / (aspect || 1)
+  const { hostRef, width: boxW, height: boxH } = useFittedSize(ratio)
 
   // One pixel per stitch; CSS does the enlarging. Recomputed only when the
   // pattern or the hovered thread actually changes.
@@ -91,23 +132,23 @@ export function PatternCanvas({
       </div>
 
       {/* the cloth */}
-      <div className="w-full overflow-auto scroll-linen flex justify-center">
+      <div ref={hostRef} className="w-full flex justify-center">
         <div className="aida [--aida-size:22.5px] [--aida-ink:.09] bg-aida rounded-[20px] p-6 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] shrink-0">
           {showPattern ? (
-            <div className="relative" style={{ width: CANVAS_WIDTH }}>
+            <div className="relative" style={{ width: boxW, height: boxH }}>
               <canvas
                 ref={patternRef}
                 aria-label={t.converter.canvas.pattern}
                 role="img"
-                style={{ imageRendering: "pixelated", width: CANVAS_WIDTH }}
-                className="block h-auto rounded-[6px]"
+                style={{ imageRendering: "pixelated", width: boxW, height: boxH }}
+                className="block rounded-[6px]"
               />
               {highlightIndex >= 0 && (
                 <canvas
                   ref={highlightRef}
                   aria-hidden="true"
-                  style={{ imageRendering: "pixelated", width: CANVAS_WIDTH }}
-                  className="absolute inset-0 h-auto rounded-[6px] pointer-events-none mix-blend-lighten animate-mask-glow"
+                  style={{ imageRendering: "pixelated", width: boxW, height: boxH }}
+                  className="absolute inset-0 rounded-[6px] pointer-events-none mix-blend-lighten animate-mask-glow"
                 />
               )}
             </div>
@@ -115,13 +156,13 @@ export function PatternCanvas({
             <img
               src={original}
               alt={t.converter.canvas.original}
-              style={{ width: CANVAS_WIDTH }}
-              className="block h-auto rounded-[6px]"
+              style={{ width: boxW, height: boxH }}
+              className="block rounded-[6px] object-contain"
             />
           ) : busy ? (
             <div
               className="relative overflow-hidden rounded-[6px] bg-[#F3ECDC]/60"
-              style={{ width: CANVAS_WIDTH, height: Math.round(CANVAS_WIDTH / (aspect || 1)) }}
+              style={{ width: boxW, height: boxH }}
               role="status"
               aria-label={t.converter.canvas.building}
             >
@@ -130,7 +171,7 @@ export function PatternCanvas({
           ) : (
             <div
               className="flex flex-col items-center justify-center gap-4 text-center"
-              style={{ width: CANVAS_WIDTH, minHeight: 320 }}
+              style={{ width: boxW, minHeight: 320 }}
             >
               <div className="opacity-35">
                 <PixelGrid pixels={berry} cols={BERRY_COLS} size={14} radius={2} />
