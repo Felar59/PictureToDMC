@@ -37,91 +37,204 @@ export function boostChroma(lab: Float64Array, vividness: number): void {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Background removal                                                  */
+/* ------------------------------------------------------------------ */
+
+/** A neighbour joins the background only if it is this close to the cell we
+ *  came from. Small on purpose: it is what lets the fill walk a smooth studio
+ *  gradient while refusing to step across the edge of a subject. */
+const STEP2 = 8 * 8
+/** ...and no further than this from the background's own colour, however many
+ *  small steps it took to get there. Without the cap, a long gradient lets the
+ *  fill drift arbitrarily far from where it started. */
+const DRIFT2 = 30 * 30
+/** Only border cells this close to the dominant border colour are seeds. */
+const SEED2 = 22 * 22
+/** If a fill would leave less than this share of the picture, it is wrong. */
+const MIN_SUBJECT_SHARE = 0.06
+
 /**
  * Flood-fill the background inward from the edges.
  *
- * A connected fill, not a global colour match: a subject that happens to share
- * the background's colour survives as long as it doesn't touch the border. That
- * is the difference between "remove the sky" and "remove every blue stitch",
- * and it is why a flood fill is worth the extra code over a plain threshold.
+ * Three things make this survive real photographs:
  *
- * Honest about its limits — this finds a *plain* background. A cat on a busy
- * rug will not come out cleanly, and the UI says so rather than promising
- * magic.
+ * 1. **Seeds come from the dominant border colour, not from every border
+ *    cell.** A subject usually touches an edge — a dog's chest runs off the
+ *    bottom of the frame — and sampling that fur as "background" is what makes
+ *    a naive version delete the dog. The dominant colour is a component-wise
+ *    median of the border, which a minority intruder cannot move.
+ *
+ * 2. **Each step is judged against the neighbour, not against a fixed
+ *    reference.** Studio backdrops are never flat; they vignette. A local
+ *    tolerance walks that gradient, while a sharp edge — fur against sky — is
+ *    too big a jump to cross. A drift cap from the dominant colour stops many
+ *    small steps from adding up to a different colour entirely.
+ *
+ * 3. **It refuses to do something absurd.** If the result would erase nearly
+ *    the whole picture, the photo has no plain background to find and the fill
+ *    is abandoned rather than handing back an empty pattern.
+ *
+ * Still honest about its limits: this finds a *plain* background. A cat on a
+ * patterned rug will not come out cleanly, and the UI says so.
  *
  * @param labs   Lab triples, one per grid cell
  * @param alpha  modified in place: background cells are set to 0
+ * @returns whether the fill was kept
  */
 export function removeFlatBackground(
   labs: Float64Array,
   alpha: Uint8Array,
   width: number,
   height: number,
-): void {
+): boolean {
   const count = width * height
-  if (count === 0) return
+  if (count === 0) return false
 
   const at = (i: number): Lab => [labs[i * 3], labs[i * 3 + 1], labs[i * 3 + 2]]
 
-  // Seed from every already-visible border cell, and keep their colours as the
-  // reference set — a gradient sky is several distinct samples, not one.
-  const seeds: number[] = []
-  const samples: Lab[] = []
-  const pushEdge = (i: number) => {
-    if (alpha[i] === 0) return
-    seeds.push(i)
-    samples.push(at(i))
-  }
+  const border: number[] = []
   for (let x = 0; x < width; x++) {
-    pushEdge(x)
-    pushEdge((height - 1) * width + x)
+    border.push(x, (height - 1) * width + x)
   }
   for (let y = 1; y < height - 1; y++) {
-    pushEdge(y * width)
-    pushEdge(y * width + width - 1)
-  }
-  if (seeds.length === 0) return
-
-  // Tolerance in squared Lab distance. ~18 Lab units: comfortably more than
-  // JPEG noise and a soft gradient, comfortably less than the step from a sky
-  // to the thing standing in front of it.
-  const TOLERANCE2 = 18 * 18
-
-  const nearSample = (lab: Lab): boolean => {
-    for (const s of samples) if (labDist2(lab, s) <= TOLERANCE2) return true
-    return false
+    border.push(y * width, y * width + width - 1)
   }
 
-  const visited = new Uint8Array(count)
+  const visible = border.filter((i) => alpha[i] !== 0)
+  if (visible.length === 0) return false
+
+  const dominant = medianLab(labs, visible)
+
+  // Seeds only, not samples: everything after this is judged step by step.
   const queue = new Int32Array(count)
+  const visited = new Uint8Array(count)
   let head = 0
   let tail = 0
-  for (const s of seeds) {
-    if (!visited[s] && nearSample(at(s))) {
-      visited[s] = 1
-      queue[tail++] = s
+  for (const i of visible) {
+    if (!visited[i] && labDist2(at(i), dominant) <= SEED2) {
+      visited[i] = 1
+      queue[tail++] = i
     }
   }
+  if (tail === 0) return false // nothing on the border looks like a backdrop
 
+  const removed: number[] = []
   while (head < tail) {
     const i = queue[head++]
-    alpha[i] = 0
+    removed.push(i)
+    const here = at(i)
     const x = i % width
     const y = (i - x) / width
-    // 4-connected: diagonals let the fill leak through single-stitch gaps in a
-    // subject's outline and eat the middle of it.
-    if (x > 0) consider(i - 1)
-    if (x < width - 1) consider(i + 1)
-    if (y > 0) consider(i - width)
-    if (y < height - 1) consider(i + width)
+
+    // 4-connected: diagonals let the fill squeeze through a one-stitch gap in a
+    // subject's outline and hollow it out from the inside.
+    if (x > 0) consider(i - 1, here)
+    if (x < width - 1) consider(i + 1, here)
+    if (y > 0) consider(i - width, here)
+    if (y < height - 1) consider(i + width, here)
   }
 
-  function consider(j: number) {
+  function consider(j: number, from: Lab) {
     if (visited[j] || alpha[j] === 0) return
-    if (!nearSample(at(j))) return
+    const there = at(j)
+    if (labDist2(there, from) > STEP2) return
+    if (labDist2(there, dominant) > DRIFT2) return
     visited[j] = 1
     queue[tail++] = j
   }
+
+  const visibleBefore = countVisible(alpha)
+  const left = visibleBefore - removed.length
+  if (left < visibleBefore * MIN_SUBJECT_SHARE) return false
+
+  for (const i of removed) alpha[i] = 0
+
+  shaveFringe(labs, alpha, width, height, dominant)
+  return true
+}
+
+/**
+ * Drop the one-stitch halo the fill leaves behind.
+ *
+ * A cell straddling the subject's edge is a *mixture* of backdrop and subject,
+ * so it sits between the two and the step tolerance rightly refuses to cross
+ * into it — which leaves a thin outline of backdrop colour tracing the
+ * silhouette. Whether such a cell belongs to the background is decided locally:
+ * is it nearer the backdrop, or nearer the subject behind it? That comparison is
+ * safe in a way a wider global tolerance would not be, because a pale part of
+ * the subject is judged against its own neighbours rather than against a
+ * threshold that happens to include it.
+ */
+function shaveFringe(
+  labs: Float64Array,
+  alpha: Uint8Array,
+  width: number,
+  height: number,
+  dominant: Lab,
+): void {
+  const at = (i: number): Lab => [labs[i * 3], labs[i * 3 + 1], labs[i * 3 + 2]]
+  const doomed: number[] = []
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      if (alpha[i] === 0) continue
+
+      let touchesBackground = false
+      let inwardSum = [0, 0, 0]
+      let inwardCount = 0
+      const visit = (j: number) => {
+        if (alpha[j] === 0) {
+          touchesBackground = true
+        } else {
+          const lab = at(j)
+          inwardSum = [inwardSum[0] + lab[0], inwardSum[1] + lab[1], inwardSum[2] + lab[2]]
+          inwardCount++
+        }
+      }
+      if (x > 0) visit(i - 1)
+      if (x < width - 1) visit(i + 1)
+      if (y > 0) visit(i - width)
+      if (y < height - 1) visit(i + width)
+
+      if (!touchesBackground || inwardCount === 0) continue
+
+      const subject: Lab = [
+        inwardSum[0] / inwardCount,
+        inwardSum[1] / inwardCount,
+        inwardSum[2] / inwardCount,
+      ]
+      const here = at(i)
+      if (labDist2(here, dominant) < labDist2(here, subject)) doomed.push(i)
+    }
+  }
+
+  // Applied after the scan, so one shaved cell can't cascade into the next and
+  // erode the subject a stitch at a time.
+  for (const i of doomed) alpha[i] = 0
+}
+
+function countVisible(alpha: Uint8Array): number {
+  let n = 0
+  for (let i = 0; i < alpha.length; i++) if (alpha[i] !== 0) n++
+  return n
+}
+
+/**
+ * Component-wise median of a set of cells.
+ *
+ * Median, not mean: a subject running off the edge of the frame contributes a
+ * minority of border cells, and a mean would let it drag the reference colour
+ * towards the subject — which is precisely the failure this replaces.
+ */
+function medianLab(labs: Float64Array, indices: number[]): Lab {
+  const pick = (offset: number) => {
+    const values = indices.map((i) => labs[i * 3 + offset]).sort((a, b) => a - b)
+    const mid = values.length >> 1
+    return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2
+  }
+  return [pick(0), pick(1), pick(2)]
 }
 
 /** Lab for every cell of an RGBA grid, as a flat array the above can chew on. */
