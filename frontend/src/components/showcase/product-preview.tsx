@@ -55,16 +55,7 @@ function Motif({ image, footprint }: { image: ImageData | null; footprint: numbe
   )
 }
 
-export function ProductPreview({
-  pattern,
-  kicker,
-}: {
-  pattern: Pattern
-  /** The converter's default announces a fresh result ("your pattern is ready");
-   *  on someone else's published piece nothing has just happened, so that page
-   *  passes its own line. */
-  kicker?: string
-}) {
+export function ProductPreview({ pattern }: { pattern: Pattern }) {
   const { t } = useI18n()
 
   // One pass over the grid for all four mockups.
@@ -73,8 +64,11 @@ export function ProductPreview({
   return (
     <section className="w-full">
       <header className="text-center">
-        <div className="font-hand text-[17px] text-quill">{kicker ?? t.showcase.kicker}</div>
-        <h2 className="text-[26px] sm:text-[30px] lg:text-[32px] mt-1.5 mb-3 tracking-[-.4px]">
+        <div className="font-hand text-[17px] text-quill">{t.showcase.kicker}</div>
+        {/* Deliberately below the page's h1, and by a clear margin. At 32px this
+            sat within two points of the piece title, so a supporting section of
+            decorative mockups read as important as the piece itself. */}
+        <h2 className="text-[21px] sm:text-[23px] mt-1.5 mb-3 tracking-[-.3px]">
           {t.showcase.title}
         </h2>
         <p className="text-[16px] leading-[1.6] text-clay mx-auto max-w-[560px] m-0">

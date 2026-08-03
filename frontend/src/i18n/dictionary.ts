@@ -135,11 +135,12 @@ export const en = {
     backToGallery: "Back to the gallery",
     notFound: "That piece isn't here any more.",
     patternNote: "redrawn from the maker's own grid",
-    makeYourOwn: "Make one of your own",
-    threads: "Threads used",
+    makeYourOwn: "Start my own pattern",
     threadsToBuy: "Threads to buy",
+    photoAlt: (title: string) => `${title}, stitched`,
+    patternAlt: (title: string) => `The grid for ${title}`,
     stitches: (n: number) => `${n} st`,
-    exitTitle: "Fancy one of your own?",
+    exitTitle: "Fancy a pattern of your own?",
     exitLead: "Any photo turns into a chart like this one. It takes about a second.",
   },
 
@@ -153,10 +154,9 @@ export const en = {
   },
 
   showcase: {
-    kicker: "your pattern is ready ✓",
-    kickerShared: "once it's on cloth",
+    kicker: "once it's on cloth",
     title: "Now, where will it live?",
-    lead: "A little preview of your finished piece on things stitchers love to make. Just for inspiration — your chart works for all of them.",
+    lead: "The same motif on the things stitchers most often make. Just for inspiration — one chart works for all of them.",
     products: [
       {
         name: "Embroidery hoop",
@@ -175,16 +175,14 @@ export const en = {
       },
       { name: "Cushion", tip: "The cosy big project for the sofa.", fabric: "11-count aida" },
     ],
-    skeins: (n: number) => `the chart includes your DMC shopping list — ${n} skeins for this one`,
-    open: "See it stitched",
-    close: "Back to editing",
+    skeins: (n: number) => `the chart comes with its DMC shopping list — ${n} skeins for this one`,
   },
 
   chart: {
     heading: "Your printable chart",
     preview: "Preview",
     previewHint: "your chart in miniature — the file prints larger and sharper",
-    previewFailed: "There wasn't enough memory to draw the preview. Downloading still works.",
+    previewFailed: "Draw the preview again — your download works either way.",
     refresh: "Refresh the preview",
   },
 
@@ -317,7 +315,6 @@ export const en = {
     },
 
     download: {
-      heading: "Download",
       grid: "Grid",
       gridHint: "Draw the counting grid over the chart",
       legend: "Legend",
@@ -493,11 +490,12 @@ export const fr: Copy = {
     backToGallery: "Retour à la galerie",
     notFound: "Cet ouvrage n'est plus là.",
     patternNote: "redessiné depuis la grille de son auteur",
-    makeYourOwn: "En faire un à moi",
-    threads: "Fils utilisés",
+    makeYourOwn: "Créer ma grille",
     threadsToBuy: "Fils à acheter",
+    photoAlt: (title: string) => `${title}, brodé`,
+    patternAlt: (title: string) => `La grille de ${title}`,
     stitches: (n: number) => `${n} pts`,
-    exitTitle: "Envie de la vôtre ?",
+    exitTitle: "Envie de créer votre grille ?",
     exitLead:
         "N'importe quelle photo devient une grille comme celle-ci. Ça prend environ une seconde.",
   },
@@ -512,10 +510,9 @@ export const fr: Copy = {
   },
 
   showcase: {
-    kicker: "votre grille est prête ✓",
-    kickerShared: "une fois sur le tissu",
+    kicker: "une fois sur le tissu",
     title: "Et maintenant, elle vivra où ?",
-    lead: "Un aperçu de votre ouvrage terminé sur ce que les brodeuses aiment faire. Juste pour l'inspiration — votre grille marche pour tous.",
+    lead: "Le même motif sur ce que les brodeuses font le plus souvent. Juste pour l'inspiration — une seule grille suffit pour tous.",
     products: [
       {
         name: "Tambour à broder",
@@ -535,9 +532,7 @@ export const fr: Copy = {
       { name: "Coussin", tip: "Le grand projet douillet pour le canapé.", fabric: "aida 11 fils" },
     ],
     skeins: (n: number) =>
-      `la grille inclut votre liste d'achat DMC — ${n} écheveaux pour celle-ci`,
-    open: "Voir sur un ouvrage",
-    close: "Retour aux réglages",
+      `la grille est livrée avec sa liste d'achat DMC — ${n} écheveaux pour celle-ci`,
   },
 
   chart: {
@@ -545,7 +540,7 @@ export const fr: Copy = {
     preview: "Aperçu",
     previewHint: "votre grille en réduction — le fichier est plus grand et plus net",
     previewFailed:
-      "Pas assez de mémoire pour dessiner l'aperçu. Le téléchargement fonctionne quand même.",
+      "Redessinez l'aperçu — le téléchargement fonctionne dans tous les cas.",
     refresh: "Rafraîchir l'aperçu",
   },
 
@@ -678,7 +673,6 @@ export const fr: Copy = {
     },
 
     download: {
-      heading: "Téléchargement",
       grid: "Quadrillage",
       gridHint: "Tracer la grille de comptage sur l'image",
       legend: "Légende",

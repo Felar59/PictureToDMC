@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
-import { DownloadPanel } from "@/components/converter/download-panel"
+import { ChartPanel } from "@/components/converter/chart-panel"
 import { PublishDialog } from "@/community/publish-dialog"
 import { PatternCanvas, type CanvasView } from "@/components/converter/pattern-canvas"
 import { PhotoDropzone, type LoadedPhoto } from "@/components/converter/photo-dropzone"
@@ -305,7 +305,7 @@ export default function Convert() {
 
           {pattern && pattern.threads.length > 0 && (
             <>
-              <DownloadPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
+              <ChartPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
               {shared ? (
                 <p className="font-hand text-[15px] text-nile-deep text-center m-0">
                   {t.publish.done}

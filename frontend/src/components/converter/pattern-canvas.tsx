@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { PixelGrid } from "@/components/brand/pixel-grid"
 import type { Pattern } from "@/engine/convert"
@@ -19,19 +19,42 @@ const MAX_ASPECT = 2
 /** Tailwind p-6 on the aida frame, per side. */
 const AIDA_PADDING = 24
 
-/** Draws an ImageData into a canvas sized to match it. */
+function paint(canvas: HTMLCanvasElement | null, image: ImageData | null): void {
+  if (!canvas || !image) return
+  canvas.width = image.width
+  canvas.height = image.height
+  canvas.getContext("2d")?.putImageData(image, 0, 0)
+}
+
+/**
+ * Draws an ImageData into a canvas sized to match it.
+ *
+ * Returns a ref *callback*, not a ref object, and that is the whole point: a
+ * canvas has to be redrawn both when the picture changes and whenever a fresh
+ * element appears under it, and those are two different events. An effect keyed
+ * on the data alone covers only the first — switch the view to the photo and
+ * back and the canvas remounts with unchanged data, the effect is skipped, and
+ * you get an empty element at its default 300x150. That bug is only invisible
+ * while the ImageData is rebuilt on every render, which is exactly what the
+ * memoisation below stops doing.
+ */
 function useImageData(data: ImageData | null) {
-  const ref = useRef<HTMLCanvasElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  // Read through a ref so the callback identity stays stable: a changing ref
+  // callback makes React detach and reattach on every render.
+  const dataRef = useRef(data)
+  dataRef.current = data
+
+  const attach = useCallback((canvas: HTMLCanvasElement | null) => {
+    canvasRef.current = canvas
+    paint(canvas, dataRef.current)
+  }, [])
 
   useEffect(() => {
-    const canvas = ref.current
-    if (!canvas || !data) return
-    canvas.width = data.width
-    canvas.height = data.height
-    canvas.getContext("2d")?.putImageData(data, 0, 0)
+    paint(canvasRef.current, data)
   }, [data])
 
-  return ref
+  return attach
 }
 
 /**
@@ -153,12 +176,14 @@ export function PatternCanvas({
                 style={{ imageRendering: "pixelated", width: boxW, height: boxH }}
                 className="block rounded-[6px]"
               />
-              {/* Keyed on the thread so the veil settles in again each time the
-                  hover moves — without it the entrance plays once and later
-                  threads appear abruptly. */}
+              {/* One element, reused as the hover moves between threads. Keying
+                  it on the thread would replay the entrance each time, at the
+                  cost of throwing away a multi-megabyte backing store per row —
+                  and sweeping a twenty-thread list would flash twenty fades.
+                  The veil settling in once, when the hover begins, is the cue;
+                  after that its changing contents are. */}
               {highlightIndex >= 0 && (
                 <canvas
-                  key={highlightIndex}
                   ref={veilRef}
                   aria-hidden="true"
                   style={{ imageRendering: "pixelated", width: boxW, height: boxH }}

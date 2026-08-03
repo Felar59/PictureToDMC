@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 
 import { DownloadGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
-import { PanelTitle } from "@/components/ui/card"
-import { Tag } from "@/components/ui/pill"
 import { Switch } from "@/components/ui/switch"
 import type { Pattern } from "@/engine/convert"
 import { canvasToBlob, renderChart } from "@/engine/render"
@@ -80,15 +78,12 @@ function ToggleRow({
 export function ChartPanel({
   pattern,
   onError,
-  heading,
 }: {
   pattern: Pattern
   onError: (key: string) => void
-  /** Defaults to the neutral "your printable chart"; the converter passes its
-   *  own download wording. */
-  heading?: string
 }) {
   const { t } = useI18n()
+  const captionId = useId()
   const [grid, setGrid] = useState(true)
   const [legend, setLegend] = useState(true)
   // Lives here rather than in the settings: it changes the chart you
@@ -159,7 +154,9 @@ export function ChartPanel({
       document.body.appendChild(a)
       a.click()
       a.remove()
-      URL.revokeObjectURL(url)
+      // Deferred by one task: revoking in the same turn as the click is a known
+      // way to have Safari cancel the download it was just handed.
+      window.setTimeout(() => URL.revokeObjectURL(url), 0)
     } catch {
       onError("download")
     } finally {
@@ -168,33 +165,38 @@ export function ChartPanel({
   }
 
   return (
-    // Container queries, not breakpoints: this panel is 296px in the
-    // converter's sidebar and roughly a page wide on a published piece, and
-    // neither width follows the viewport.
-    <div className="@container bg-blanc rounded-[18px] shadow-soft p-5 flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <PanelTitle>{heading ?? t.chart.heading}</PanelTitle>
-        <span className="flex flex-wrap gap-1.5">
-          <Tag>{t.gallery.stitches(pattern.width, pattern.height)}</Tag>
-          <Tag>{t.gallery.colors(pattern.threads.length)}</Tag>
-        </span>
-      </div>
+    // Container queries, not breakpoints: the queried width is about 436px in
+    // the converter's centre column and about 477px in a published piece's
+    // sidebar, and neither follows the viewport.
+    <div className="@container bg-blanc rounded-card shadow-soft p-5 flex flex-col gap-4">
+      {/* A real heading, not a styled div: the chart is the one thing these pages
+          exist to hand over, and it was missing from the outline entirely — the
+          shopping list and the mockups both had an h2 and this did not. It
+          outranks them typographically for the same reason. */}
+      <h2 className="font-display font-medium text-[21px] text-ink m-0">{t.chart.heading}</h2>
 
-      {/* Side by side only in a genuinely wide container. Both placements today
-          — the converter's right column and a published piece's sidebar — come
-          out at 476px, where splitting would leave the chart about 200px across
-          and 4px per stitch: no longer a preview of anything. So they stack on
-          purpose, and the row form is there for a full-width host. */}
+      {/* Side by side only in a genuinely wide container. Neither placement today
+          reaches 704px, and splitting either would leave the chart about 200px
+          across at 4px per stitch: no longer a preview of anything. So they stack
+          on purpose, and the row form is there for a full-width host.
+          Every part of the split shares this one threshold. When the two halves
+          disagreed — the options pinned to 250px from 480px up while the parent
+          only turned into a row at 704px — anything queried between those two
+          numbers got the coral download button squeezed into a narrow strip with
+          half the panel empty beside it, which is exactly where a 768px tablet
+          landed on the piece page. */}
       <div className="flex flex-col gap-5 @min-[44rem]:flex-row @min-[44rem]:items-start">
         {/* The chart leads; the switches below are adjustments to it. */}
-        <figure className="m-0 flex flex-col gap-2 min-w-0 @min-[30rem]:flex-1">
-          {/* Paper, not another card: this is the sheet you print and keep beside
-              you, and it is the one thing the page exists to hand over. The top
-              edge is torn — see the `sheet` utility — so pt-3 keeps the bite in
-              the margin rather than in the chart. */}
-          <div className="sheet rounded-[6px] border-[1.5px] border-edge-4 bg-[#FBF6EA] px-2 pt-3 pb-2 flex items-center justify-center min-h-[120px]">
+        <figure className="m-0 flex flex-col gap-2 min-w-0 @min-[44rem]:flex-1">
+          {/* Paper stock rather than another card: this is the sheet you print and
+              keep beside you. It had a torn top edge cut with a CSS mask, and the
+              mask had to go — it clipped the focus ring of the retry button
+              inside it, it put a filter pass over a live canvas, and at a fixed
+              pitch it read as a ticket perforation rather than a tear. The colour
+              and the lift say "sheet" without any of that. */}
+          <div className="rounded-[6px] border-[1.5px] border-edge-4 bg-paper p-2 shadow-card flex items-center justify-center min-h-[120px]">
             {failed ? (
-              <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div role="status" className="flex flex-col items-center gap-3 py-6 text-center">
                 <span className="text-[13px] text-stone">{t.chart.previewFailed}</span>
                 <Button variant="secondary" size="sm" onClick={drawPreview}>
                   {t.chart.refresh}
@@ -204,13 +206,22 @@ export function ChartPanel({
               <canvas
                 ref={viewRef}
                 role="img"
-                aria-label={`${t.chart.preview} — ${t.chart.previewHint}`}
-                // Intrinsic size with both caps left to the browser: a replaced
-                // element keeps its aspect ratio under max-width *and*
-                // max-height, which explicit sizing would not. The global
-                // reduced-motion rule neutralises the fade.
+                // Named by the caption below rather than repeating it: the two
+                // used to say the same sentence twice to a screen reader.
+                aria-labelledby={captionId}
+                // The intrinsic size is declared here, not only set in the effect
+                // that blits: effects flush after paint, so a canvas whose
+                // dimensions arrive later is painted once at the element's default
+                // 300x150 and then reflows — a several-hundred-pixel jump on the
+                // first frame of every piece page.
+                width={preview?.width}
+                height={preview?.height}
+                // Both caps left to the browser: a replaced element keeps its
+                // aspect ratio under max-width *and* max-height, which explicit
+                // sizing would not. The global reduced-motion rule neutralises
+                // the fade.
                 style={{ width: "auto", height: "auto", maxHeight: 560 }}
-                className={`block max-w-full rounded-[6px] transition-opacity duration-200 ${
+                className={`block max-w-full rounded-[4px] transition-opacity duration-200 ${
                   stale ? "opacity-60" : "opacity-100"
                 }`}
               />
@@ -222,12 +233,12 @@ export function ChartPanel({
               width, so a 364px preview lists the DMC codes in one column where
               the 728px file uses three. Claiming "exactly what you'll get"
               would be a promise the legend breaks. */}
-          <figcaption className="font-hand text-[13px] text-sand text-center">
+          <figcaption id={captionId} className="font-hand text-[13px] text-sand text-center">
             {t.chart.previewHint}
           </figcaption>
         </figure>
 
-        <div className="flex flex-col gap-4 @min-[30rem]:w-[250px] @min-[30rem]:shrink-0">
+        <div className="flex flex-col gap-4 @min-[44rem]:w-[250px] @min-[44rem]:shrink-0">
           <ToggleRow
             label={t.converter.download.grid}
             hint={t.converter.download.gridHint}

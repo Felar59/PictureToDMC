@@ -15,6 +15,8 @@
   /* page background */
   --color-aida: #EDE3D0;
   /* stitch canvas */
+  --color-paper: #FBF6EA;
+  /* printable chart stock — also the fabric colour of the product mockups */
   --color-taupe: #C9BBA6;
   /* borders */
   --color-cocoa: #6B5A48;
@@ -164,55 +166,15 @@
 @utility bobbin {
   box-shadow:
     inset 0 0 0 1px rgba(83, 63, 42, .14),
-    inset 0 -8px 0 rgba(0, 0, 0, .09),
+    inset 0 -8px 0 rgba(83, 63, 42, .13),
     inset 0 3px 0 rgba(255, 255, 255, .22);
 }
 
 @utility bobbin-sm {
   box-shadow:
     inset 0 0 0 1px rgba(83, 63, 42, .14),
-    inset 0 -5px 0 rgba(0, 0, 0, .09),
+    inset 0 -5px 0 rgba(83, 63, 42, .13),
     inset 0 2px 0 rgba(255, 255, 255, .18);
-}
-
-/* ------------------------------------------------------------------
-   A chart is a sheet of paper. Stitchers keep them in ring binders and tear
-   them off pads, and the one thing this app hands over is that sheet — so the
-   chart preview is given a torn top edge rather than another rounded card.
-   The bite is shallow and cut in radial gradients, so it costs no markup and
-   the paper reads as torn against whatever sits behind it.
-
-   The mask clips the element's own border along with everything else, which is
-   the point: torn along the top, cleanly cut on the other three sides. Keep at
-   least --sheet-tear of padding at the top so the bite lands in the margin and
-   never in the artwork.
-------------------------------------------------------------------- */
-@utility sheet {
-  --sheet-tear: 7px;
-  --sheet-tooth: 14px;
-  /* Prefixed first: Safari only took the unprefixed properties in 15.4, and a
-     torn edge is not worth losing on an older iPad. */
-  -webkit-mask-image:
-    radial-gradient(circle at 50% 0,
-      transparent 0 calc(var(--sheet-tear) - 2px),
-      #000 calc(var(--sheet-tear) - 1px)),
-    linear-gradient(#000 0 0);
-  -webkit-mask-size: var(--sheet-tooth) var(--sheet-tear), 100% 100%;
-  -webkit-mask-position: 0 0, 0 var(--sheet-tear);
-  -webkit-mask-repeat: repeat-x, no-repeat;
-  mask-image:
-    radial-gradient(circle at 50% 0,
-      transparent 0 calc(var(--sheet-tear) - 2px),
-      #000 calc(var(--sheet-tear) - 1px)),
-    linear-gradient(#000 0 0);
-  mask-size: var(--sheet-tooth) var(--sheet-tear), 100% 100%;
-  mask-position: 0 0, 0 var(--sheet-tear);
-  mask-repeat: repeat-x, no-repeat;
-  /* drop-shadow, not box-shadow: a mask clips the element's own box shadow away,
-     while a filter shadow traces the silhouette the mask leaves — so the teeth
-     cast, and the tear reads even where the paper and the card behind it are
-     within a few points of each other. */
-  filter: drop-shadow(0 2px 5px rgba(83, 63, 42, .17));
 }
 
 /* Wavy golden underline — once per page, on the key noun. */

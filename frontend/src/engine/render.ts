@@ -90,8 +90,17 @@ const KEYLINE_ALPHA = 235
  *
  * The keyline is what makes a scattered thread findable. A dozen single
  * stitches of pale grey read as noise however the rest is dimmed; outlined,
- * they read as a dozen marks. It follows only the edges facing something else,
- * so a solid block gets one border rather than a grid of them.
+ * they read as a dozen marks.
+ *
+ * It is drawn on the cells *around* the thread rather than inside it, and that
+ * detail matters more than it sounds. Inked inwards, a lone stitch — all four
+ * edges facing something else, which is precisely the case the keyline exists
+ * for — loses eight of its nine sub-pixels to the outline and reads as a dark
+ * dot rather than as its own colour. Drawn outwards the matching cells are never
+ * touched at all, so the outline hugs the outside of the silhouette and the
+ * thread keeps every pixel of itself whatever shape it takes. Bare cloth next to
+ * the thread is outlined too but never veiled: an outline against bare fabric is
+ * where a pale thread needs the help most.
  */
 export function isolateImageData(pattern: Pattern, threadIndex: number): ImageData {
   const scale = ISOLATE_SCALE
@@ -114,31 +123,26 @@ export function isolateImageData(pattern: Pattern, threadIndex: number): ImageDa
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const cell = cells[y * width + x]
+      if (cell === threadIndex) continue // left entirely alone
 
-      if (cell !== threadIndex) {
-        if (cell < 0) continue // bare cloth, already not the thread
-        for (let dy = 0; dy < scale; dy++) {
-          for (let dx = 0; dx < scale; dx++) paint(x * scale + dx, y * scale + dy, VEIL, VEIL_ALPHA)
-        }
-        continue
-      }
+      // Which sides of this cell face the hovered thread — those get the ink.
+      const above = mine(x, y - 1)
+      const below = mine(x, y + 1)
+      const before = mine(x - 1, y)
+      const after = mine(x + 1, y)
 
-      // Matching cell: interior stays transparent so the thread shows through
-      // at its true colour. Only the outward-facing edges get ink.
-      const top = !mine(x, y - 1)
-      const bottom = !mine(x, y + 1)
-      const left = !mine(x - 1, y)
-      const right = !mine(x + 1, y)
-      if (!top && !bottom && !left && !right) continue
+      const stitched = cell >= 0
+      if (!stitched && !(above || below || before || after)) continue // plain cloth
 
       for (let dy = 0; dy < scale; dy++) {
         for (let dx = 0; dx < scale; dx++) {
           const edge =
-            (top && dy === 0) ||
-            (bottom && dy === scale - 1) ||
-            (left && dx === 0) ||
-            (right && dx === scale - 1)
+            (above && dy === 0) ||
+            (below && dy === scale - 1) ||
+            (before && dx === 0) ||
+            (after && dx === scale - 1)
           if (edge) paint(x * scale + dx, y * scale + dy, KEYLINE, KEYLINE_ALPHA)
+          else if (stitched) paint(x * scale + dx, y * scale + dy, VEIL, VEIL_ALPHA)
         }
       }
     }
@@ -159,25 +163,53 @@ export type ChartOptions = {
   heavyEvery?: number
 }
 
+/**
+ * Browsers refuse a canvas beyond roughly 16,384px on a side, and asking for one
+ * yields a null 2d context rather than an error worth reading.
+ */
+const MAX_CANVAS_SIDE = 16000
+
 /** The printable chart: stitches, counting grid, and the thread legend. */
 export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanvasElement {
-  const cell = opts.cellSize ?? 14
   const grid = opts.grid ?? true
   const legend = opts.legend ?? true
   const outline = opts.outline ?? false
   const heavyEvery = opts.heavyEvery ?? 10
   const background = opts.background ?? "#EBE2D7"
 
-  const artW = pattern.width * cell
-  const artH = pattern.height * cell
-  const margin = Math.round(cell * 1.5)
+  const layout = (cell: number) => {
+    const artW = pattern.width * cell
+    const artH = pattern.height * cell
+    const margin = Math.round(cell * 1.5)
+    const legendCols = Math.max(1, Math.min(4, Math.floor(artW / 190)))
+    const legendRowH = Math.max(26, Math.round(cell * 1.6))
+    const legendRows = legend ? Math.ceil(pattern.threads.length / legendCols) : 0
+    const legendH = legend ? legendRows * legendRowH + margin * 2 : 0
+    return {
+      cell,
+      artW,
+      artH,
+      margin,
+      legendCols,
+      legendRowH,
+      legendH,
+      canvasW: artW + margin * 2,
+      canvasH: artH + margin * 2 + legendH,
+    }
+  }
 
-  const legendCols = Math.max(1, Math.min(4, Math.floor(artW / 190)))
-  const legendRowH = Math.max(26, Math.round(cell * 1.6))
-  const legendRows = legend ? Math.ceil(pattern.threads.length / legendCols) : 0
-  const legendH = legend ? legendRows * legendRowH + margin * 2 : 0
+  // A tall photo at the 200-stitch maximum can reach 200x2000 stitches, which at
+  // 14px a stitch asks for a chart 28,000px tall — refused. Shrinking the stitch
+  // to fit beats the alternative: the smaller preview drew happily while the
+  // download failed every time, and told the user it was out of memory.
+  let box = layout(opts.cellSize ?? 14)
+  if (box.canvasW > MAX_CANVAS_SIDE || box.canvasH > MAX_CANVAS_SIDE) {
+    const factor = Math.min(MAX_CANVAS_SIDE / box.canvasW, MAX_CANVAS_SIDE / box.canvasH)
+    box = layout(Math.max(1, Math.floor(box.cell * factor)))
+  }
+  const { cell, artW, artH, margin, legendCols, legendRowH } = box
 
-  const [canvas, ctx] = surface(artW + margin * 2, artH + margin * 2 + legendH)
+  const [canvas, ctx] = surface(box.canvasW, box.canvasH)
 
   ctx.fillStyle = background
   ctx.fillRect(0, 0, canvas.width, canvas.height)
