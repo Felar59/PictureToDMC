@@ -183,7 +183,7 @@ export const en = {
   chart: {
     heading: "Your printable chart",
     preview: "Preview",
-    previewHint: "exactly what the PNG will look like",
+    previewHint: "your chart in miniature — the file prints larger and sharper",
     previewFailed: "There wasn't enough memory to draw the preview. Downloading still works.",
     refresh: "Refresh the preview",
   },
@@ -543,7 +543,7 @@ export const fr: Copy = {
   chart: {
     heading: "Votre grille imprimable",
     preview: "Aperçu",
-    previewHint: "exactement ce à quoi ressemblera le PNG",
+    previewHint: "votre grille en réduction — le fichier est plus grand et plus net",
     previewFailed:
       "Pas assez de mémoire pour dessiner l'aperçu. Le téléchargement fonctionne quand même.",
     refresh: "Rafraîchir l'aperçu",

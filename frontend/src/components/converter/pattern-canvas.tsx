@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { PixelGrid } from "@/components/brand/pixel-grid"
 import type { Pattern } from "@/engine/convert"
@@ -98,12 +98,22 @@ export function PatternCanvas({
   const ratio = pattern ? pattern.height / pattern.width : 1 / (aspect || 1)
   const { hostRef, width: boxW, height: boxH } = useFittedSize(ratio)
 
-  // One pixel per stitch; CSS does the enlarging. Recomputed only when the
-  // pattern or the hovered thread actually changes.
-  const patternRef = useImageData(pattern ? patternImageData(pattern) : null)
-  const veilRef = useImageData(
-    pattern && highlightIndex >= 0 ? isolateImageData(pattern, highlightIndex) : null,
+  // One pixel per stitch; CSS does the enlarging.
+  //
+  // Both are memoised, and the veil especially needs it: it holds three
+  // sub-pixels per stitch, so a tall photo at the slider's 200-stitch maximum —
+  // say 200x800 — is a 600x2400 buffer, close to 6 MB. (MAX_ASPECT below caps
+  // how tall it is *drawn*, not how many stitches it has.) Built during render,
+  // it would be rebuilt on every unrelated re-render of this page for as long as
+  // a thread stayed hovered, which is exactly while the mouse is moving.
+  const patternImage = useMemo(() => (pattern ? patternImageData(pattern) : null), [pattern])
+  const veilImage = useMemo(
+    () => (pattern && highlightIndex >= 0 ? isolateImageData(pattern, highlightIndex) : null),
+    [pattern, highlightIndex],
   )
+
+  const patternRef = useImageData(patternImage)
+  const veilRef = useImageData(veilImage)
 
   const showPattern = view === "pattern" && pattern
   const showOriginal = view === "original" && original

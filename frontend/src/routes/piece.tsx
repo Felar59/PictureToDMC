@@ -227,7 +227,7 @@ export default function Piece() {
         <div className="flex flex-col gap-5">
           <ChartPanel pattern={pattern} onError={() => setDownloadFailed(true)} />
 
-          <div className="bg-blanc rounded-[18px] shadow-soft p-5">
+          <div className="@container bg-blanc rounded-[18px] shadow-soft p-5">
             <div className="flex items-baseline justify-between gap-3 mb-3.5">
               <h2 className="font-display font-medium text-[17px] m-0">{t.piece.threadsToBuy}</h2>
               <span className="font-mono text-[12.5px] text-stone">
@@ -236,8 +236,13 @@ export default function Piece() {
             </div>
             {/* Two columns where there is room, and no inner scrollbar: a nested
                 scroll area hides half a shopping list from anyone who does not
-                know to look for it. The page scrolls instead. */}
-            <ul className="grid sm:grid-cols-2 gap-2 list-none p-0 m-0">
+                know to look for it. The page scrolls instead.
+                A container query, not `sm:` — this card is full-width below the
+                two-column breakpoint and then abruptly narrower above it, so a
+                viewport rule splits it exactly where the room runs out. At 1024
+                that gave each row 124px and truncated "Snow White" to "Snow W…"
+                while "DMC B5200" wrapped onto two lines. */}
+            <ul className="grid @min-[26rem]:grid-cols-2 gap-2 list-none p-0 m-0">
               {pattern.threads.map((thread, i) => (
                 <li
                   key={thread.num}

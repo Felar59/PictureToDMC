@@ -216,8 +216,12 @@ export function ChartPanel({
               />
             )}
           </div>
-          {/* The caption earns its place by saying something the picture can't:
-              that this is the file, not an impression of it. */}
+          {/* The caption says what the picture can't, and says it accurately: the
+              stitches, grid, decade rules and background are the file exactly,
+              but the legend reflows — its column count follows the drawing
+              width, so a 364px preview lists the DMC codes in one column where
+              the 728px file uses three. Claiming "exactly what you'll get"
+              would be a promise the legend breaks. */}
           <figcaption className="font-hand text-[13px] text-sand text-center">
             {t.chart.previewHint}
           </figcaption>
