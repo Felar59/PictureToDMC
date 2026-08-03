@@ -27,10 +27,11 @@ import time
 
 from . import config
 
+# 4 added app_meta, which holds the post id high-water mark.
 # 3 added users.bio, users.icon and users.setup_at.
 # 2 added `comments`. Every statement in SCHEMA is IF NOT EXISTS and init() runs
 # on boot, so a new table needs no migration step of its own.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 _local = threading.local()
 
@@ -122,6 +123,16 @@ CREATE TABLE IF NOT EXISTS post_likes (
     PRIMARY KEY (post_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_likes_user ON post_likes(user_id);
+
+-- Small key/value store. Today it holds one thing: the highest post id ever
+-- used, so a deleted post's id is never handed to a new one. SQLite's
+-- INTEGER PRIMARY KEY recycles the id of the highest deleted row, which made a
+-- shared link quietly point at someone else's piece and let a browser serve the
+-- deleted post's cached thumbnail under the new post's id.
+CREATE TABLE IF NOT EXISTS app_meta (
+    key   TEXT PRIMARY KEY,
+    value INTEGER NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS comments (
     id         INTEGER PRIMARY KEY,

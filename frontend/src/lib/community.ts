@@ -133,8 +133,20 @@ export function deletePost(id: number) {
   return call<{ ok: true }>(`/api/posts/${id}`, { method: "DELETE" })
 }
 
-export const thumbUrl = (id: number) => `/api/posts/${id}/thumb`
-export const photoUrl = (id: number) => `/api/posts/${id}/photo`
+/**
+ * The stored images, cached for a year and told apart by the post's own timestamp.
+ *
+ * The id alone is not enough. SQLite used to hand a deleted post's id to the next
+ * one, and these are served `immutable`, so a browser that had seen the old post
+ * went on showing its thumbnail under the new post's id — the gallery and the
+ * piece page disagreed, because the piece page redraws from the grid in the JSON.
+ * Ids are no longer recycled, but a cache poisoned before that fix would keep
+ * lying for a year; `v` makes it a different URL, so it recovers on its own.
+ */
+export const thumbUrl = (post: { id: number; createdAt: number }) =>
+  `/api/posts/${post.id}/thumb?v=${post.createdAt}`
+export const photoUrl = (post: { id: number; createdAt: number }) =>
+  `/api/posts/${post.id}/photo?v=${post.createdAt}`
 
 export type Comment = {
   id: number

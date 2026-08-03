@@ -278,7 +278,7 @@ export default function Piece() {
       <div className="mt-8 flex flex-col items-center gap-4">
         {post.hasPhoto && (
           <img
-            src={api.photoUrl(post.id)}
+            src={api.photoUrl(post)}
             alt={t.piece.photoAlt(post.title)}
             className="w-full max-w-[720px] rounded-card shadow-card object-cover max-h-[460px]"
           />

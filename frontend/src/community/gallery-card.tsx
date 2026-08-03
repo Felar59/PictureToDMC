@@ -46,7 +46,7 @@ export function GalleryCard({
         <div className="aida [--aida-size:14px] [--aida-ink:.07] bg-[#F7F1E5] border-2 border-dashed border-edge-5 rounded-[14px] p-2 h-[230px] overflow-hidden">
           {post.hasPhoto || post.hasThumb ? (
             <img
-              src={post.hasPhoto ? api.photoUrl(post.id) : api.thumbUrl(post.id)}
+              src={post.hasPhoto ? api.photoUrl(post) : api.thumbUrl(post)}
               alt={post.title}
               loading="lazy"
               style={post.hasPhoto ? undefined : { imageRendering: "pixelated" }}

@@ -208,28 +208,59 @@ async def publish(request: Request) -> JSONResponse:
     photo = body.get("photo")
     photo_bytes, photo_mime = _decode_data_url(photo, MAX_PHOTO_BYTES) if photo else (None, None)
 
+    # One id, and never a recycled one.
+    #
+    # SQLite's INTEGER PRIMARY KEY hands the next insert the id of the highest
+    # deleted row. That made a link someone shared quietly point at a different
+    # piece later, and — because the thumbnail is served immutable on a URL keyed
+    # by the id — let a browser show the deleted post's picture under the new
+    # post's id. `app_meta` remembers the highest id ever used, so it cannot
+    # happen again. Read and written inside the same immediate transaction as the
+    # insert, so two publishes cannot settle on the same number.
     conn = connect()
-    cur = conn.execute(
-        """
-        INSERT INTO posts (author_id, title, category, width, height, cells,
-                           thread_codes, thumb_png, photo, photo_mime, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
-        """,
-        (
-            user["id"],
-            title,
-            category,
-            width,
-            height,
-            cells,
-            json.dumps(codes),
-            thumb_bytes,
-            photo_bytes,
-            photo_mime,
-            now_ms(),
-        ),
-    )
-    return JSONResponse({"id": int(cur.lastrowid or 0)}, status_code=201)
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute(
+            "SELECT MAX(next) AS next FROM ("
+            "  SELECT COALESCE(MAX(id), 0) AS next FROM posts"
+            "  UNION ALL"
+            "  SELECT COALESCE(value, 0) FROM app_meta WHERE key = 'posts_seq'"
+            ")"
+        ).fetchone()
+        post_id = int(row["next"] or 0) + 1
+
+        conn.execute(
+            """
+            INSERT INTO posts (id, author_id, title, category, width, height, cells,
+                               thread_codes, thumb_png, photo, photo_mime, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                post_id,
+                user["id"],
+                title,
+                category,
+                width,
+                height,
+                cells,
+                json.dumps(codes),
+                thumb_bytes,
+                photo_bytes,
+                photo_mime,
+                now_ms(),
+            ),
+        )
+        conn.execute(
+            "INSERT INTO app_meta (key, value) VALUES ('posts_seq', ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (post_id,),
+        )
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+    return JSONResponse({"id": post_id}, status_code=201)
 
 
 @router.post("/posts/{post_id}/like")
