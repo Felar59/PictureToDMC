@@ -194,6 +194,8 @@ uniform float uJitterPos, uJitterAngle, uJitterLen, uTopLegMix;
 uniform float uPlyFreq, uPlyDepth, uFibreNoise;
 uniform float uLightAngle, uLightHeight, uDiffuse, uAmbient, uSpecular, uShininess, uSheen;
 uniform float uShadowStrength, uShadowSpread;
+// 1 draws our own cloth, 0 leaves the ground transparent for a photograph.
+uniform float uGroundAlpha;
 uniform float uValueJitter, uHueJitter, uSaturation, uGamma;
 
 out vec4 fragColor;
@@ -366,9 +368,7 @@ void main() {
     }
   }
 
-  // Cloth under the stitches, darkened where thread meets fabric.
-  col *= 1.0 - shadow * uShadowStrength * 0.55;
-
+  vec3 lit = vec3(0.0);
   if (bestCov > 0.001) {
     vec3 n = normalize(vec3(-bestGrad, 1.0));
     float lambert = max(dot(n, lightDir), 0.0);
@@ -380,12 +380,28 @@ void main() {
     float along = abs(dot(normalize(bestDir), lightDir.xy));
     spec *= mix(1.0, along, uSheen);
 
-    vec3 lit = bestCol * (uAmbient + uDiffuse * lambert) + vec3(spec) * uSpecular;
+    lit = bestCol * (uAmbient + uDiffuse * lambert) + vec3(spec) * uSpecular;
+  }
+
+  float alpha;
+  if (uGroundAlpha > 0.5) {
+    // Standing on its own: we draw the cloth as well, darkened where thread
+    // meets fabric.
+    col *= 1.0 - shadow * uShadowStrength * 0.55;
     col = mix(col, lit, bestCov);
+    alpha = 1.0;
+  } else {
+    // Laid over a photograph: the cloth in the picture is the cloth, so all we
+    // contribute is thread and the shadow it casts. Anything else would paint a
+    // patch of synthetic fabric onto a real one, which is exactly what the flat
+    // renderer already looks like.
+    float sh = clamp(shadow * uShadowStrength, 0.0, 1.0);
+    alpha = max(bestCov, sh);
+    col = mix(vec3(0.0), lit, bestCov / max(alpha, 1e-4));
   }
 
   col = pow(max(col, 0.0), vec3(1.0 / max(uGamma, 0.05)));
-  fragColor = vec4(col, 1.0);
+  fragColor = vec4(col, alpha);
 }`
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
@@ -402,8 +418,13 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string): WebG
 }
 
 export type StitchRenderer = {
-  /** Draws `pattern` (as ImageData, one texel per stitch) at the given zoom. */
-  render(image: ImageData, params: StitchParams, zoom: number): void
+  /**
+   * Draws `pattern` (as ImageData, one texel per stitch) at the given zoom.
+   *
+   * `overPhoto` leaves the cloth out and the background transparent, so the
+   * canvas can sit on top of a photograph of the real thing.
+   */
+  render(image: ImageData, params: StitchParams, zoom: number, overPhoto?: boolean): void
   dispose(): void
 }
 
@@ -446,6 +467,7 @@ export function createStitchRenderer(canvas: HTMLCanvasElement): StitchRenderer 
     cellPx: loc("uCellPx"),
     origin: loc("uOrigin"),
     clothColor: loc("uClothColor"),
+    groundAlpha: loc("uGroundAlpha"),
   }
   // Everything else is a plain float named after the parameter.
   const scalarKeys = (Object.keys(DEFAULT_PARAMS) as (keyof StitchParams)[]).filter(
@@ -458,7 +480,7 @@ export function createStitchRenderer(canvas: HTMLCanvasElement): StitchRenderer 
   let lastImage: ImageData | null = null
 
   return {
-    render(image, params, zoom) {
+    render(image, params, zoom, overPhoto = false) {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const width = Math.max(1, Math.round(canvas.clientWidth * dpr))
       const height = Math.max(1, Math.round(canvas.clientHeight * dpr))
@@ -469,6 +491,12 @@ export function createStitchRenderer(canvas: HTMLCanvasElement): StitchRenderer 
 
       gl.viewport(0, 0, width, height)
       gl.useProgram(program)
+      // Straight alpha, so a half-covered edge pixel blends with the photograph
+      // beneath rather than with black.
+      gl.enable(gl.BLEND)
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+      gl.clearColor(0, 0, 0, 0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -501,6 +529,7 @@ export function createStitchRenderer(canvas: HTMLCanvasElement): StitchRenderer 
         (height - image.height * cellPx) / 2,
       )
       gl.uniform3fv(U.clothColor, params.clothColor)
+      gl.uniform1f(U.groundAlpha, overPhoto ? 0 : 1)
       for (const [key, location] of scalars) {
         gl.uniform1f(location, params[key] as number)
       }

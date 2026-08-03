@@ -1,0 +1,1 @@
+const s="/assets/cushion-Shy2RVgn.avif",t="/assets/hoop-DQZk-h_G.avif",o="/assets/shirt-DS87ZXGA.avif",c="/assets/tote-CYxjghuc.avif",e=1,h=[{key:"hoop",src:t,spot:{x:.5,y:.5,w:.46}},{key:"tote",src:c,spot:{x:.5,y:.52,w:.34}},{key:"shirt",src:o,spot:{x:.5,y:.44,w:.2}},{key:"cushion",src:s,spot:{x:.5,y:.5,w:.36}}];export{e as C,h as P};

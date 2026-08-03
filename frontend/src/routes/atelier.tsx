@@ -12,6 +12,7 @@ import {
   type StitchParams,
   type StitchRenderer,
 } from "@/engine/stitch-shader"
+import { PRODUCTS } from "@/components/showcase/products"
 import * as api from "@/lib/community"
 
 /**
@@ -23,10 +24,16 @@ import * as api from "@/lib/community"
  * looks right press "copier les réglages" and paste what comes out — that becomes
  * the permanent set.
  *
- * `?piece=2` renders a published piece; without it you get a built-in sampler,
- * which is deliberately awkward — single stitches, long runs, a hard edge and a
- * pale thread next to a dark one — because those are the four things a fabric
- * shader gets wrong.
+ * Two things can be chosen independently, because tuning needs both. The
+ * *pattern* is either a built-in sampler — deliberately awkward: single stitches,
+ * long runs, a hard edge, a pale thread against a dark one, the four cases a
+ * fabric shader gets wrong — or a published piece via `?piece=2`. The *surface*
+ * is either the shader's own cloth, where the geometry is easiest to read, or one
+ * of the real product photographs, which is the only place you can tell whether
+ * a setting looks right where it will actually be used.
+ *
+ * On a photograph the shader stops drawing cloth: the fabric in the picture is
+ * the fabric, and all it adds is thread and the shadow the thread casts.
  */
 
 /** A test card, not a picture: every case that breaks a stitch renderer. */
@@ -62,6 +69,9 @@ function samplerPattern(): Pattern {
   return { width: W, height: H, cells, threads, counts, stitched }
 }
 
+/** Button labels, in the order the selector shows them: cloth, then PRODUCTS. */
+const SURFACES = ["toile seule", "tambour", "tote bag", "t-shirt", "coussin"]
+
 function hexToRgb01(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16)
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
@@ -80,6 +90,9 @@ export default function Atelier() {
 
   const [params, setParams] = useState<StitchParams>(DEFAULT_PARAMS)
   const [zoom, setZoom] = useState(1)
+  // -1 is the shader's own cloth; 0..3 index PRODUCTS.
+  const [surface, setSurface] = useState(0)
+  const onPhoto = surface >= 0
   const [pattern, setPattern] = useState<Pattern>(() => samplerPattern())
   const [note, setNote] = useState<string>("échantillon de test")
   const [error, setError] = useState<string | null>(null)
@@ -124,6 +137,8 @@ export default function Atelier() {
   const glRef = useRef<HTMLCanvasElement | null>(null)
   const rendererRef = useRef<StitchRenderer | null>(null)
 
+  // Keyed on which branch is mounted: the two layouts render different canvas
+  // elements, and a context bound to a detached one silently draws nothing.
   useEffect(() => {
     const canvas = glRef.current
     if (!canvas) return
@@ -139,18 +154,18 @@ export default function Atelier() {
       renderer?.dispose()
       rendererRef.current = null
     }
-  }, [])
+  }, [onPhoto])
 
   // Redraw on any change, and whenever the canvas is resized.
   useEffect(() => {
-    const draw = () => rendererRef.current?.render(image, params, zoom)
+    const draw = () => rendererRef.current?.render(image, params, onPhoto ? 1 : zoom, onPhoto)
     draw()
     const canvas = glRef.current
     if (!canvas) return
     const observer = new ResizeObserver(draw)
     observer.observe(canvas)
     return () => observer.disconnect()
-  }, [image, params, zoom])
+  }, [image, params, zoom, onPhoto])
 
   // ---- the flat renderer, side by side, because "better" needs a reference
   const flatRef = useRef<HTMLCanvasElement | null>(null)
@@ -190,17 +205,76 @@ export default function Atelier() {
       <div className="grid lg:grid-cols-[1fr_360px] gap-5 items-start">
         {/* the render */}
         <div className="flex flex-col gap-3 lg:sticky lg:top-4">
-          <canvas
-            ref={glRef}
-            className="w-full block rounded-card shadow-card bg-linen"
-            style={{ aspectRatio: `${pattern.width} / ${pattern.height}` }}
-          />
+          {/* Which surface. The photographs are the ones the site uses, at the
+              same spot and the same size, so what is on screen here is what a
+              visitor will see. */}
+          <div className="flex gap-1.5 flex-wrap">
+            {SURFACES.map((label, i) => {
+              const index = i - 1
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setSurface(index)
+                    setZoom(1)
+                  }}
+                  className={`rounded-full font-mono text-[12px] px-3 py-1.5 cursor-pointer transition-colors ${
+                    surface === index ? "bg-ink text-blanc" : "bg-blanc text-cocoa hover:bg-linen"
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
+          {surface < 0 ? (
+            <canvas
+              ref={glRef}
+              className="w-full block rounded-card shadow-card bg-linen"
+              style={{ aspectRatio: `${pattern.width} / ${pattern.height}` }}
+            />
+          ) : (
+            // The zoom is a magnifier here, not a stitch size: it scales the
+            // photograph and the motif together, centred on the motif, so the
+            // proportions stay the ones the product actually has.
+            <div className="relative overflow-hidden rounded-card shadow-card bg-linen aspect-square">
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: `scale(${zoom})`,
+                  transformOrigin: `${PRODUCTS[surface].spot.x * 100}% ${PRODUCTS[surface].spot.y * 100}%`,
+                }}
+              >
+                <img
+                  src={PRODUCTS[surface].src}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <canvas
+                  ref={glRef}
+                  style={{
+                    position: "absolute",
+                    left: `${PRODUCTS[surface].spot.x * 100}%`,
+                    top: `${PRODUCTS[surface].spot.y * 100}%`,
+                    width: `${PRODUCTS[surface].spot.w * 100}%`,
+                    aspectRatio: `${pattern.width} / ${pattern.height}`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                  className="block"
+                />
+              </div>
+            </div>
+          )}
           <div className="flex items-center gap-3">
-            <label className="font-mono text-[12px] text-stone shrink-0">zoom</label>
+            <label className="font-mono text-[12px] text-stone shrink-0">
+              {surface < 0 ? "taille du point" : "loupe"}
+            </label>
             <input
               type="range"
-              min={0.3}
-              max={4}
+              min={onPhoto ? 1 : 0.3}
+              max={onPhoto ? 6 : 4}
               step={0.05}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
