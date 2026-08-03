@@ -8,7 +8,10 @@ import { patternImageData } from "@/engine/render"
 import {
   DEFAULT_PARAMS,
   PARAM_GROUPS,
+  clearSavedParams,
   createStitchRenderer,
+  loadParams,
+  saveParams,
   type StitchParams,
   type StitchRenderer,
 } from "@/engine/stitch-shader"
@@ -88,7 +91,14 @@ export default function Atelier() {
   const [search] = useSearchParams()
   const pieceId = search.get("piece")
 
-  const [params, setParams] = useState<StitchParams>(DEFAULT_PARAMS)
+  // Picks up where the last session left off, and every change is written back:
+  // the product previews on the real pages read the same set, so a setting can be
+  // judged where it will actually be used rather than only on this bench.
+  const [params, setParams] = useState<StitchParams>(() => loadParams())
+
+  useEffect(() => {
+    saveParams(params)
+  }, [params])
   const [zoom, setZoom] = useState(1)
   // -1 is the shader's own cloth; 0..3 index PRODUCTS.
   const [surface, setSurface] = useState(0)
@@ -308,12 +318,21 @@ export default function Atelier() {
             </button>
             <button
               type="button"
-              onClick={() => setParams(DEFAULT_PARAMS)}
+              onClick={() => {
+                clearSavedParams()
+                setParams(DEFAULT_PARAMS)
+              }}
               className="rounded-full bg-linen text-cocoa font-display text-[14px] px-4 py-2 cursor-pointer hover:bg-edge-3"
             >
               remettre à zéro
             </button>
           </div>
+
+          <p className="font-mono text-[11.5px] text-stone m-0 leading-snug">
+            ces réglages sont gardés dans ce navigateur et s'appliquent aux aperçus
+            produit du site — envoyez-les-moi pour les rendre définitifs pour tout
+            le monde.
+          </p>
 
           <label className="flex items-center justify-between gap-3 bg-blanc rounded-chip px-3 py-2">
             <span className="font-mono text-[12.5px] text-bark">couleur de la toile</span>

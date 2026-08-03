@@ -61,6 +61,12 @@ export type StitchParams = {
 /**
  * A starting point, not an answer. Tuned by eye against photographs of 14-count
  * aida; the numbers that matter most are coverage, legWidth and the light pair.
+ *
+ * legWidth is deliberately fatter than a single strand looks in close-up. These
+ * defaults have to hold at the size the previews actually use — a motif about 110
+ * to 230 CSS pixels across — and a thin leg there leaves so much cloth between
+ * stitches that the shape reads as a lattice instead of as a heart. Real dense
+ * cross-stitch covers its ground; a photograph of it, shrunk, looks solid.
  */
 export const DEFAULT_PARAMS: StitchParams = {
   clothColor: [0.93, 0.9, 0.83],
@@ -70,8 +76,8 @@ export const DEFAULT_PARAMS: StitchParams = {
   holeDepth: 0.38,
   clothFuzz: 0.25,
 
-  coverage: 0.5,
-  legWidth: 0.13,
+  coverage: 0.54,
+  legWidth: 0.21,
   roundness: 0.7,
   crossOffset: 0.04,
   jitterPos: 0.035,
@@ -170,6 +176,46 @@ export const PARAM_GROUPS: {
     ],
   },
 ]
+
+const STORAGE_KEY = "ptd.stitch-params"
+
+/**
+ * The parameters the previews should use.
+ *
+ * DEFAULT_PARAMS is what everyone gets. /atelier writes its current set to local
+ * storage as well, so whoever is tuning sees their own numbers on the real
+ * previews immediately, in place, without a deploy — which is the only way to
+ * judge them. Nobody else is affected, and when the numbers are settled they
+ * move into DEFAULT_PARAMS and this layer goes back to doing nothing.
+ */
+export function loadParams(): StitchParams {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return DEFAULT_PARAMS
+    const saved = JSON.parse(raw) as Partial<StitchParams>
+    // Merged onto the defaults, so a set saved before a parameter existed still
+    // loads instead of leaving a uniform undefined.
+    return { ...DEFAULT_PARAMS, ...saved }
+  } catch {
+    return DEFAULT_PARAMS
+  }
+}
+
+export function saveParams(params: StitchParams): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(params))
+  } catch {
+    // Private mode, or a full quota. Tuning still works for this page view.
+  }
+}
+
+export function clearSavedParams(): void {
+  try {
+    window.localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* nothing to undo */
+  }
+}
 
 const VERTEX = `#version 300 es
 void main() {
@@ -424,7 +470,16 @@ export type StitchRenderer = {
    * `overPhoto` leaves the cloth out and the background transparent, so the
    * canvas can sit on top of a photograph of the real thing.
    */
-  render(image: ImageData, params: StitchParams, zoom: number, overPhoto?: boolean): void
+  render(
+    image: ImageData,
+    params: StitchParams,
+    zoom: number,
+    overPhoto?: boolean,
+    /** Device pixels to draw at. Without it the canvas's own CSS box is used,
+     *  which is 0 for a detached canvas — and a detached canvas is how one
+     *  context serves several visible previews. */
+    size?: { width: number; height: number },
+  ): void
   dispose(): void
 }
 
@@ -480,10 +535,10 @@ export function createStitchRenderer(canvas: HTMLCanvasElement): StitchRenderer 
   let lastImage: ImageData | null = null
 
   return {
-    render(image, params, zoom, overPhoto = false) {
+    render(image, params, zoom, overPhoto = false, size) {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      const width = Math.max(1, Math.round(canvas.clientWidth * dpr))
-      const height = Math.max(1, Math.round(canvas.clientHeight * dpr))
+      const width = Math.max(1, Math.round(size ? size.width : canvas.clientWidth * dpr))
+      const height = Math.max(1, Math.round(size ? size.height : canvas.clientHeight * dpr))
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width
         canvas.height = height

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 import { Tag } from "@/components/ui/pill"
 import type { Pattern } from "@/engine/convert"
-import { patternImageData } from "@/engine/render"
 import { useI18n } from "@/i18n"
 import { CARD_ASPECT, PRODUCTS, type ProductMock } from "./products"
+import { useStitchedBitmap } from "./use-stitched-bitmap"
 
 /**
  * "See it stitched" — the motif on four things stitchers actually make.
@@ -16,46 +16,65 @@ import { CARD_ASPECT, PRODUCTS, type ProductMock } from "./products"
  */
 
 /**
- * The motif, drawn one pixel per stitch and enlarged by CSS.
+ * One product's copy of the motif.
  *
- * Same idiom as the converter canvas: a single putImageData plus
- * `image-rendering: pixelated`, never a grid of divs — a pattern can be
- * thousands of cells and there are four of these on screen at once. Bare
- * stitches stay transparent, so the cloth in the photograph shows through them,
- * which is how it would really look.
+ * The shaded render is shared, so this is a plain 2D canvas that blits from it —
+ * a canvas can only live in one place, and there are four products. Sized and
+ * placed as a percentage of the photograph rather than in pixels, so it tracks
+ * the image at every card width without a second measurement.
  *
- * Sized and placed as a percentage of the photo rather than in pixels, so it
- * tracks the image at every card width without a second measurement.
+ * Bare stitches come out transparent from either renderer, so the cloth in the
+ * photograph shows through them, which is how it would really look.
  */
-function Motif({ image, spot }: { image: ImageData | null; spot: ProductMock["spot"] }) {
+function Motif({
+  source,
+  flatImage,
+  spot,
+  ratio,
+}: {
+  source: HTMLCanvasElement | null
+  flatImage: ImageData | null
+  spot: ProductMock["spot"]
+  /** Pattern width over height. */
+  ratio: number
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     const canvas = ref.current
-    if (!canvas || !image) return
-    canvas.width = image.width
-    canvas.height = image.height
-    canvas.getContext("2d")?.putImageData(image, 0, 0)
-  }, [image])
+    if (!canvas) return
+    if (source) {
+      canvas.width = source.width
+      canvas.height = source.height
+      canvas.getContext("2d")?.drawImage(source, 0, 0)
+      return
+    }
+    if (flatImage) {
+      canvas.width = flatImage.width
+      canvas.height = flatImage.height
+      canvas.getContext("2d")?.putImageData(flatImage, 0, 0)
+    }
+  }, [source, flatImage])
 
-  if (!image) return null
+  if (!source && !flatImage) return null
 
-  // The long side gets the allowance and the short side follows, so a portrait
+  // The long side takes the allowance and the short side follows, so a portrait
   // pattern never spills past the area the product can carry.
-  const portrait = image.height > image.width
-  const long = `${spot.w * 100}%`
-  const short = `${((spot.w * Math.min(image.width, image.height)) / Math.max(image.width, image.height)) * 100}%`
+  const portrait = ratio < 1
+  const width = portrait ? spot.w * ratio : spot.w
 
   return (
     <canvas
       ref={ref}
       aria-hidden="true"
       style={{
-        imageRendering: "pixelated",
+        // Only the flat fallback wants hard pixel edges. The shaded render is a
+        // picture of thread and should be resampled like one.
+        imageRendering: source ? "auto" : "pixelated",
         position: "absolute",
         left: `${spot.x * 100}%`,
         top: `${spot.y * 100}%`,
-        width: portrait ? short : long,
+        width: `${width * 100}%`,
         transform: "translate(-50%, -50%)",
       }}
       className="block"
@@ -66,8 +85,9 @@ function Motif({ image, spot }: { image: ImageData | null; spot: ProductMock["sp
 export function ProductPreview({ pattern }: { pattern: Pattern }) {
   const { t } = useI18n()
 
-  // One pass over the grid for all four photographs.
-  const image = useMemo(() => patternImageData(pattern), [pattern])
+  // Rendered as thread once, on a single WebGL context, and copied four times.
+  const { source, flatImage } = useStitchedBitmap(pattern)
+  const ratio = pattern.width / pattern.height
 
   return (
     <section className="w-full">
@@ -99,7 +119,12 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
                   decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-                <Motif image={image} spot={product.spot} />
+                <Motif
+                  source={source}
+                  flatImage={flatImage}
+                  spot={product.spot}
+                  ratio={ratio}
+                />
               </div>
 
               <div className="text-center flex flex-col items-center gap-1.5 px-1">
