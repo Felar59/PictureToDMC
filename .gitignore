@@ -26,3 +26,7 @@ Thumbs.db
 # Local dev database
 .dev-db.sqlite*
 .clean-db.sqlite*
+
+# Photos sources des maquettes produit : lourdes (7 Mo) et inutiles en prod.
+# Les versions servies sont dans frontend/src/assets/products/*.avif.
+sources/
