@@ -305,7 +305,17 @@ export default function Convert() {
 
           {pattern && pattern.threads.length > 0 && (
             <>
-              <ChartPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
+              {/* The workbench keeps the chart in the open — this is the page
+                  whose whole point is the download, so there is nothing to
+                  reveal. The published-piece page puts the same panel behind a
+                  button instead, because there the chart is one of two things
+                  you might want. */}
+              <div className="bg-blanc rounded-card shadow-soft p-5 flex flex-col gap-4">
+                <h2 className="font-display font-medium text-[21px] text-ink m-0">
+                  {t.chart.heading}
+                </h2>
+                <ChartPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
+              </div>
               {shared ? (
                 <p className="font-hand text-[15px] text-nile-deep text-center m-0">
                   {t.publish.done}

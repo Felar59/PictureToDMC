@@ -156,8 +156,11 @@ export type ChartOptions = {
   cellSize?: number
   grid?: boolean
   legend?: boolean
-  /** Dark keyline around the stitched area. */
+  /** Keyline around the stitched area. */
   outline?: boolean
+  /** Its colour. A dark line is right on pale fabric and disappears on a dark
+   *  background, which is a choice the person printing the chart has to make. */
+  outlineColor?: string
   background?: string
   /** Heavier rule every N stitches, the usual counting aid. */
   heavyEvery?: number
@@ -174,6 +177,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
   const grid = opts.grid ?? true
   const legend = opts.legend ?? true
   const outline = opts.outline ?? false
+  const outlineColor = opts.outlineColor ?? "#141008"
   const heavyEvery = opts.heavyEvery ?? 10
   const background = opts.background ?? "#EBE2D7"
 
@@ -229,7 +233,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     const stitched = (x: number, y: number) =>
       x >= 0 && y >= 0 && x < pattern.width && y < pattern.height &&
       pattern.cells[y * pattern.width + x] >= 0
-    ctx.strokeStyle = "rgba(20,16,12,.9)"
+    ctx.strokeStyle = outlineColor
     ctx.lineWidth = Math.max(2, Math.round(cell / 5))
     ctx.beginPath()
     for (let y = 0; y < pattern.height; y++) {

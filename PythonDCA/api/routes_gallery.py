@@ -19,6 +19,7 @@ PAGE_SIZE = 12
 MAX_TITLE = 80
 MAX_THREADS = 64
 MAX_CELLS = 200 * 200
+MAX_COMMENT = 1000
 # A pattern thumbnail is a few kB; the hoop photo is the one that can be big.
 MAX_THUMB_BYTES = 256 * 1024
 MAX_PHOTO_BYTES = 6 * 1024 * 1024
@@ -284,6 +285,98 @@ def delete_post(post_id: int, request: Request) -> JSONResponse:
         raise HTTPException(403, "That isn't yours")
 
     connect().execute("DELETE FROM posts WHERE id = ?", (post_id,))
+    return JSONResponse({"ok": True})
+
+
+@router.get("/posts/{post_id}/comments")
+def list_comments(post_id: int) -> JSONResponse:
+    """The conversation under a piece, oldest first.
+
+    Public: reading the gallery has never needed an account, and that includes
+    what people said about a piece.
+    """
+    conn = connect()
+    if not conn.execute("SELECT 1 FROM posts WHERE id = ?", (post_id,)).fetchone():
+        raise HTTPException(404, "No such piece")
+
+    rows = conn.execute(
+        """
+        SELECT c.id, c.body, c.created_at, u.id AS uid, u.display_name, u.avatar_url
+        FROM comments c
+        JOIN users u ON u.id = c.author_id
+        WHERE c.post_id = ? AND u.banned_at IS NULL
+        ORDER BY c.created_at
+        """,
+        (post_id,),
+    ).fetchall()
+
+    return JSONResponse(
+        {
+            "comments": [
+                {
+                    "id": r["id"],
+                    "body": r["body"],
+                    "createdAt": r["created_at"],
+                    "author": {
+                        "id": r["uid"],
+                        "displayName": r["display_name"],
+                        "avatarUrl": r["avatar_url"],
+                    },
+                }
+                for r in rows
+            ]
+        }
+    )
+
+
+@router.post("/posts/{post_id}/comments")
+async def add_comment(post_id: int, request: Request) -> JSONResponse:
+    user = auth.current_user(request)
+    if not user:
+        raise HTTPException(401, "Sign in to leave a comment")
+
+    payload = await request.json()
+    body = str(payload.get("body") or "").strip()
+    if not body:
+        raise HTTPException(422, "Write something first")
+    if len(body) > MAX_COMMENT:
+        raise HTTPException(422, f"Comments are limited to {MAX_COMMENT} characters")
+
+    conn = connect()
+    if not conn.execute("SELECT 1 FROM posts WHERE id = ?", (post_id,)).fetchone():
+        raise HTTPException(404, "No such piece")
+
+    when = now_ms()
+    cur = conn.execute(
+        "INSERT INTO comments (post_id, author_id, body, created_at) VALUES (?,?,?,?)",
+        (post_id, user["id"], body, when),
+    )
+    # Returned whole so the client can append it without refetching the thread.
+    return JSONResponse(
+        {
+            "id": cur.lastrowid,
+            "body": body,
+            "createdAt": when,
+            "author": auth.public_user(user),
+        },
+        status_code=201,
+    )
+
+
+@router.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, request: Request) -> JSONResponse:
+    user = auth.current_user(request)
+    if not user:
+        raise HTTPException(401, "Sign in first")
+
+    conn = connect()
+    row = conn.execute("SELECT author_id FROM comments WHERE id = ?", (comment_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "No such comment")
+    if row["author_id"] != user["id"] and user["role"] != "admin":
+        raise HTTPException(403, "That isn't yours")
+
+    conn.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
     return JSONResponse({"ok": True})
 
 

@@ -124,3 +124,26 @@ export function deletePost(id: number) {
 
 export const thumbUrl = (id: number) => `/api/posts/${id}/thumb`
 export const photoUrl = (id: number) => `/api/posts/${id}/photo`
+
+export type Comment = {
+  id: number
+  body: string
+  createdAt: number
+  author: PublicUser
+}
+
+export function fetchComments(postId: number) {
+  return call<{ comments: Comment[] }>(`/api/posts/${postId}/comments`)
+}
+
+/** Returns the stored comment, so the thread can grow without a refetch. */
+export function addComment(postId: number, body: string) {
+  return call<Comment>(`/api/posts/${postId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  })
+}
+
+export function deleteComment(id: number) {
+  return call<{ ok: true }>(`/api/comments/${id}`, { method: "DELETE" })
+}

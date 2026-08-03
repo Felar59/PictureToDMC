@@ -27,7 +27,9 @@ import time
 
 from . import config
 
-SCHEMA_VERSION = 1
+# 2 added `comments`. Every statement in SCHEMA is IF NOT EXISTS and init() runs
+# on boot, so a new table needs no migration step of its own.
+SCHEMA_VERSION = 2
 
 _local = threading.local()
 
@@ -111,6 +113,17 @@ CREATE TABLE IF NOT EXISTS post_likes (
     PRIMARY KEY (post_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_likes_user ON post_likes(user_id);
+
+CREATE TABLE IF NOT EXISTS comments (
+    id         INTEGER PRIMARY KEY,
+    post_id    INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    author_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body       TEXT    NOT NULL,
+    created_at INTEGER NOT NULL
+);
+-- Oldest first is how a conversation reads, and it is the only order this is
+-- ever queried in.
+CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at);
 """
 
 

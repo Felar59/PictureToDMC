@@ -64,19 +64,16 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
   return (
     <section className="w-full">
       <header className="text-center">
-        <div className="font-hand text-[17px] text-quill">{t.showcase.kicker}</div>
-        {/* Deliberately below the page's h1, and by a clear margin. At 32px this
-            sat within two points of the piece title, so a supporting section of
-            decorative mockups read as important as the piece itself. */}
-        <h2 className="text-[21px] sm:text-[23px] mt-1.5 mb-3 tracking-[-.3px]">
-          {t.showcase.title}
-        </h2>
+        {/* No heading of its own: the only host is a dialog whose title already
+            says "where will it live?", and repeating it would be the second h2
+            for one idea. */}
+        <div className="font-hand text-[17px] text-quill mb-2">{t.showcase.kicker}</div>
         <p className="text-[16px] leading-[1.6] text-clay mx-auto max-w-[560px] m-0">
           {t.showcase.lead}
         </p>
       </header>
 
-      <ul className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 list-none p-0 mt-7 mb-0">
+      <ul className="grid grid-cols-2 @min-[46rem]:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 list-none p-0 mt-7 mb-0">
         {PRODUCTS.map((product, i) => {
           const copy = t.showcase.products[i]
           return (

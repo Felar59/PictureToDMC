@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
-import { Bobbin } from "@/components/brand/bobbin"
-import { ChartPanel } from "@/components/converter/chart-panel"
-import { ProductPreview } from "@/components/showcase/product-preview"
+import { ProductDialog } from "@/components/showcase/product-dialog"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
+import { ChartDialog } from "@/community/chart-dialog"
+import { Comments } from "@/community/comments"
 import type { Pattern } from "@/engine/convert"
 import { findThread, type Thread } from "@/engine/dmc"
 import { base64ToCells } from "@/engine/publish"
@@ -14,16 +14,15 @@ import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 
 /**
- * One published piece.
+ * One published piece: the work, then what you can do with it, then what people
+ * said about it.
  *
- * The page has a single job: hand over the pattern. A visitor arrives from the
- * gallery because a thumbnail caught them, and what they want is to stitch that
- * thing — so the printable chart is the destination, and the photo, the maker's
- * name and the hearts are the evidence that it is worth the evening. The page
- * used to have no download at all, which meant it was evidence and nothing else.
- *
- * That job sets the order: look at it (left), take it away (right), imagine it
- * finished (below). On a narrow screen those stack in the same sequence.
+ * Everything used to sit in a column beside the picture — chart preview, five
+ * options, download, shopping list — and the taller that column grew the more
+ * empty cloth was left under the pattern. It grew with the number of colours, so
+ * the pieces with the most to look at were the ones that read worst. Both of
+ * those are now behind a button, which leaves a single column: the work, two
+ * things you might want, and the conversation.
  *
  * The pattern is rebuilt from the stored grid rather than shown as a fixed
  * image — that is the whole reason the grid is stored at all. It means this page
@@ -39,6 +38,8 @@ export default function Piece() {
   const [post, setPost] = useState<api.PostDetail | null>(null)
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
   const [downloadFailed, setDownloadFailed] = useState(false)
+  const [chartOpen, setChartOpen] = useState(false)
+  const [productsOpen, setProductsOpen] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
@@ -199,9 +200,9 @@ export default function Piece() {
                 {t.gallery.by(post.author.displayName)}
               </span>
             </Link>
-            <span aria-hidden="true" className="text-edge-5">
-              ·
-            </span>
+            {/* No separator between the name and the figures: it wraps to its own
+                line on a phone and leaves a dot dangling at the end of the
+                author. The change of face already separates them. */}
             {/* Bare dimensions, not `gallery.stitches`: that helper suffixes
                 "st"/"pts", which read as a second stitch count directly beside
                 "1 963 points à broder". The colour count comes from the threads
@@ -255,111 +256,58 @@ export default function Piece() {
         </div>
       )}
 
-      {/* Equal halves. The chart is the reason for the visit, so giving the
-          column it lives in the smaller share contradicted the page's own
-          ordering. */}
-      <div className="grid lg:grid-cols-2 gap-8 mt-8 items-start">
-        {/* Look at it. */}
-        <div className="flex flex-col gap-4">
-          {post.hasPhoto && (
-            <img
-              src={api.photoUrl(post.id)}
-              alt={t.piece.photoAlt(post.title)}
-              className="w-full rounded-card shadow-card object-cover max-h-[460px]"
-            />
-          )}
-          {/* The weave is drawn only once its pitch is known — one square per
-              stitch. Until then it stays plain cloth, which is better than a
-              wrong pitch showing through the motif's bare cells. */}
-          <div
-            className={`${clothPitch > 0 ? "aida" : ""} [--aida-ink:.09] bg-aida rounded-card p-6 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] flex justify-center`}
-            style={clothPitch > 0 ? { ["--aida-size" as string]: `${clothPitch}px` } : undefined}
-          >
-            <canvas
-              ref={canvasRef}
-              role="img"
-              aria-label={t.piece.patternAlt(post.title)}
-              width={pattern.width}
-              height={pattern.height}
-              style={{ imageRendering: "pixelated", width: "100%", maxWidth: 520 }}
-              className="block h-auto rounded-[6px]"
-            />
-          </div>
-          <p className="font-hand text-sm text-sand text-center m-0">{t.piece.patternNote}</p>
+      {/* One column. The photo, then the grid on cloth, and nothing beside them
+          to leave a hole when it runs short. */}
+      <div className="mt-8 flex flex-col items-center gap-4">
+        {post.hasPhoto && (
+          <img
+            src={api.photoUrl(post.id)}
+            alt={t.piece.photoAlt(post.title)}
+            className="w-full max-w-[720px] rounded-card shadow-card object-cover max-h-[460px]"
+          />
+        )}
+        {/* The weave is drawn only once its pitch is known — one square per
+            stitch. Until then it stays plain cloth, which is better than a wrong
+            pitch showing through the motif's bare cells. */}
+        <div
+          className={`${clothPitch > 0 ? "aida" : ""} [--aida-ink:.09] bg-aida rounded-card p-6 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] flex justify-center w-full max-w-[720px]`}
+          style={clothPitch > 0 ? { ["--aida-size" as string]: `${clothPitch}px` } : undefined}
+        >
+          <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label={t.piece.patternAlt(post.title)}
+            width={pattern.width}
+            height={pattern.height}
+            style={{ imageRendering: "pixelated", width: "100%", maxWidth: 560 }}
+            className="block h-auto rounded-[6px]"
+          />
         </div>
+        <p className="font-hand text-sm text-sand text-center m-0">{t.piece.patternNote}</p>
 
-        {/* Take it away. The chart first, because that is what the visit is for;
-            the shopping list second, because it is what you do next. */}
-        <div className="flex flex-col gap-5">
-          <ChartPanel pattern={pattern} onError={() => setDownloadFailed(true)} />
-
-          <div className="@container bg-blanc rounded-card shadow-soft p-5">
-            <div className="flex items-baseline justify-between gap-3 mb-3.5">
-              <h2 className="font-display font-medium text-[17px] m-0">{t.piece.threadsToBuy}</h2>
-              <span className="font-mono text-[12.5px] text-stone">
-                {t.converter.threads.count(pattern.threads.length)}
-              </span>
-            </div>
-            {/* Two columns where there is room, and no inner scrollbar: a nested
-                scroll area hides half a shopping list from anyone who does not
-                know to look for it. The page scrolls instead.
-                A container query, not `sm:` — this card is full-width below the
-                two-column breakpoint and then abruptly narrower above it, so a
-                viewport rule splits it exactly where the room runs out. At 1024
-                that gave each row 124px and truncated "Snow White" to "Snow W…"
-                while "DMC B5200" wrapped onto two lines. */}
-            <ul className="grid @min-[26rem]:grid-cols-2 gap-2 list-none p-0 m-0">
-              {pattern.threads.map((thread, i) => (
-                <li
-                  key={thread.num}
-                  className="flex items-center gap-3 bg-linen rounded-chip px-3 py-2"
-                >
-                  <Bobbin hex={thread.hex} width={22} height={30} radius={6} />
-                  {/* The stitch count rides on the code's line rather than in its
-                      own column, which hands the whole row width to the name.
-                      Beside the count, two columns left about 109px for it and
-                      real DMC names ("Vert Mousse Très Foncé") clipped; the row
-                      is the same height either way. */}
-                  <span className="flex-1 min-w-0">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="text-[13.5px] font-extrabold">DMC {thread.num}</span>
-                      <span className="font-mono text-[11.5px] text-cocoa shrink-0">
-                        {t.piece.stitches(pattern.counts[i])}
-                      </span>
-                    </span>
-                    {/* Wraps rather than truncates. Even with the row width to
-                        itself, the longest name in the chart — "Étoile -
-                        Pistachio Green - Ultra Dark", 37 characters — still
-                        clipped in two columns, and a shopping list that hides
-                        which thread to buy is not a shopping list. A grid row
-                        stretches to its tallest cell, so a second line costs
-                        nothing but height on the one row that needs it. */}
-                    <span className="block text-xs text-stone leading-snug break-words">
-                      {thread.name}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Two things, and the coral one is the chart: taking the pattern is why
+            people come here. Seeing it on a cushion is a nice thought. */}
+        <div className="flex flex-wrap justify-center gap-3 mt-2">
+          <Button onClick={() => setChartOpen(true)}>{t.piece.getChart}</Button>
+          <Button variant="secondary" onClick={() => setProductsOpen(true)}>
+            {t.piece.seeStitched}
+          </Button>
         </div>
       </div>
 
-      {/* Imagine it finished. A hairline, not a slab: the page is one visit, not
-          three pages stacked. */}
-      <div className="border-t border-edge-2 mt-14 pt-12">
-        <ProductPreview pattern={pattern} />
-      </div>
+      <Comments postId={postId} />
 
-      {/* The exit. Secondary, because the coral on this page belongs to the
-          download — someone else's pattern is the thing on offer here. */}
-      <div className="bg-blanc rounded-card-lg shadow-soft mt-14 px-6 py-9 text-center flex flex-col items-center gap-3">
-        <h2 className="text-[22px] sm:text-[25px] m-0">{t.piece.exitTitle}</h2>
-        <p className="text-[16px] text-clay max-w-[46ch] m-0">{t.piece.exitLead}</p>
-        <Button asChild variant="secondary" className="mt-2">
-          <Link to="/convert">{t.piece.makeYourOwn}</Link>
-        </Button>
-      </div>
+      <ChartDialog
+        open={chartOpen}
+        onClose={() => setChartOpen(false)}
+        pattern={pattern}
+        onError={() => setDownloadFailed(true)}
+      />
+      <ProductDialog
+        open={productsOpen}
+        onClose={() => setProductsOpen(false)}
+        pattern={pattern}
+      />
     </div>
   )
 }

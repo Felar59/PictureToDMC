@@ -135,13 +135,12 @@ export const en = {
     backToGallery: "Back to the gallery",
     notFound: "That piece isn't here any more.",
     patternNote: "redrawn from the maker's own grid",
-    makeYourOwn: "Start my own pattern",
     threadsToBuy: "Threads to buy",
     photoAlt: (title: string) => `${title}, stitched`,
     patternAlt: (title: string) => `The grid for ${title}`,
+    getChart: "Get the chart",
+    seeStitched: "See it stitched",
     stitches: (n: number) => `${n} st`,
-    exitTitle: "Fancy a pattern of your own?",
-    exitLead: "Any photo turns into a chart like this one. It takes about a second.",
   },
 
   profile: {
@@ -178,12 +177,27 @@ export const en = {
     skeins: (n: number) => `the chart comes with its DMC shopping list — ${n} skeins for this one`,
   },
 
+  comments: {
+    heading: "What people said",
+    count: (n: number) => (n === 1 ? "1 note" : `${n} notes`),
+    empty: "Nobody has said anything yet. Be the first — makers love hearing it.",
+    placeholder: "Say something kind, or ask how they did it…",
+    send: "Leave a note",
+    sending: "Sending…",
+    signIn: "Sign in to leave a note",
+    deleteAria: "Delete my note",
+    failed: "That note didn't send. Try again.",
+    loading: "Fetching the notes…",
+  },
+
   chart: {
     heading: "Your printable chart",
     preview: "Preview",
     previewHint: "your chart in miniature — the file prints larger and sharper",
     previewFailed: "Draw the preview again — your download works either way.",
     refresh: "Refresh the preview",
+    outlineColor: "Outline colour",
+    threads: (n: number) => (n === 1 ? "1 thread to buy" : `${n} threads to buy`),
   },
 
   gallery: {
@@ -490,14 +504,12 @@ export const fr: Copy = {
     backToGallery: "Retour à la galerie",
     notFound: "Cet ouvrage n'est plus là.",
     patternNote: "redessiné depuis la grille de son auteur",
-    makeYourOwn: "Créer ma grille",
     threadsToBuy: "Fils à acheter",
     photoAlt: (title: string) => `${title}, brodé`,
     patternAlt: (title: string) => `La grille de ${title}`,
+    getChart: "Avoir la grille",
+    seeStitched: "Voir sur un ouvrage",
     stitches: (n: number) => `${n} pts`,
-    exitTitle: "Envie de créer votre grille ?",
-    exitLead:
-        "N'importe quelle photo devient une grille comme celle-ci. Ça prend environ une seconde.",
   },
 
   profile: {
@@ -535,6 +547,19 @@ export const fr: Copy = {
       `la grille est livrée avec sa liste d'achat DMC — ${n} écheveaux pour celle-ci`,
   },
 
+  comments: {
+    heading: "Ce qu'on en dit",
+    count: (n: number) => (n === 1 ? "1 mot" : `${n} mots`),
+    empty: "Personne n'a encore rien dit. Lancez-vous — ça fait toujours plaisir.",
+    placeholder: "Un mot gentil, ou demandez comment c'est fait…",
+    send: "Laisser un mot",
+    sending: "Envoi…",
+    signIn: "Connectez-vous pour laisser un mot",
+    deleteAria: "Supprimer mon mot",
+    failed: "Ce mot n'est pas parti. Réessayez.",
+    loading: "Récupération des mots…",
+  },
+
   chart: {
     heading: "Votre grille imprimable",
     preview: "Aperçu",
@@ -542,6 +567,8 @@ export const fr: Copy = {
     previewFailed:
       "Redessinez l'aperçu — le téléchargement fonctionne dans tous les cas.",
     refresh: "Rafraîchir l'aperçu",
+    outlineColor: "Couleur du liseré",
+    threads: (n: number) => (n === 1 ? "1 fil à acheter" : `${n} fils à acheter`),
   },
 
   gallery: {

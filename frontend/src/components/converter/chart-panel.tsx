@@ -75,6 +75,33 @@ function ToggleRow({
   )
 }
 
+/** Label, hex readout, swatch. Wraps rather than squeezing: the label plus the
+ *  readout plus the swatch does not fit one line at 256px. */
+function ColorRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <label className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+      <span className="text-[15px] font-bold text-bark">{label}</span>
+      <span className="flex items-center gap-2.5">
+        <span className="font-mono text-xs text-stone">{value.toUpperCase()}</span>
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-12 h-9 rounded-[10px] border-[1.5px] border-edge-3 cursor-pointer bg-transparent p-0"
+        />
+      </span>
+    </label>
+  )
+}
+
 export function ChartPanel({
   pattern,
   onError,
@@ -90,10 +117,12 @@ export function ChartPanel({
   // download, not the pattern itself.
   const [outline, setOutline] = useState(false)
   const [backcolor, setBackcolor] = useState("#EBE2D7")
+  const [outlineColor, setOutlineColor] = useState("#141008")
   const [busy, setBusy] = useState(false)
 
   const settledColor = useSettled(backcolor, SETTLE_MS)
-  const stale = settledColor !== backcolor
+  const settledOutline = useSettled(outlineColor, SETTLE_MS)
+  const stale = settledColor !== backcolor || settledOutline !== outlineColor
 
   // Held rather than memoised so the retry button can ask for the same draw
   // again: identity depends only on the inputs that change the chart, so a
@@ -109,6 +138,7 @@ export function ChartPanel({
           grid,
           legend,
           outline,
+          outlineColor: settledOutline,
           background: settledColor,
         }),
       )
@@ -119,7 +149,7 @@ export function ChartPanel({
       setPreview(null)
       setFailed(true)
     }
-  }, [pattern, grid, legend, outline, settledColor])
+  }, [pattern, grid, legend, outline, settledOutline, settledColor])
 
   useEffect(drawPreview, [drawPreview])
 
@@ -144,6 +174,7 @@ export function ChartPanel({
         grid,
         legend,
         outline,
+        outlineColor,
         background: backcolor,
       })
       const blob = await canvasToBlob(canvas)
@@ -165,16 +196,12 @@ export function ChartPanel({
   }
 
   return (
-    // Container queries, not breakpoints: the queried width is about 436px in
-    // the converter's centre column and about 477px in a published piece's
-    // sidebar, and neither follows the viewport.
-    <div className="@container bg-blanc rounded-card shadow-soft p-5 flex flex-col gap-4">
-      {/* A real heading, not a styled div: the chart is the one thing these pages
-          exist to hand over, and it was missing from the outline entirely — the
-          shopping list and the mockups both had an h2 and this did not. It
-          outranks them typographically for the same reason. */}
-      <h2 className="font-display font-medium text-[21px] text-ink m-0">{t.chart.heading}</h2>
-
+    // Container queries, not breakpoints: this sits in the converter's centre
+    // column at about 436px and fills a dialog at about 950px, and neither width
+    // follows the viewport. No card and no heading of its own — the converter
+    // wraps it in a panel, the piece page opens it in a dialog that already has a
+    // title, and a card inside a dialog is one frame too many.
+    <div className="@container flex flex-col gap-4">
       {/* Side by side only in a genuinely wide container. Neither placement today
           reaches 704px, and splitting either would leave the chart about 200px
           across at 4px per stitch: no longer a preview of anything. So they stack
@@ -258,22 +285,22 @@ export function ChartPanel({
             onChange={setOutline}
           />
 
-          {/* Wraps rather than squeezes: "Couleur de fond" plus a hex readout
-              plus the swatch does not fit one line at 256px. */}
-          <label className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-            <span className="text-[15px] font-bold text-bark">
-              {t.converter.download.background}
-            </span>
-            <span className="flex items-center gap-2.5">
-              <span className="font-mono text-xs text-stone">{backcolor.toUpperCase()}</span>
-              <input
-                type="color"
-                value={backcolor}
-                onChange={(e) => setBackcolor(e.target.value)}
-                className="w-12 h-9 rounded-[10px] border-[1.5px] border-edge-3 cursor-pointer bg-transparent p-0"
-              />
-            </span>
-          </label>
+          {/* Only offered once the outline is on. A colour picker for a line that
+              isn't being drawn is a control to read past, and this panel already
+              has five. */}
+          {outline && (
+            <ColorRow
+              label={t.chart.outlineColor}
+              value={outlineColor}
+              onChange={setOutlineColor}
+            />
+          )}
+
+          <ColorRow
+            label={t.converter.download.background}
+            value={backcolor}
+            onChange={setBackcolor}
+          />
 
           <Button size="block" onClick={download} disabled={busy}>
             <DownloadGlyph />
