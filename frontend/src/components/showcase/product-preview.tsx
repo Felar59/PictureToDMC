@@ -155,12 +155,28 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
                     decoding="async"
                     className="absolute inset-0 w-full h-full object-contain rounded-card shadow-soft"
                   />
-                  <Motif
-                    painter={painter}
-                    flatImage={flatImage}
-                    spot={product.spot}
-                    pattern={pattern}
-                  />
+                  {/* Clipped to the cloth. The mask spans the photograph exactly,
+                      because the inner box is the photograph, so whatever the
+                      motif overhangs simply stops at the edge of the object
+                      rather than floating over the scenery behind it. */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      WebkitMaskImage: `url(${product.mask})`,
+                      WebkitMaskSize: "100% 100%",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskImage: `url(${product.mask})`,
+                      maskSize: "100% 100%",
+                      maskRepeat: "no-repeat",
+                    }}
+                  >
+                    <Motif
+                      painter={painter}
+                      flatImage={flatImage}
+                      spot={product.spot}
+                      pattern={pattern}
+                    />
+                  </div>
                 </div>
               </div>
 
