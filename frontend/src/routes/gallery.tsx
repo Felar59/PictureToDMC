@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { BrandMark } from "@/components/brand/logo"
+import { GalleryCard } from "@/community/gallery-card"
 import { useAuth } from "@/community/auth-context"
 import { Button } from "@/components/ui/button"
 import { Pill } from "@/components/ui/pill"
@@ -9,100 +10,6 @@ import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 
 const FILTER_KEYS = ["all", "pets", "portraits", "flowers", "landscapes", "little"] as const
-
-function GalleryCard({
-  post,
-  onLike,
-  onDelete,
-}: {
-  post: api.PostCard
-  onLike: (id: number) => void
-  onDelete: (id: number) => void
-}) {
-  const { t } = useI18n()
-  const { user } = useAuth()
-  const mine = user && (user.id === post.author.id || user.isAdmin)
-
-  return (
-    <article className="bg-blanc rounded-[20px] shadow-card-sm p-3.5 flex flex-col gap-3 transition-shadow hover:shadow-lift">
-      {/* The finished piece if they photographed it, otherwise the pattern. */}
-      {post.hasPhoto ? (
-        <img
-          src={api.photoUrl(post.id)}
-          alt={post.title}
-          loading="lazy"
-          className="w-full h-[230px] object-cover rounded-[14px] bg-linen"
-        />
-      ) : (
-        <img
-          src={api.thumbUrl(post.id)}
-          alt={post.title}
-          loading="lazy"
-          style={{ imageRendering: "pixelated" }}
-          className="w-full h-[230px] object-contain rounded-[14px] bg-aida p-2"
-        />
-      )}
-
-      <div className="px-1 flex items-center gap-2.5">
-        {post.author.avatarUrl ? (
-          <img
-            src={post.author.avatarUrl}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="size-9 rounded-full shrink-0 bg-linen"
-          />
-        ) : (
-          <span className="size-9 rounded-full bg-coral text-blanc grid place-items-center font-display font-semibold shrink-0">
-            {post.author.displayName.slice(0, 1).toUpperCase()}
-          </span>
-        )}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-[16.5px] leading-tight truncate">{post.title}</h3>
-          <div className="text-[13px] text-stone truncate">
-            {t.gallery.by(post.author.displayName)}
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onLike(post.id)}
-          aria-label={t.gallery.likeAria(post.title)}
-          aria-pressed={post.liked}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 shrink-0 cursor-pointer transition-colors ${
-            post.liked ? "bg-coral-wash text-coral-deep" : "bg-linen text-cocoa hover:bg-coral-wash"
-          }`}
-        >
-          <span aria-hidden="true">{post.liked ? "♥" : "♡"}</span>
-          <span className="text-[12.5px] font-extrabold">{post.likeCount}</span>
-        </button>
-      </div>
-
-      <div className="flex gap-1.5 px-1 pb-1 flex-wrap items-center">
-        <span className="text-[11.5px] font-extrabold bg-linen rounded-full px-2.5 py-1 text-cocoa">
-          {t.gallery.stitches(post.width, post.height)}
-        </span>
-        <span className="text-[11.5px] font-extrabold bg-linen rounded-full px-2.5 py-1 text-cocoa">
-          {t.gallery.colors(post.threadCount)}
-        </span>
-        <Link
-          to="/convert"
-          className="text-[11.5px] font-extrabold text-coral-deep bg-coral-wash rounded-full px-2.5 py-1 hover:bg-coral hover:text-blanc transition-colors"
-        >
-          {t.gallery.getPattern}
-        </Link>
-        {mine && (
-          <button
-            type="button"
-            onClick={() => onDelete(post.id)}
-            aria-label={t.gallery.deleteAria(post.title)}
-            className="ml-auto text-[11.5px] font-bold text-stone hover:text-coral-deep cursor-pointer"
-          >
-            ✕
-          </button>
-        )}
-      </div>
-    </article>
-  )
-}
 
 export default function Gallery() {
   const { t } = useI18n()

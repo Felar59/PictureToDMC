@@ -25,6 +25,7 @@ export type PostCard = {
   liked: boolean
   createdAt: number
   hasPhoto: boolean
+  hasThumb: boolean
   author: PublicUser
 }
 

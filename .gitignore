@@ -25,3 +25,4 @@ Thumbs.db
 
 # Local dev database
 .dev-db.sqlite*
+.clean-db.sqlite*

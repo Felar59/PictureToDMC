@@ -14,6 +14,8 @@ import Home from "@/routes/home"
 const Convert = lazy(() => import("@/routes/convert"))
 const Gallery = lazy(() => import("@/routes/gallery"))
 const NotFound = lazy(() => import("@/routes/not-found"))
+const Piece = lazy(() => import("@/routes/piece"))
+const Profile = lazy(() => import("@/routes/profile"))
 
 /** Top of the page on navigation, the anchor when there's a hash. */
 function ScrollManager() {
@@ -51,6 +53,10 @@ export default function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/convert" element={<Convert />} />
                 <Route path="/gallery" element={<Gallery />} />
+                {/* French paths: the audience is French-first, and a
+                    readable URL is part of feeling at home. */}
+                <Route path="/piece/:id" element={<Piece />} />
+                <Route path="/brodeur/:id" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

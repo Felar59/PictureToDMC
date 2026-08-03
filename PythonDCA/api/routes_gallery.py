@@ -59,6 +59,11 @@ def _card(row: sqlite3.Row, liked: bool) -> dict:
         "liked": liked,
         "createdAt": row["created_at"],
         "hasPhoto": row["photo"] is not None if "photo" in row.keys() else bool(row["has_photo"]),
+        # Told rather than discovered: without this the card fires a request
+        # that 404s and the browser paints a broken-image icon.
+        "hasThumb": row["thumb_png"] is not None
+        if "thumb_png" in row.keys()
+        else bool(row["has_thumb"]),
         "author": {
             "id": row["author_id"],
             "displayName": row["display_name"],
@@ -86,6 +91,7 @@ def list_posts(request: Request, category: str = "all", sort: str = "new", page:
         SELECT p.id, p.title, p.category, p.width, p.height, p.thread_codes,
                p.like_count, p.created_at, p.author_id,
                p.photo IS NOT NULL AS has_photo,
+               p.thumb_png IS NOT NULL AS has_thumb,
                u.display_name, u.avatar_url,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id
@@ -279,3 +285,42 @@ def delete_post(post_id: int, request: Request) -> JSONResponse:
 
     connect().execute("DELETE FROM posts WHERE id = ?", (post_id,))
     return JSONResponse({"ok": True})
+
+
+@router.get("/users/{user_id}")
+def get_profile(user_id: int, request: Request) -> JSONResponse:
+    """A member and everything they have published."""
+    viewer = auth.current_user(request)
+    conn = connect()
+
+    who = conn.execute(
+        "SELECT * FROM users WHERE id = ? AND banned_at IS NULL", (user_id,)
+    ).fetchone()
+    if not who:
+        raise HTTPException(404, "No such member")
+
+    rows = conn.execute(
+        """
+        SELECT p.id, p.title, p.category, p.width, p.height, p.thread_codes,
+               p.like_count, p.created_at, p.author_id,
+               p.photo IS NOT NULL AS has_photo,
+               p.thumb_png IS NOT NULL AS has_thumb,
+               u.display_name, u.avatar_url,
+               EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
+        FROM posts p JOIN users u ON u.id = p.author_id
+        WHERE p.author_id = ?
+        ORDER BY p.created_at DESC
+        LIMIT 60
+        """,
+        (viewer["id"] if viewer else -1, user_id),
+    ).fetchall()
+
+    return JSONResponse(
+        {
+            "user": auth.public_user(who),
+            "joinedAt": who["created_at"],
+            "posts": [_card(r, bool(r["liked"])) for r in rows],
+            # Sum of hearts received, which is the number a maker cares about.
+            "totalLikes": sum(r["like_count"] for r in rows),
+        }
+    )

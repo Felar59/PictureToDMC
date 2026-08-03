@@ -131,6 +131,24 @@ export const en = {
     tooBig: "That photo is too heavy, even after shrinking. Try a smaller one.",
   },
 
+  piece: {
+    backToGallery: "Back to the gallery",
+    notFound: "That piece isn't here any more.",
+    patternNote: "redrawn from the maker's own grid",
+    makeYourOwn: "Make one of your own",
+    threads: "Threads used",
+    stitches: (n: number) => `${n} st`,
+  },
+
+  profile: {
+    notFound: "No such member.",
+    joined: (when: string) => `Here since ${when}`,
+    pieces: (n: number) => (n === 1 ? "1 piece" : `${n} pieces`),
+    likes: (n: number) => (n === 1 ? "1 heart" : `${n} hearts`),
+    emptyMine: "You haven't shared anything yet.",
+    emptyTheirs: (who: string) => `${who} hasn't shared anything yet.`,
+  },
+
   gallery: {
     kicker: "made by people like you",
     title: "The stitch gallery",
@@ -148,6 +166,7 @@ export const en = {
     colors: (n: number) => `${n} colors`,
     more: (n: number) => `+${n}`,
     getPattern: "Get this pattern →",
+    noPreview: "no picture yet",
     shareTitle: "Finished a piece?",
     shareBody: "Snap a photo of it in the hoop and add it to the gallery.",
     shareCta: "Share your stitch",
@@ -431,6 +450,24 @@ export const fr: Copy = {
     tooBig: "Cette photo reste trop lourde même réduite. Essayez-en une plus petite.",
   },
 
+  piece: {
+    backToGallery: "Retour à la galerie",
+    notFound: "Cet ouvrage n'est plus là.",
+    patternNote: "redessiné depuis la grille de son auteur",
+    makeYourOwn: "En faire un à moi",
+    threads: "Fils utilisés",
+    stitches: (n: number) => `${n} pts`,
+  },
+
+  profile: {
+    notFound: "Ce membre n'existe pas.",
+    joined: (when: string) => `Ici depuis ${when}`,
+    pieces: (n: number) => (n === 1 ? "1 ouvrage" : `${n} ouvrages`),
+    likes: (n: number) => (n === 1 ? "1 cœur" : `${n} cœurs`),
+    emptyMine: "Vous n'avez rien partagé pour l'instant.",
+    emptyTheirs: (who: string) => `${who} n'a rien partagé pour l'instant.`,
+  },
+
   gallery: {
     kicker: "brodé par des gens comme vous",
     title: "La galerie",
@@ -448,6 +485,7 @@ export const fr: Copy = {
     colors: (n: number) => `${n} couleurs`,
     more: (n: number) => `+${n}`,
     getPattern: "Obtenir cette grille →",
+    noPreview: "pas encore d'image",
     shareTitle: "Un ouvrage terminé ?",
     shareBody: "Prenez-le en photo dans son tambour et ajoutez-le à la galerie.",
     shareCta: "Partager votre broderie",
