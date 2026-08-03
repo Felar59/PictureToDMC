@@ -19,11 +19,17 @@ from . import config
 
 
 class GoogleIdentity(NamedTuple):
+    """What we take from Google, and nothing more.
+
+    No `picture`: members are shown a stitched mark drawn from their id, so the
+    account photo has no reader here. Asking for a face we would never display
+    is a disclosure with no purpose.
+    """
+
     sub: str
     email: str | None
     email_verified: bool
     name: str | None
-    picture: str | None
 
 
 def auth_url(state: str) -> str:
@@ -81,5 +87,4 @@ def exchange_code(code: str) -> GoogleIdentity:
         email=email.lower() if email else None,
         email_verified=claims.get("email_verified") is True,
         name=claims.get("name") or None,
-        picture=claims.get("picture") or None,
     )

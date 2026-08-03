@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 
+import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { findThread } from "@/engine/dmc"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
@@ -72,18 +73,7 @@ export function GalleryCard({
             className="shrink-0"
             aria-label={post.author.displayName}
           >
-            {post.author.avatarUrl ? (
-              <img
-                src={post.author.avatarUrl}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="size-9 rounded-full bg-linen"
-              />
-            ) : (
-              <span className="size-9 rounded-full bg-coral text-blanc grid place-items-center font-display font-semibold">
-                {post.author.displayName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+            <StitchAvatar seed={post.author.id} size={36} />
           </Link>
           <div className="flex-1 min-w-0">
             <Link to={`/piece/${post.id}`} className="block">

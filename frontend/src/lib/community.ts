@@ -8,7 +8,6 @@
 export type PublicUser = {
   id: number
   displayName: string
-  avatarUrl: string | null
 }
 
 export type Me = PublicUser & { email: string | null; isAdmin: boolean }

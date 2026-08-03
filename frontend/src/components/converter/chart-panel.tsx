@@ -40,9 +40,10 @@ const PREVIEW_CELL = 7
 /**
  * A colour input fires continuously while the pointer is down. The chart waits
  * for the hand to settle rather than redrawing a few hundred times across a
- * single drag of the picker.
+ * single drag of the picker. Short, because this is the only thing between
+ * choosing a colour and seeing it.
  */
-const SETTLE_MS = 140
+const SETTLE_MS = 90
 
 function useSettled<T>(value: T, delay: number): T {
   const [settled, setSettled] = useState(value)
@@ -122,7 +123,6 @@ export function ChartPanel({
 
   const settledColor = useSettled(backcolor, SETTLE_MS)
   const settledOutline = useSettled(outlineColor, SETTLE_MS)
-  const stale = settledColor !== backcolor || settledOutline !== outlineColor
 
   // Held rather than memoised so the retry button can ask for the same draw
   // again: identity depends only on the inputs that change the chart, so a
@@ -248,9 +248,13 @@ export function ChartPanel({
                 // sizing would not. The global reduced-motion rule neutralises
                 // the fade.
                 style={{ width: "auto", height: "auto", maxHeight: 560 }}
-                className={`block max-w-full rounded-[4px] transition-opacity duration-200 ${
-                  stale ? "opacity-60" : "opacity-100"
-                }`}
+                // No "redrawing" fade. It used to drop to 60% opacity while a
+                // colour settled, which meant the moment you picked a colour the
+                // chart went pale — so the colour looked wrong and you blamed the
+                // colour. A redraw takes a few milliseconds behind a 90ms
+                // debounce; there is nothing worth signalling, and certainly not
+                // by lying about the very thing being chosen.
+                className="block max-w-full rounded-[4px]"
               />
             )}
           </div>

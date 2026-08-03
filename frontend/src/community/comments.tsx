@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
+import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
@@ -10,9 +11,9 @@ import { useAuth } from "./auth-context"
  * The conversation under a published piece.
  *
  * Reading it needs no account, the way the rest of the gallery doesn't — only
- * writing does. A new note is appended from what the server hands back rather
- * than by refetching the thread, so the box empties and the note appears in one
- * step even on a slow connection.
+ * writing does. A posted comment is appended from what the server hands back
+ * rather than by refetching the thread, so the box empties and the comment
+ * appears in one step even on a slow connection.
  */
 export function Comments({ postId }: { postId: number }) {
   const { t, lang } = useI18n()
@@ -52,7 +53,7 @@ export function Comments({ postId }: { postId: number }) {
   }
 
   const remove = async (id: number) => {
-    // Optimistic: put the note back if the server disagrees.
+    // Optimistic: put it back if the server disagrees.
     const before = comments
     setComments((list) => (list ?? []).filter((c) => c.id !== id))
     try {
@@ -80,14 +81,15 @@ export function Comments({ postId }: { postId: number }) {
         )}
       </div>
 
-      {/* The box comes first: an empty thread is an invitation, not a report. */}
+      {/* The box comes first: on an empty thread the useful thing on screen is
+          the way to write, not the news that nobody has. */}
       {user ? (
         <div className="bg-blanc rounded-card shadow-soft p-4 flex flex-col gap-3">
-          <label className="sr-only" htmlFor="new-note">
+          <label className="sr-only" htmlFor="new-comment">
             {t.comments.placeholder}
           </label>
           <textarea
-            id="new-note"
+            id="new-comment"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={t.comments.placeholder}
@@ -120,7 +122,7 @@ export function Comments({ postId }: { postId: number }) {
       {comments === null ? (
         <p className="text-[15px] text-stone mt-5">{t.comments.loading}</p>
       ) : comments.length === 0 ? (
-        <p className="font-hand text-[15.5px] text-sand mt-5">{t.comments.empty}</p>
+        <p className="text-[15.5px] text-stone mt-5">{t.comments.empty}</p>
       ) : (
         <ul className="list-none p-0 m-0 mt-5 flex flex-col gap-3">
           {comments.map((c) => {
@@ -128,18 +130,7 @@ export function Comments({ postId }: { postId: number }) {
             return (
               <li key={c.id} className="bg-blanc rounded-card shadow-soft p-4 flex gap-3.5">
                 <Link to={`/brodeur/${c.author.id}`} className="shrink-0">
-                  {c.author.avatarUrl ? (
-                    <img
-                      src={c.author.avatarUrl}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      className="size-9 rounded-full bg-linen"
-                    />
-                  ) : (
-                    <span className="size-9 rounded-full bg-coral text-blanc grid place-items-center font-display font-semibold">
-                      {c.author.displayName.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
+                  <StitchAvatar seed={c.author.id} size={36} />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2.5 flex-wrap">

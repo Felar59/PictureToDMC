@@ -178,16 +178,16 @@ export const en = {
   },
 
   comments: {
-    heading: "What people said",
-    count: (n: number) => (n === 1 ? "1 note" : `${n} notes`),
-    empty: "Nobody has said anything yet. Be the first — makers love hearing it.",
-    placeholder: "Say something kind, or ask how they did it…",
-    send: "Leave a note",
-    sending: "Sending…",
-    signIn: "Sign in to leave a note",
-    deleteAria: "Delete my note",
-    failed: "That note didn't send. Try again.",
-    loading: "Fetching the notes…",
+    heading: "Comments",
+    count: (n: number) => (n === 1 ? "1 comment" : `${n} comments`),
+    empty: "No comments yet.",
+    placeholder: "Your comment",
+    send: "Post",
+    sending: "Posting…",
+    signIn: "Sign in to comment.",
+    deleteAria: "Delete this comment",
+    failed: "Your comment wasn't posted. Try again.",
+    loading: "Loading comments…",
   },
 
   chart: {
@@ -548,16 +548,16 @@ export const fr: Copy = {
   },
 
   comments: {
-    heading: "Ce qu'on en dit",
-    count: (n: number) => (n === 1 ? "1 mot" : `${n} mots`),
-    empty: "Personne n'a encore rien dit. Lancez-vous — ça fait toujours plaisir.",
-    placeholder: "Un mot gentil, ou demandez comment c'est fait…",
-    send: "Laisser un mot",
-    sending: "Envoi…",
-    signIn: "Connectez-vous pour laisser un mot",
-    deleteAria: "Supprimer mon mot",
-    failed: "Ce mot n'est pas parti. Réessayez.",
-    loading: "Récupération des mots…",
+    heading: "Commentaires",
+    count: (n: number) => (n === 1 ? "1 commentaire" : `${n} commentaires`),
+    empty: "Aucun commentaire pour le moment.",
+    placeholder: "Votre commentaire",
+    send: "Publier",
+    sending: "Publication…",
+    signIn: "Connectez-vous pour commenter.",
+    deleteAria: "Supprimer ce commentaire",
+    failed: "Votre commentaire n'a pas été publié. Réessayez.",
+    loading: "Chargement des commentaires…",
   },
 
   chart: {

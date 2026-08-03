@@ -72,20 +72,15 @@ def google_callback(request: Request, code: str | None = None, state: str | None
 
     if existing:
         user_id = existing["user_id"]
-        # Keep the name and picture fresh, but never touch `role`.
+        # Keep the name fresh, but never touch `role`.
         conn.execute(
-            "UPDATE users SET display_name = ?, avatar_url = ?, email = ? WHERE id = ?",
-            (
-                identity.name or "Brodeur·se",
-                identity.picture,
-                identity.email,
-                user_id,
-            ),
+            "UPDATE users SET display_name = ?, email = ? WHERE id = ?",
+            (identity.name or "Brodeur·se", identity.email, user_id),
         )
     else:
         cur = conn.execute(
-            "INSERT INTO users (display_name, email, avatar_url, created_at) VALUES (?,?,?,?)",
-            (identity.name or "Brodeur·se", identity.email, identity.picture, now_ms()),
+            "INSERT INTO users (display_name, email, created_at) VALUES (?,?,?)",
+            (identity.name or "Brodeur·se", identity.email, now_ms()),
         )
         user_id = int(cur.lastrowid or 0)
         conn.execute(

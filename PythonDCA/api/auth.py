@@ -66,14 +66,13 @@ def current_user(request: Request) -> Optional[sqlite3.Row]:
 def public_user(row: sqlite3.Row) -> dict:
     """What the client is allowed to know about an account.
 
-    Deliberately narrow: no e-mail, no role, no timestamps. The gallery only
-    needs a name and a face, and anything more would be a needless disclosure
-    on every card.
+    Deliberately narrow: no e-mail, no role, no timestamps, and no picture. The
+    gallery needs a name; the mark beside it is drawn from the id in the browser.
+    Anything more would be a needless disclosure on every card.
     """
     return {
         "id": row["id"],
         "displayName": row["display_name"],
-        "avatarUrl": row["avatar_url"],
     }
 
 

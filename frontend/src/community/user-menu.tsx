@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
+import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useAuth } from "./auth-context"
@@ -58,18 +59,7 @@ export function UserMenu({ className }: { className?: string }) {
         aria-haspopup="menu"
         className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 cursor-pointer transition-colors hover:border-taupe"
       >
-        {user.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="size-7 rounded-full bg-blanc"
-          />
-        ) : (
-          <span className="size-7 rounded-full bg-coral text-blanc grid place-items-center text-xs font-bold">
-            {user.displayName.slice(0, 1).toUpperCase()}
-          </span>
-        )}
+        <StitchAvatar seed={user.id} size={28} />
         <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
           {user.displayName}
         </span>

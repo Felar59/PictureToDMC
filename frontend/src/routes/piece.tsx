@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
+import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { ProductDialog } from "@/components/showcase/product-dialog"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
@@ -184,18 +185,7 @@ export default function Piece() {
               to={`/brodeur/${post.author.id}`}
               className="inline-flex items-center gap-2.5 group shrink-0"
             >
-              {post.author.avatarUrl ? (
-                <img
-                  src={post.author.avatarUrl}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  className="size-9 rounded-full bg-linen"
-                />
-              ) : (
-                <span className="size-9 rounded-full bg-coral text-blanc grid place-items-center font-display font-semibold">
-                  {post.author.displayName.slice(0, 1).toUpperCase()}
-                </span>
-              )}
+              <StitchAvatar seed={post.author.id} size={36} />
               <span className="text-[15.5px] font-bold text-cocoa group-hover:text-coral-deep transition-colors">
                 {t.gallery.by(post.author.displayName)}
               </span>

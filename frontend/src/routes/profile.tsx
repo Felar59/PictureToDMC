@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom"
 
 import { GalleryCard } from "@/community/gallery-card"
 import { useAuth } from "@/community/auth-context"
+import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { Tag } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
@@ -84,18 +85,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20 py-10">
       <header className="flex items-center gap-5 flex-wrap pb-8 border-b-2 border-dashed border-edge-2">
-        {profile.user.avatarUrl ? (
-          <img
-            src={profile.user.avatarUrl}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="size-20 rounded-full bg-linen shadow-soft"
-          />
-        ) : (
-          <span className="size-20 rounded-full bg-coral text-blanc grid place-items-center font-display font-semibold text-3xl">
-            {profile.user.displayName.slice(0, 1).toUpperCase()}
-          </span>
-        )}
+        <StitchAvatar seed={profile.user.id} size={80} className="shadow-soft" />
         <div className="flex-1 min-w-[200px]">
           <h1 className="text-[30px] sm:text-[34px] m-0">{profile.user.displayName}</h1>
           <p className="text-[14.5px] text-stone m-0 mt-1">{t.profile.joined(joined)}</p>

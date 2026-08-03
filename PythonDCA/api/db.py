@@ -131,6 +131,12 @@ def init() -> None:
     conn = connect()
     conn.executescript(SCHEMA)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    # Nothing reads `avatar_url` any more: members are shown a stitched mark
+    # drawn from their id. Holding on to a Google profile photo we never display
+    # would be keeping a face for no reason, so it goes. Matches no rows once it
+    # has run, and the column itself stays — dropping one in SQLite means
+    # rebuilding the table, for nothing.
+    conn.execute("UPDATE users SET avatar_url = NULL WHERE avatar_url IS NOT NULL")
 
 
 def purge_expired_sessions() -> int:
