@@ -140,6 +140,10 @@ export const en = {
     patternAlt: (title: string) => `The grid for ${title}`,
     getChart: "Get the chart",
     seeStitched: "See it stitched",
+    remove: "Delete this piece",
+    removeConfirm: "Delete this piece for good? The chart and the comments go with it.",
+    removing: "Deleting…",
+    removeFailed: "It wasn't deleted. Try again.",
     stitches: (n: number) => `${n} st`,
   },
 
@@ -509,6 +513,11 @@ export const fr: Copy = {
     patternAlt: (title: string) => `La grille de ${title}`,
     getChart: "Avoir la grille",
     seeStitched: "Voir sur un ouvrage",
+    remove: "Supprimer cet ouvrage",
+    removeConfirm:
+      "Supprimer cet ouvrage définitivement ? La grille et les commentaires partent avec.",
+    removing: "Suppression…",
+    removeFailed: "Il n'a pas été supprimé. Réessayez.",
     stitches: (n: number) => `${n} pts`,
   },
 

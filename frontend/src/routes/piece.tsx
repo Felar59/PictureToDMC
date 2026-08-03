@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { ProductDialog } from "@/components/showcase/product-dialog"
@@ -33,6 +33,7 @@ import * as api from "@/lib/community"
 export default function Piece() {
   const { t } = useI18n()
   const { user, signIn } = useAuth()
+  const navigate = useNavigate()
   const { id } = useParams()
   const postId = Number(id)
 
@@ -41,6 +42,8 @@ export default function Piece() {
   const [downloadFailed, setDownloadFailed] = useState(false)
   const [chartOpen, setChartOpen] = useState(false)
   const [productsOpen, setProductsOpen] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [removeFailed, setRemoveFailed] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
@@ -150,9 +153,33 @@ export default function Piece() {
     }
   }
 
+  /**
+   * Delete, for the author or an admin.
+   *
+   * `confirm` rather than a bespoke dialog: this is irreversible and takes the
+   * grid, the photo and the conversation with it, and the browser's own prompt is
+   * the one thing nobody clicks through by accident. The server checks ownership
+   * regardless — the button only decides what to show.
+   */
+  const remove = async () => {
+    if (!post || removing) return
+    if (!window.confirm(t.piece.removeConfirm)) return
+    setRemoving(true)
+    setRemoveFailed(false)
+    try {
+      await api.deletePost(post.id)
+      void navigate("/gallery", { replace: true })
+    } catch {
+      setRemoveFailed(true)
+      setRemoving(false)
+    }
+  }
+
   if (state === "loading") {
     return <p className="text-center text-cocoa py-24">{t.gallery.loading}</p>
   }
+  const mine = Boolean(post && user && (user.id === post.author.id || user.isAdmin))
+
   if (state === "failed" || !post || !pattern) {
     return (
       <div className="text-center py-24 flex flex-col items-center gap-4">
@@ -283,6 +310,27 @@ export default function Piece() {
             {t.piece.seeStitched}
           </Button>
         </div>
+
+        {/* The author's own way out. Set apart from the two things a visitor came
+            for, and quiet: a delete button that looks like an action invites the
+            click it must not get. */}
+        {mine && (
+          <div className="flex flex-col items-center gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => void remove()}
+              disabled={removing}
+              className="text-[13.5px] font-bold text-stone hover:text-coral-deep transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-edge-5"
+            >
+              {removing ? t.piece.removing : t.piece.remove}
+            </button>
+            {removeFailed && (
+              <p role="alert" className="text-[13.5px] text-coral-deeper m-0">
+                {t.piece.removeFailed}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <Comments postId={postId} />

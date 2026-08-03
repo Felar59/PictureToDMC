@@ -3,7 +3,13 @@ import { useEffect, useRef } from "react"
 import { Tag } from "@/components/ui/pill"
 import type { Pattern } from "@/engine/convert"
 import { useI18n } from "@/i18n"
-import { CARD_ASPECT, PRODUCTS, type ProductMock } from "./products"
+import {
+  IMAGE_INSET,
+  PRODUCTS,
+  REFERENCE_STITCHES,
+  SIZE_BOUNDS,
+  type ProductMock,
+} from "./products"
 import { useStitchPainter, type StitchPainter } from "./use-stitch-painter"
 
 /**
@@ -18,26 +24,30 @@ import { useStitchPainter, type StitchPainter } from "./use-stitch-painter"
 /**
  * One product's motif, painted at the size it is actually shown.
  *
- * The canvas measures itself and asks the painter for exactly that many device
- * pixels, so nothing is resampled — the previous version shared one large render
- * across all four, and shrinking a picture made of one-pixel highlights by four
- * times looks like a compression artefact rather than like thread.
+ * The canvas measures itself and asks the painter for that many device pixels;
+ * the painter draws at seven pixels per stitch and resamples down, because at the
+ * sizes these cards use a stitch is two pixels across and cannot be drawn.
  *
- * Sized and placed as a percentage of the photograph, so it tracks the image at
- * every card width. Bare stitches come out transparent from either renderer, so
- * the cloth in the photograph shows through them.
+ * Its width follows the stitch count. `spot.w` is the width for a
+ * REFERENCE_STITCHES-wide pattern, and everything else scales from there: the
+ * fabric count is fixed in reality, so twice the stitches really is twice the
+ * cloth. Bounded at both ends, because a tiny pattern still has to be visible and
+ * a huge one still has to fit on the bag.
+ *
+ * Placed in percentages of the photograph, so it tracks the image at every card
+ * width. Bare stitches come out transparent from either renderer, so the cloth in
+ * the photograph shows through them.
  */
 function Motif({
   painter,
   flatImage,
   spot,
-  ratio,
+  pattern,
 }: {
   painter: StitchPainter | null
   flatImage: ImageData | null
   spot: ProductMock["spot"]
-  /** Pattern width over height. */
-  ratio: number
+  pattern: Pattern
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null)
 
@@ -67,10 +77,15 @@ function Motif({
 
   if (!painter && !flatImage) return null
 
+  const long = Math.max(pattern.width, pattern.height)
+  const scale = Math.min(
+    SIZE_BOUNDS.max,
+    Math.max(SIZE_BOUNDS.min, long / REFERENCE_STITCHES),
+  )
   // The long side takes the allowance and the short side follows, so a portrait
   // pattern never spills past the area the product can carry.
-  const portrait = ratio < 1
-  const width = portrait ? spot.w * ratio : spot.w
+  const portrait = pattern.height > pattern.width
+  const width = spot.w * scale * (portrait ? pattern.width / pattern.height : 1)
 
   return (
     <canvas
@@ -84,7 +99,7 @@ function Motif({
         left: `${spot.x * 100}%`,
         top: `${spot.y * 100}%`,
         width: `${width * 100}%`,
-        transform: "translate(-50%, -50%)",
+        transform: `translate(-50%, -50%) rotate(${spot.rot ?? 0}deg)`,
       }}
       className="block"
     />
@@ -96,7 +111,6 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
 
   // One WebGL context, painting each product at its own size.
   const { painter, flatImage } = useStitchPainter(pattern)
-  const ratio = pattern.width / pattern.height
 
   return (
     <section className="w-full">
@@ -115,25 +129,39 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
           const copy = t.showcase.products[i]
           return (
             <li key={product.key} className="flex flex-col gap-2.5">
-              {/* One aspect for all four, reserved up front, so the row keeps its
-                  shape while the photographs load and the captions below line up. */}
-              <div
-                className="relative overflow-hidden rounded-card shadow-soft bg-linen"
-                style={{ aspectRatio: String(CARD_ASPECT) }}
-              >
-                <img
-                  src={product.src}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <Motif
-                  painter={painter}
-                  flatImage={flatImage}
-                  spot={product.spot}
-                  ratio={ratio}
-                />
+              {/* A square slot with the whole photograph inside it, not filling
+                  it. object-cover kept the four cards level but cut the tote and
+                  the t-shirt down the sides; letterboxing keeps the product whole
+                  at the cost of some empty slot. The slot itself is bare and the
+                  photograph carries the shadow — a card behind a letterboxed image
+                  turns that emptiness into four white slabs, and the row stops
+                  reading as four photographs. The motif is positioned against the
+                  inner box, so its percentages still refer to the picture. */}
+              <div className="relative aspect-square grid place-items-center">
+                <div
+                  className="relative"
+                  style={{
+                    aspectRatio: String(product.aspect),
+                    width: product.aspect >= 1 ? `${IMAGE_INSET * 100}%` : "auto",
+                    height: product.aspect >= 1 ? "auto" : `${IMAGE_INSET * 100}%`,
+                    maxWidth: `${IMAGE_INSET * 100}%`,
+                    maxHeight: `${IMAGE_INSET * 100}%`,
+                  }}
+                >
+                  <img
+                    src={product.src}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-contain rounded-card shadow-soft"
+                  />
+                  <Motif
+                    painter={painter}
+                    flatImage={flatImage}
+                    spot={product.spot}
+                    pattern={pattern}
+                  />
+                </div>
               </div>
 
               <div className="text-center flex flex-col items-center gap-1.5 px-1">
