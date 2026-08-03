@@ -76,8 +76,17 @@ jobs:
               [ "$i" = 30 ] && { echo "app never came up"; sudo journalctl -u picturetodmc -n 40 --no-pager; exit 1; }
               sleep 1
             done
-            # The homepage is static; this proves the DMC chart loaded too.
-            curl -fsS -X POST http://127.0.0.1:8001/add_color \
-              -H 'Content-Type: application/json' -d '{"colorNum":"350"}' | grep -q 'Coral' \
-              && echo "OK  chart loaded, app responding"
+            # There are no API routes any more — the conversion runs in the
+            # browser. So the checks are: the shell is served, a client-side
+            # route falls back to it, and the JS bundle it references exists.
+            curl -fsS http://127.0.0.1:8001/ | grep -q '<div id="root">' \
+              && echo "OK  index.html served"
+            curl -fsS http://127.0.0.1:8001/gallery | grep -q '<div id="root">' \
+              && echo "OK  /gallery falls back to the SPA shell"
+            bundle=$(curl -fsS http://127.0.0.1:8001/ | grep -o '/assets/[^"]*\.js' | head -1)
+            curl -fsS -o /dev/null "http://127.0.0.1:8001$bundle" \
+              && echo "OK  bundle $bundle reachable"
+            # A missing asset must still 404 rather than answer with HTML.
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/assets/does-not-exist.js)
+            [ "$code" = "404" ] && echo "OK  missing asset 404s" || { echo "expected 404, got $code"; exit 1; }
           REMOTE
