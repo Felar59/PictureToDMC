@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
 import { DownloadPanel } from "@/components/converter/download-panel"
@@ -10,64 +10,88 @@ import { Button } from "@/components/ui/button"
 import { FieldLabel, PanelTitle, Readout, SubPanel } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
+import { convert, type Pattern } from "@/engine/convert"
+import { findThread, type Thread } from "@/engine/dmc"
+import { renderHighlight, renderPattern } from "@/engine/render"
+import { clearSession, loadSession, saveSession } from "@/engine/storage"
 import { useI18n } from "@/i18n"
-import {
-  ApiError,
-  fetchWhiteMasks,
-  replaceColor as replaceColorRequest,
-  uploadImage,
-  type DMCColor,
-} from "@/lib/api"
 
 type ErrorKey = keyof ReturnType<typeof useI18n>["t"]["converter"]["errors"]
 
-/** Turn a backend failure into something a stitcher can act on. */
-function classify(err: unknown): ErrorKey {
-  if (err instanceof ApiError) {
-    if (err.kind === "network") return "network"
-    // KMeans refuses when the photo has fewer distinct colors than clusters:
-    // "n_samples=6 should be >= n_clusters=8".
-    if (err.detail?.includes("n_clusters")) return "tooFewColors"
-  }
-  return "generic"
-}
+/** Preview cell size. The chart export uses its own, larger, value. */
+const PREVIEW_CELL = 8
 
 export default function Convert() {
   const { t } = useI18n()
 
   // inputs
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null)
-  const [imageSize, setImageSize] = useState(50)
+  const [stitchWidth, setStitchWidth] = useState(50)
   const [colorCount, setColorCount] = useState(8)
   const [outline, setOutline] = useState(true)
   const [useCustom, setUseCustom] = useState(false)
-  const [customThreads, setCustomThreads] = useState<DMCColor[]>([])
+  const [customThreads, setCustomThreads] = useState<Thread[]>([])
   const [customOpen, setCustomOpen] = useState(false)
 
   // results
-  const [pattern, setPattern] = useState<string | null>(null)
-  const [threads, setThreads] = useState<DMCColor[]>([])
-  const [masks, setMasks] = useState<Record<string, string>>({})
+  const [pattern, setPattern] = useState<Pattern | null>(null)
 
   // ui
   const [busy, setBusy] = useState(false)
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null)
   const [view, setView] = useState<CanvasView>("pattern")
   const [hovered, setHovered] = useState<string | null>(null)
-  const [selected, setSelected] = useState<DMCColor | null>(null)
+  const [selected, setSelected] = useState<Thread | null>(null)
+  const [restored, setRestored] = useState(false)
 
-  /** Picking a photo shows it straight away — the canvas is now the only
-   *  place it appears, so landing on an empty "Pattern" tab would leave no
-   *  confirmation that the file was even read. */
   const handlePhoto = useCallback((next: LoadedPhoto) => {
     setPhoto(next)
     setView("original")
   }, [])
 
   const patternHeight = useMemo(
-    () => (photo && photo.width > 0 ? Math.round((imageSize * photo.height) / photo.width) : null),
-    [photo, imageSize],
+    () =>
+      photo && photo.width > 0 ? Math.round((stitchWidth * photo.height) / photo.width) : null,
+    [photo, stitchWidth],
   )
+
+  /** Bring back whatever was open last time. The pattern itself isn't stored —
+   *  rebuilding it takes about as long as reading it would have. */
+  useEffect(() => {
+    let cancelled = false
+    loadSession().then(async (session) => {
+      if (cancelled || !session) return setRestored(true)
+      try {
+        const url = URL.createObjectURL(session.photo)
+        const probe = new Image()
+        await new Promise<void>((resolve) => {
+          probe.onload = () => resolve()
+          probe.onerror = () => resolve()
+          probe.src = url
+        })
+        if (cancelled) return
+        setPhoto({
+          dataUrl: url,
+          blob: session.photo,
+          width: probe.naturalWidth,
+          height: probe.naturalHeight,
+        })
+        setStitchWidth(session.stitchWidth)
+        setColorCount(session.colorCount)
+        setOutline(session.outline)
+        setUseCustom(session.useCustomPalette)
+        setCustomThreads(
+          session.customThreadNums.map(findThread).filter((x): x is Thread => Boolean(x)),
+        )
+        setView("original")
+      } finally {
+        if (!cancelled) setRestored(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const create = useCallback(async () => {
     if (!photo) return setErrorKey("noImage")
@@ -76,74 +100,81 @@ export default function Convert() {
     setBusy(true)
     setErrorKey(null)
     setPattern(null)
-    setThreads([])
-    setMasks({})
-    // Switch now, not on success: the work is happening on the Pattern tab,
-    // so that's where the loading state belongs. Staying on Original would
-    // show a finished photo while the grid is still being matched.
     setView("pattern")
 
     try {
-      const { image, values } = await uploadImage({
-        image: photo.dataUrl,
+      // Runs here, in this tab. Nothing is uploaded, so two people converting
+      // at once can no longer end up looking at each other's pattern.
+      const next = await convert(photo.blob, {
+        stitchWidth,
         colorCount,
-        imageSize,
-        outline,
-        colors: useCustom ? customThreads : [],
+        palette: useCustom ? customThreads : undefined,
       })
-      setPattern(`data:image/png;base64,${image}`)
-      setThreads(values)
-
-      // Highlight masks are a bonus; losing them must not lose the pattern.
-      try {
-        const { whitemasks } = await fetchWhiteMasks()
-        const next: Record<string, string> = {}
-        for (const v of values) {
-          const b64 = whitemasks[v.num]
-          if (b64) next[v.num] = `data:image/png;base64,${b64}`
-        }
-        setMasks(next)
-      } catch {
-        setMasks({})
-      }
+      setPattern(next)
+      void saveSession({
+        photo: photo.blob,
+        photoName: photo.name ?? "photo",
+        stitchWidth,
+        colorCount,
+        outline,
+        useCustomPalette: useCustom,
+        customThreadNums: customThreads.map((c) => c.num),
+        substitutions: {},
+      })
     } catch (err) {
-      setErrorKey(classify(err))
+      console.error(err)
+      setErrorKey("generic")
     } finally {
       setBusy(false)
     }
-  }, [photo, useCustom, customThreads, colorCount, imageSize, outline])
+  }, [photo, useCustom, customThreads, colorCount, stitchWidth, outline])
 
-  const replace = useCallback(async (from: DMCColor, to: DMCColor) => {
-    try {
-      const { image } = await replaceColorRequest(from, to)
-      setPattern(`data:image/png;base64,${image}`)
-      setThreads((prev) => prev.map((c) => (c.num === from.num ? to : c)))
-      // The old mask still describes the right stitches — it just answers to
-      // a new code now. Rebuilt immutably so React actually re-renders.
-      setMasks((prev) => {
-        if (!(from.num in prev)) return prev
-        const { [from.num]: mask, ...rest } = prev
-        return { ...rest, [to.num]: mask }
-      })
-      setSelected(to)
-    } catch (err) {
-      setErrorKey(classify(err))
-      setSelected(null)
-    }
+  /** Swap one thread for another. A relabel plus a re-render — the stitches
+   *  don't move, so there is nothing to recompute. */
+  const replace = useCallback((from: Thread, to: Thread) => {
+    setPattern((prev) => {
+      if (!prev) return prev
+      const at = prev.threads.findIndex((c) => c.num === from.num)
+      if (at < 0) return prev
+      const threads = [...prev.threads]
+      threads[at] = to
+      return { ...prev, threads }
+    })
+    setSelected(to)
   }, [])
 
   const startOver = () => {
     setPhoto(null)
     setPattern(null)
-    setThreads([])
-    setMasks({})
     setErrorKey(null)
     setSelected(null)
+    void clearSession()
   }
+
+  // Preview and hover overlay, both drawn from the pattern in memory.
+  const previewUrl = useMemo(
+    () => (pattern ? renderPattern(pattern, { cellSize: PREVIEW_CELL }).toDataURL() : null),
+    [pattern],
+  )
+
+  const hoveredIndex = pattern ? pattern.threads.findIndex((c) => c.num === hovered) : -1
+  const maskUrl = useMemo(
+    () =>
+      pattern && hoveredIndex >= 0
+        ? renderHighlight(pattern, hoveredIndex, PREVIEW_CELL).toDataURL()
+        : undefined,
+    [pattern, hoveredIndex],
+  )
+
+  // Revoke the object URL we created for a restored photo.
+  const lastUrl = useRef<string | null>(null)
+  useEffect(() => {
+    if (lastUrl.current && lastUrl.current !== photo?.dataUrl) URL.revokeObjectURL(lastUrl.current)
+    lastUrl.current = photo?.dataUrl?.startsWith("blob:") ? photo.dataUrl : null
+  }, [photo])
 
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-10 py-10">
-      {/* ---------------- page head ---------------- */}
       <div className="flex items-end justify-between gap-4 flex-wrap mb-7">
         <div>
           <h1 className="text-[30px] sm:text-[34px] m-0">{t.converter.title}</h1>
@@ -172,24 +203,19 @@ export default function Convert() {
         </div>
       )}
 
-      {/* ---------------- the workbench ----------------
-          settings left, fabric centre, threads right — the same spatial
-          logic as a real craft table. */}
       <div className="grid gap-7 lg:grid-cols-[296px_1fr] xl:grid-cols-[296px_1fr_312px]">
-        {/* left: controls. Size and colour used to be two panels, but both
-            answer the same question — how the pattern comes out — so the
-            split was chrome, not structure. */}
+        {/* left: controls */}
         <div className="flex flex-col gap-4">
           <SubPanel>
             <PanelTitle className="mb-4">{t.converter.settings.heading}</PanelTitle>
 
             <div className="flex justify-between items-baseline mb-2">
               <FieldLabel>{t.converter.size.stitchesWide}</FieldLabel>
-              <Readout>{imageSize}</Readout>
+              <Readout>{stitchWidth}</Readout>
             </div>
             <Slider
-              value={[imageSize]}
-              onValueChange={([v]) => setImageSize(v)}
+              value={[stitchWidth]}
+              onValueChange={([v]) => setStitchWidth(v)}
               min={20}
               max={200}
               step={2}
@@ -231,7 +257,7 @@ export default function Convert() {
 
             <p className="bg-linen rounded-[12px] px-3.5 py-2.5 text-[13.5px] text-clay m-0 mt-4">
               {patternHeight
-                ? t.converter.size.note(imageSize, patternHeight)
+                ? t.converter.size.note(stitchWidth, patternHeight)
                 : t.converter.size.unknown}
             </p>
           </SubPanel>
@@ -261,15 +287,13 @@ export default function Convert() {
           </Button>
         </div>
 
-        {/* centre: the cloth, and getting it off the screen. Download lives
-            under the pattern it downloads — see it, then take it — which also
-            evens the three columns out instead of stranding this one short. */}
+        {/* centre: the cloth */}
         <div className="flex flex-col gap-6 lg:border-x-2 lg:border-dashed lg:border-edge-2 lg:px-7">
           {photo ? (
             <PatternCanvas
-              pattern={pattern}
+              pattern={previewUrl}
               original={photo.dataUrl}
-              maskSrc={hovered ? masks[hovered] : undefined}
+              maskSrc={maskUrl}
               view={view}
               onViewChange={setView}
               busy={busy}
@@ -280,17 +304,23 @@ export default function Convert() {
             <div className="flex flex-col gap-4">
               <PhotoDropzone onPhoto={handlePhoto} />
               <p className="font-hand text-sm text-sand text-center m-0">
-                {t.converter.canvas.note}
+                {restored ? t.converter.canvas.note : t.converter.canvas.building}
               </p>
             </div>
           )}
 
-          {threads.length > 0 && <DownloadPanel onError={(k) => setErrorKey(k as ErrorKey)} />}
+          {pattern && pattern.threads.length > 0 && (
+            <DownloadPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
+          )}
         </div>
 
         {/* right: the thread drawer */}
         <div className="lg:col-span-2 xl:col-span-1">
-          <ThreadList threads={threads} onSelect={setSelected} onHover={setHovered} />
+          <ThreadList
+            threads={pattern?.threads ?? []}
+            onSelect={setSelected}
+            onHover={setHovered}
+          />
         </div>
       </div>
 
@@ -305,7 +335,7 @@ export default function Convert() {
 
       <ThreadDetailDialog
         thread={selected}
-        threads={threads}
+        threads={pattern?.threads ?? []}
         onClose={() => setSelected(null)}
         onReplace={replace}
       />

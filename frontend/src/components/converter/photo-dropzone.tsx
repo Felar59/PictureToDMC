@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 
-export type LoadedPhoto = { dataUrl: string; width: number; height: number }
+export type LoadedPhoto = {
+  /** For <img src>. An object URL when restored from storage, a data URL when
+   *  freshly picked. */
+  dataUrl: string
+  /** The original file. The engine converts from this, and it is what gets
+   *  stored in IndexedDB — re-encoding through a data URL would be lossy. */
+  blob: Blob
+  name?: string
+  width: number
+  height: number
+}
 
 /**
  * Read a picked file into a data URL, measuring it on the way through: the
@@ -19,8 +29,10 @@ function readPhoto(file: File, onPhoto: (photo: LoadedPhoto) => void) {
     const dataUrl = e.target?.result
     if (typeof dataUrl !== "string") return
     const img = new Image()
-    img.onload = () => onPhoto({ dataUrl, width: img.naturalWidth, height: img.naturalHeight })
-    img.onerror = () => onPhoto({ dataUrl, width: 0, height: 0 })
+    const done = (width: number, height: number) =>
+      onPhoto({ dataUrl, blob: file, name: file.name, width, height })
+    img.onload = () => done(img.naturalWidth, img.naturalHeight)
+    img.onerror = () => done(0, 0)
     img.src = dataUrl
   }
   reader.readAsDataURL(file)

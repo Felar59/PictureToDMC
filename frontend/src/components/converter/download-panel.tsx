@@ -4,8 +4,9 @@ import { DownloadGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { PanelTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import type { Pattern } from "@/engine/convert"
+import { canvasToBlob, renderChart } from "@/engine/render"
 import { useI18n } from "@/i18n"
-import { ApiError, downloadChart } from "@/lib/api"
 
 function ToggleRow({
   label,
@@ -29,7 +30,13 @@ function ToggleRow({
   )
 }
 
-export function DownloadPanel({ onError }: { onError: (message: string) => void }) {
+export function DownloadPanel({
+  pattern,
+  onError,
+}: {
+  pattern: Pattern
+  onError: (key: string) => void
+}) {
   const { t } = useI18n()
   const [grid, setGrid] = useState(true)
   const [legend, setLegend] = useState(true)
@@ -39,7 +46,15 @@ export function DownloadPanel({ onError }: { onError: (message: string) => void 
   const download = async () => {
     setBusy(true)
     try {
-      const blob = await downloadChart({ grid, legend, backcolor })
+      // Drawn here and now. No upload, no server-side state to get confused
+      // about whose pattern this is.
+      const canvas = renderChart(pattern, {
+        cellSize: 14,
+        grid,
+        legend,
+        background: backcolor,
+      })
+      const blob = await canvasToBlob(canvas)
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
@@ -48,8 +63,8 @@ export function DownloadPanel({ onError }: { onError: (message: string) => void 
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-    } catch (err) {
-      onError(err instanceof ApiError && err.kind === "network" ? "network" : "download")
+    } catch {
+      onError("download")
     } finally {
       setBusy(false)
     }

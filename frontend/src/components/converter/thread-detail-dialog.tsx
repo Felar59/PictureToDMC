@@ -3,8 +3,8 @@ import { useEffect, useState } from "react"
 import { Bobbin } from "@/components/brand/bobbin"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
+import { findThread, nearestThreads, type Thread } from "@/engine/dmc"
 import { useI18n } from "@/i18n"
-import { NOT_FOUND_NAME, addColor, findAlternatives, type DMCColor } from "@/lib/api"
 
 export function ThreadDetailDialog({
   thread,
@@ -12,16 +12,15 @@ export function ThreadDetailDialog({
   onClose,
   onReplace,
 }: {
-  thread: DMCColor | null
-  threads: DMCColor[]
+  thread: Thread | null
+  threads: Thread[]
   onClose: () => void
-  onReplace: (from: DMCColor, to: DMCColor) => void
+  onReplace: (from: Thread, to: Thread) => void
 }) {
   const { t } = useI18n()
-  const [alternatives, setAlternatives] = useState<DMCColor[]>([])
+  const [alternatives, setAlternatives] = useState<Thread[]>([])
   const [showInput, setShowInput] = useState(false)
   const [code, setCode] = useState("")
-  const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   // A different thread means different suggestions.
@@ -34,46 +33,32 @@ export function ThreadDetailDialog({
 
   if (!thread) return null
 
-  const suggest = async () => {
-    setBusy(true)
+  /** Closest shades in Lab, skipping anything already on the palette.
+   *  Used to be a POST; the chart lives in the bundle now, so it is instant. */
+  const suggest = () => {
     setNotice(null)
-    try {
-      const { new_colors } = await findAlternatives(threads, thread)
-      setAlternatives(new_colors)
-    } catch {
-      setNotice(t.converter.errors.generic)
-    } finally {
-      setBusy(false)
-    }
+    setAlternatives(nearestThreads(thread.lab, 3, threads.map((c) => c.num)))
   }
 
-  const lookup = async () => {
+  const lookup = () => {
     const wanted = code.trim()
     if (!wanted) return
-    setBusy(true)
     setNotice(null)
-    try {
-      const { add_color } = await addColor(wanted)
-      if (add_color.name === NOT_FOUND_NAME) {
-        setNotice(t.converter.custom.notFound)
-      } else if (threads.some((c) => c.num === add_color.num)) {
-        setNotice(t.converter.custom.already)
-      } else {
-        setAlternatives((prev) => [...prev, add_color].slice(-3))
-        setCode("")
-        setShowInput(false)
-      }
-    } catch {
-      setNotice(t.converter.errors.generic)
-    } finally {
-      setBusy(false)
+    const found = findThread(wanted)
+    if (!found) {
+      setNotice(t.converter.custom.notFound)
+    } else if (threads.some((c) => c.num === found.num)) {
+      setNotice(t.converter.custom.already)
+    } else {
+      setAlternatives((prev) => [...prev, found].slice(-3))
+      setCode("")
+      setShowInput(false)
     }
   }
 
   return (
     <Dialog open onClose={onClose} title={t.converter.detail.title} className="max-w-2xl">
       <div className="flex flex-col gap-6">
-        {/* the thread itself */}
         <div className="flex items-center gap-4">
           <Bobbin hex={thread.hex} width={54} height={72} radius={12} className="bobbin" />
           <div className="flex-1 min-w-0">
@@ -131,7 +116,7 @@ export function ThreadDetailDialog({
                 placeholder="702"
                 className="flex-1 min-w-[140px] text-base bg-linen border-[1.5px] border-edge-3 rounded-[14px] px-4 py-3 outline-none transition-colors focus:border-coral focus:bg-blanc"
               />
-              <Button size="sm" onClick={lookup} disabled={busy}>
+              <Button size="sm" onClick={lookup}>
                 {t.converter.custom.validate}
               </Button>
               <Button
@@ -155,7 +140,7 @@ export function ThreadDetailDialog({
         )}
 
         <div className="flex gap-3 flex-wrap">
-          <Button className="flex-1 min-w-[200px]" onClick={suggest} disabled={busy}>
+          <Button className="flex-1 min-w-[200px]" onClick={suggest}>
             {t.converter.detail.findSimilar}
           </Button>
           <Button

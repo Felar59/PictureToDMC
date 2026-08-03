@@ -20,7 +20,8 @@ Pixel Embroidery Converter is a web application that transforms any image into a
 ## Tech Stack
 
 - **Frontend**: React 19 + React Router + TailwindCSS 4 (Vite)
-- **Backend**: Python / FastAPI (image processing and DMC matching)
+- **Conversion**: runs entirely in the browser (`frontend/src/engine/`) — quantisation, DMC matching, rendering and chart export. No upload, no server CPU.
+- **Backend**: Python / FastAPI, static file server only
 
 ---
 

@@ -1,17 +1,9 @@
-# Direct dependencies only — pip resolves the rest.
+# The server only serves the built frontend now — the conversion runs in the
+# browser (frontend/src/engine/). numpy, pandas, scikit-learn, Pillow and
+# openpyxl are gone with the API routes that needed them.
 #
-# The previous file was a `pip freeze` of a shared virtualenv and dragged in
-# mido, pretty_midi, scikit-image, imageio, tifffile, networkx and xlrd, none
-# of which this project imports. They are gone.
-#
-# Verified together on Python 3.13. Pillow stays on 11.3.0: the README
-# documents a crash in contouring() on 12.x, and prod is not the place to
-# find out whether that still reproduces.
+# The DMC chart is generated into the bundle by scripts/export-dmc.py, which
+# needs openpyxl — but that runs on a developer machine, never in production.
 
 fastapi==0.116.1
 uvicorn[standard]==0.23.2
-pillow==11.3.0
-numpy==2.2.5
-pandas==2.3.2
-openpyxl==3.1.5
-scikit-learn==1.7.1

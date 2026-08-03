@@ -1,7 +1,7 @@
 import { Bobbin } from "@/components/brand/bobbin"
 import { ColorWheel } from "@/components/brand/icons"
 import { useI18n } from "@/i18n"
-import type { DMCColor } from "@/lib/api"
+import type { Thread } from "@/engine/dmc"
 
 /** Rows that fit in the drawer before it starts scrolling (max-h / row height). */
 const VISIBLE_ROWS = 7
@@ -20,8 +20,8 @@ export function ThreadList({
   onSelect,
   onHover,
 }: {
-  threads: DMCColor[]
-  onSelect: (t: DMCColor) => void
+  threads: Thread[]
+  onSelect: (t: Thread) => void
   onHover: (num: string | null) => void
 }) {
   const { t } = useI18n()

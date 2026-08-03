@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { useI18n } from "@/i18n"
-import { NOT_FOUND_NAME, addColor, type DMCColor } from "@/lib/api"
+import { findThread, type Thread } from "@/engine/dmc"
 
 /** "123, 16,186" and "123,16, 186" must both work. */
 function parseCodes(input: string): string[] {
@@ -27,16 +27,15 @@ export function CustomThreadsDialog({
   onClose: () => void
   enabled: boolean
   onEnabledChange: (v: boolean) => void
-  threads: DMCColor[]
-  onThreadsChange: (next: DMCColor[]) => void
+  threads: Thread[]
+  onThreadsChange: (next: Thread[]) => void
 }) {
   const { t } = useI18n()
   const [mode, setMode] = useState<"add" | "remove" | null>(null)
   const [input, setInput] = useState("")
-  const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
-  const submit = async () => {
+  const submit = () => {
     const codes = parseCodes(input)
     if (codes.length === 0) return
 
@@ -47,38 +46,22 @@ export function CustomThreadsDialog({
       return
     }
 
-    setBusy(true)
     setNotice(null)
 
-    // Resolve every code before touching state, so N concurrent responses
-    // can't race each other into the list.
-    const results = await Promise.all(
-      codes.map(async (code) => {
-        try {
-          const { add_color } = await addColor(code)
-          return add_color
-        } catch {
-          return null
-        }
-      }),
-    )
-
+    // The whole chart is in the bundle, so this is a Map lookup rather than
+    // one HTTP request per code.
     const next = [...threads]
     let missing = 0
     let duplicate = 0
 
-    for (const color of results) {
-      if (!color || color.name === NOT_FOUND_NAME) {
-        missing++
-      } else if (next.some((c) => c.num === color.num)) {
-        duplicate++
-      } else {
-        next.push(color)
-      }
+    for (const code of codes) {
+      const thread = findThread(code)
+      if (!thread) missing++
+      else if (next.some((c) => c.num === thread.num)) duplicate++
+      else next.push(thread)
     }
 
     onThreadsChange(next)
-    setBusy(false)
     setInput("")
     if (missing > 0) setNotice(t.converter.custom.notFound)
     else if (duplicate > 0) setNotice(t.converter.custom.already)
@@ -143,7 +126,7 @@ export function CustomThreadsDialog({
                   mode === "add" ? "border-edge-3 focus:border-coral" : "border-coral-edge focus:border-coral-deep"
                 }`}
               />
-              <Button size="sm" onClick={submit} disabled={busy}>
+              <Button size="sm" onClick={submit}>
                 {t.converter.custom.validate}
               </Button>
               <Button
