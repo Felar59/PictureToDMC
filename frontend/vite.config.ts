@@ -3,8 +3,10 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react-swc"
 import { defineConfig } from "vite"
 
-// Routes servies par le backend FastAPI (PythonDCA/main.py)
-const API_ROUTES = ["/upload", "/white_mask", "/download", "/new_color", "/add_color", "/replace"]
+// Le backend FastAPI (PythonDCA/main.py) ne sert plus qu'un seul prefixe : la
+// conversion tourne dans le navigateur, il ne reste que les comptes et la
+// galerie. Les anciennes routes (/upload, /add_color, ...) n'existent plus.
+const API_ROUTES = ["/api"]
 
 const BACKEND = process.env.VITE_BACKEND_URL ?? "http://localhost:10000"
 

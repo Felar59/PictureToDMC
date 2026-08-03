@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { PixelGrid } from "@/components/brand/pixel-grid"
 import type { Pattern } from "@/engine/convert"
-import { highlightImageData, patternImageData } from "@/engine/render"
+import { isolateImageData, patternImageData } from "@/engine/render"
 import { useI18n } from "@/i18n"
 import { BERRY_COLS, berry } from "@/lib/pixel-art"
 import { cn } from "@/lib/utils"
@@ -101,8 +101,8 @@ export function PatternCanvas({
   // One pixel per stitch; CSS does the enlarging. Recomputed only when the
   // pattern or the hovered thread actually changes.
   const patternRef = useImageData(pattern ? patternImageData(pattern) : null)
-  const highlightRef = useImageData(
-    pattern && highlightIndex >= 0 ? highlightImageData(pattern, highlightIndex) : null,
+  const veilRef = useImageData(
+    pattern && highlightIndex >= 0 ? isolateImageData(pattern, highlightIndex) : null,
   )
 
   const showPattern = view === "pattern" && pattern
@@ -143,12 +143,16 @@ export function PatternCanvas({
                 style={{ imageRendering: "pixelated", width: boxW, height: boxH }}
                 className="block rounded-[6px]"
               />
+              {/* Keyed on the thread so the veil settles in again each time the
+                  hover moves — without it the entrance plays once and later
+                  threads appear abruptly. */}
               {highlightIndex >= 0 && (
                 <canvas
-                  ref={highlightRef}
+                  key={highlightIndex}
+                  ref={veilRef}
                   aria-hidden="true"
                   style={{ imageRendering: "pixelated", width: boxW, height: boxH }}
-                  className="absolute inset-0 rounded-[6px] pointer-events-none mix-blend-lighten animate-mask-glow"
+                  className="absolute inset-0 rounded-[6px] pointer-events-none animate-veil"
                 />
               )}
             </div>

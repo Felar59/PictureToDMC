@@ -137,7 +137,10 @@ export const en = {
     patternNote: "redrawn from the maker's own grid",
     makeYourOwn: "Make one of your own",
     threads: "Threads used",
+    threadsToBuy: "Threads to buy",
     stitches: (n: number) => `${n} st`,
+    exitTitle: "Fancy one of your own?",
+    exitLead: "Any photo turns into a chart like this one. It takes about a second.",
   },
 
   profile: {
@@ -147,6 +150,42 @@ export const en = {
     likes: (n: number) => (n === 1 ? "1 heart" : `${n} hearts`),
     emptyMine: "You haven't shared anything yet.",
     emptyTheirs: (who: string) => `${who} hasn't shared anything yet.`,
+  },
+
+  showcase: {
+    kicker: "your pattern is ready ✓",
+    kickerShared: "once it's on cloth",
+    title: "Now, where will it live?",
+    lead: "A little preview of your finished piece on things stitchers love to make. Just for inspiration — your chart works for all of them.",
+    products: [
+      {
+        name: "Embroidery hoop",
+        tip: "The classic — stitch it, keep it in the hoop, hang it up.",
+        fabric: "14-count aida",
+      },
+      {
+        name: "Tote bag",
+        tip: "Stitched on waste canvas, then worn everywhere.",
+        fabric: "waste canvas",
+      },
+      {
+        name: "T-shirt",
+        tip: "A small motif over the chest — subtle and lovely.",
+        fabric: "waste canvas",
+      },
+      { name: "Cushion", tip: "The cosy big project for the sofa.", fabric: "11-count aida" },
+    ],
+    skeins: (n: number) => `the chart includes your DMC shopping list — ${n} skeins for this one`,
+    open: "See it stitched",
+    close: "Back to editing",
+  },
+
+  chart: {
+    heading: "Your printable chart",
+    preview: "Preview",
+    previewHint: "exactly what the PNG will look like",
+    previewFailed: "There wasn't enough memory to draw the preview. Downloading still works.",
+    refresh: "Refresh the preview",
   },
 
   gallery: {
@@ -456,7 +495,11 @@ export const fr: Copy = {
     patternNote: "redessiné depuis la grille de son auteur",
     makeYourOwn: "En faire un à moi",
     threads: "Fils utilisés",
+    threadsToBuy: "Fils à acheter",
     stitches: (n: number) => `${n} pts`,
+    exitTitle: "Envie de la vôtre ?",
+    exitLead:
+        "N'importe quelle photo devient une grille comme celle-ci. Ça prend environ une seconde.",
   },
 
   profile: {
@@ -466,6 +509,44 @@ export const fr: Copy = {
     likes: (n: number) => (n === 1 ? "1 cœur" : `${n} cœurs`),
     emptyMine: "Vous n'avez rien partagé pour l'instant.",
     emptyTheirs: (who: string) => `${who} n'a rien partagé pour l'instant.`,
+  },
+
+  showcase: {
+    kicker: "votre grille est prête ✓",
+    kickerShared: "une fois sur le tissu",
+    title: "Et maintenant, elle vivra où ?",
+    lead: "Un aperçu de votre ouvrage terminé sur ce que les brodeuses aiment faire. Juste pour l'inspiration — votre grille marche pour tous.",
+    products: [
+      {
+        name: "Tambour à broder",
+        tip: "Le classique — on brode, on laisse dans le tambour, on accroche.",
+        fabric: "aida 14 fils",
+      },
+      {
+        name: "Tote bag",
+        tip: "Brodé sur canevas soluble, puis porté partout.",
+        fabric: "canevas soluble",
+      },
+      {
+        name: "T-shirt",
+        tip: "Un petit motif sur la poitrine — discret et joli.",
+        fabric: "canevas soluble",
+      },
+      { name: "Coussin", tip: "Le grand projet douillet pour le canapé.", fabric: "aida 11 fils" },
+    ],
+    skeins: (n: number) =>
+      `la grille inclut votre liste d'achat DMC — ${n} écheveaux pour celle-ci`,
+    open: "Voir sur un ouvrage",
+    close: "Retour aux réglages",
+  },
+
+  chart: {
+    heading: "Votre grille imprimable",
+    preview: "Aperçu",
+    previewHint: "exactement ce à quoi ressemblera le PNG",
+    previewFailed:
+      "Pas assez de mémoire pour dessiner l'aperçu. Le téléchargement fonctionne quand même.",
+    refresh: "Rafraîchir l'aperçu",
   },
 
   gallery: {

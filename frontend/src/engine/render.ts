@@ -53,22 +53,97 @@ export function patternImageData(pattern: Pattern): ImageData {
 }
 
 /**
- * White where a given thread is stitched, transparent everywhere else.
- *
- * The old build had the server render one full-size PNG per thread and base64
- * them all into a single JSON response — megabytes, downloaded whether or not
- * anyone ever hovered. This is one pass over the grid, on demand.
+ * Three sub-pixels per stitch, so the keyline below can be drawn a third of a
+ * stitch thick instead of a whole one. Small enough that the overlay stays a
+ * fraction of a megabyte even for a large grid.
  */
-export function highlightImageData(pattern: Pattern, threadIndex: number): ImageData {
-  const image = new ImageData(pattern.width, pattern.height)
+const ISOLATE_SCALE = 3
+/**
+ * The veil pulls the other threads back towards bare cloth — but a shade darker
+ * than the cloth itself (--color-aida is #EDE3D0). Matching the cloth exactly
+ * looked tidier and was worse: DMC Blanc, Ecru and 3866 are all within a few
+ * points of aida, so the one colour being pointed at came out the same tone as
+ * everything around it. A step down means every pale thread reads as lighter
+ * than its surroundings, and dark threads still read as darker.
+ */
+const VEIL = [0xe4, 0xda, 0xc6] as const
+const VEIL_ALPHA = 208
+/** --color-ink, for the keyline. */
+const KEYLINE = [0x33, 0x26, 0x1a] as const
+const KEYLINE_ALPHA = 235
+
+/**
+ * Isolate one thread: veil every *other* stitch and trace the run of this one.
+ *
+ * The obvious version of this — paint the matching stitches white and blend
+ * them over the pattern — cannot work, because the answer depends on the very
+ * colour it is trying to point at. Lighten a white thread with white and
+ * nothing happens; DMC B5200 and Blanc simply vanished, which is exactly the
+ * threads a stitcher most needs to locate, since they are also the hardest to
+ * pick out of the grid unaided.
+ *
+ * So this inverts the question. The hovered thread is left completely untouched
+ * and everything around it recedes — legible for white, for black, and for
+ * every shade between, because the highlighted colour is never composited with
+ * anything. Bare fabric is left alone too: it is already not the thread, and
+ * veiling it would erase the silhouette that gives the shape its context.
+ *
+ * The keyline is what makes a scattered thread findable. A dozen single
+ * stitches of pale grey read as noise however the rest is dimmed; outlined,
+ * they read as a dozen marks. It follows only the edges facing something else,
+ * so a solid block gets one border rather than a grid of them.
+ */
+export function isolateImageData(pattern: Pattern, threadIndex: number): ImageData {
+  const scale = ISOLATE_SCALE
+  const { width, height, cells } = pattern
+  const image = new ImageData(width * scale, height * scale)
   const out = image.data
-  for (let i = 0; i < pattern.cells.length; i++) {
-    if (pattern.cells[i] !== threadIndex) continue
-    out[i * 4] = 255
-    out[i * 4 + 1] = 255
-    out[i * 4 + 2] = 255
-    out[i * 4 + 3] = 255
+  const stride = width * scale * 4
+
+  const mine = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < width && y < height && cells[y * width + x] === threadIndex
+
+  const paint = (px: number, py: number, rgb: readonly number[], alpha: number) => {
+    const o = py * stride + px * 4
+    out[o] = rgb[0]
+    out[o + 1] = rgb[1]
+    out[o + 2] = rgb[2]
+    out[o + 3] = alpha
   }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const cell = cells[y * width + x]
+
+      if (cell !== threadIndex) {
+        if (cell < 0) continue // bare cloth, already not the thread
+        for (let dy = 0; dy < scale; dy++) {
+          for (let dx = 0; dx < scale; dx++) paint(x * scale + dx, y * scale + dy, VEIL, VEIL_ALPHA)
+        }
+        continue
+      }
+
+      // Matching cell: interior stays transparent so the thread shows through
+      // at its true colour. Only the outward-facing edges get ink.
+      const top = !mine(x, y - 1)
+      const bottom = !mine(x, y + 1)
+      const left = !mine(x - 1, y)
+      const right = !mine(x + 1, y)
+      if (!top && !bottom && !left && !right) continue
+
+      for (let dy = 0; dy < scale; dy++) {
+        for (let dx = 0; dx < scale; dx++) {
+          const edge =
+            (top && dy === 0) ||
+            (bottom && dy === scale - 1) ||
+            (left && dx === 0) ||
+            (right && dx === scale - 1)
+          if (edge) paint(x * scale + dx, y * scale + dy, KEYLINE, KEYLINE_ALPHA)
+        }
+      }
+    }
+  }
+
   return image
 }
 
