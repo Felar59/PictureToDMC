@@ -87,6 +87,26 @@ fi
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_ROOT"
 echo "  $APP_ROOT owned by $DEPLOY_USER"
 
+say "Database directory"
+# The SQLite file lives outside /var/www so a deploy's rsync --delete can never
+# reach it.
+install -d -o "$DEPLOY_USER" -g "$DEPLOY_USER" -m 750 /var/lib/$APP
+echo "  /var/lib/$APP ready"
+
+if [ ! -s /etc/$APP.env ]; then
+    cat > /etc/$APP.env <<'ENVEOF'
+# Fill these in, then: systemctl restart picturetodmc
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+PUBLIC_ORIGIN=https://164-132-99-194.sslip.io
+ENVEOF
+    chown root:"$DEPLOY_USER" /etc/$APP.env
+    chmod 640 /etc/$APP.env
+    echo "  /etc/$APP.env created — add the Google credentials"
+else
+    echo "  /etc/$APP.env already present, left alone"
+fi
+
 say "systemd service"
 install -m 644 "$SRC/$APP.service" "/etc/systemd/system/$APP.service"
 systemctl daemon-reload

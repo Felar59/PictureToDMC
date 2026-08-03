@@ -1,16 +1,13 @@
-"""Static file server for the built frontend.
+"""The server: a community API, plus the built frontend as static files.
 
-That is now the whole job. The conversion — quantisation, DMC matching,
-rendering, chart export — runs in the browser (frontend/src/engine/), so there
-are no API routes left and no per-user state on the server.
+The conversion itself does NOT live here — quantisation, DMC matching, rendering
+and chart export all run in the browser (frontend/src/engine/). This process only
+handles the things that genuinely need a server: who you are, and what everyone
+has published.
 
-Removing them fixed a real bug rather than just moving code around: the old
-build kept the active conversion in a module-level global, so any two people
-converting at the same time shared one pattern. Whoever pressed Download last
-got whoever pressed Update last.
-
-Gone with it: numpy, pandas, scikit-learn, Pillow and openpyxl. The DMC chart
-is generated into the bundle by scripts/export-dmc.py.
+That split is deliberate. The old build kept the active conversion in a
+module-level global, so two people converting at once shared one pattern.
+Nothing stateful about a conversion reaches this process any more.
 """
 
 import os
@@ -22,13 +19,15 @@ from starlette.exceptions import HTTPException
 from starlette.responses import Response
 from starlette.types import Scope
 
+from .api import config, db
+from .api.routes_auth import router as auth_router
+from .api.routes_gallery import router as gallery_router
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DIST_DIR = os.path.join(BASE_DIR, "dist")
 
 if not os.path.isdir(DIST_DIR):
-    raise RuntimeError(
-        f"'{DIST_DIR}' is missing — run `npm run build` in frontend/ first."
-    )
+    raise RuntimeError(f"'{DIST_DIR}' is missing — run `npm run build` in frontend/ first.")
 
 
 class SinglePageFiles(StaticFiles):
@@ -62,6 +61,22 @@ class SinglePageFiles(StaticFiles):
 
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+
+
+@app.on_event("startup")
+def boot() -> None:
+    db.init()
+    removed = db.purge_expired_sessions()
+    print(
+        f"[ptd] db={config.DB_PATH} google={'on' if config.GOOGLE_ENABLED else 'OFF'} "
+        f"origin={config.PUBLIC_ORIGIN} purged_sessions={removed}",
+        flush=True,
+    )
+
+
+# Routers before the static mount: a mount at "/" swallows everything after it.
+app.include_router(auth_router)
+app.include_router(gallery_router)
 app.mount("/", SinglePageFiles(directory=DIST_DIR, html=True), name="site")
 
 

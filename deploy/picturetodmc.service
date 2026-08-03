@@ -9,6 +9,11 @@ User=deploy
 Group=deploy
 WorkingDirectory=/var/www/picturetodmc/app
 
+# Google client id/secret and PUBLIC_ORIGIN. Root-owned, group-readable by
+# `deploy` only — the secret never enters the repo or the unit file.
+EnvironmentFile=/etc/picturetodmc.env
+Environment=PTD_DB=/var/lib/picturetodmc/db.sqlite
+
 # uvicorn directly rather than `python -m PythonDCA.main`: the module's
 # __main__ block binds 0.0.0.0, and with no firewall on this box that would
 # publish the app on 8001 alongside the nginx port. Bind to loopback instead.
@@ -18,9 +23,10 @@ ExecStart=/var/www/picturetodmc/venv/bin/uvicorn PythonDCA.main:app \
 Restart=always
 RestartSec=3
 
-# One worker on purpose. PythonDCA keeps the current conversion in a module
-# global (main_instance), so a second worker would answer /download with a
-# different user's pattern. Do not raise this without fixing that first.
+# One worker on purpose. Two would each open their own SQLite connection to the
+# same file, which WAL handles, but they would also each hold their own
+# thread-local pool — and there is nothing here that needs the concurrency. The
+# conversion, which used to be the reason to scale out, now runs in the browser.
 
 # 3.8 GB box already running emoji-art: cap this so a huge upload can't take
 # the whole machine down with it.
@@ -34,7 +40,7 @@ ProtectHome=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictSUIDSGID=true
-ReadWritePaths=/var/www/picturetodmc
+ReadWritePaths=/var/www/picturetodmc /var/lib/picturetodmc
 
 [Install]
 WantedBy=multi-user.target

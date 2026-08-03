@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
+import { AuthProvider } from "@/community/auth-provider"
 import { I18nProvider } from "@/i18n/provider"
 import Home from "@/routes/home"
 
@@ -36,6 +37,7 @@ function ScrollManager() {
 export default function App() {
   return (
     <I18nProvider>
+      <AuthProvider>
       <BrowserRouter>
         <ScrollManager />
         <div className="min-h-screen flex flex-col">
@@ -56,6 +58,7 @@ export default function App() {
           <SiteFooter />
         </div>
       </BrowserRouter>
+      </AuthProvider>
     </I18nProvider>
   )
 }

@@ -5,6 +5,7 @@ import { Logo } from "@/components/brand/logo"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
+import { UserMenu } from "@/community/user-menu"
 import { LanguageSwitch } from "./language-switch"
 
 type NavItem = { to: string; label: string }
@@ -57,7 +58,8 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitch className="hidden sm:inline-flex" />
+          <LanguageSwitch className="hidden lg:inline-flex" />
+          <UserMenu className="hidden sm:block" />
           <Button asChild size="sm" className="hidden sm:inline-flex text-[15px] px-[22px] py-[11px]">
             <Link to="/convert">{t.nav.start}</Link>
           </Button>
@@ -84,6 +86,7 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="flex items-center justify-between gap-3 flex-wrap">
+            <UserMenu />
             <LanguageSwitch />
             <Button asChild size="sm">
               <Link to="/convert">{t.nav.start}</Link>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
 import { DownloadPanel } from "@/components/converter/download-panel"
+import { PublishDialog } from "@/community/publish-dialog"
 import { PatternCanvas, type CanvasView } from "@/components/converter/pattern-canvas"
 import { PhotoDropzone, type LoadedPhoto } from "@/components/converter/photo-dropzone"
 import { ThreadDetailDialog } from "@/components/converter/thread-detail-dialog"
@@ -40,6 +41,8 @@ export default function Convert() {
   const [hovered, setHovered] = useState<string | null>(null)
   const [selected, setSelected] = useState<Thread | null>(null)
   const [restored, setRestored] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [shared, setShared] = useState(false)
 
   const handlePhoto = useCallback((next: LoadedPhoto) => {
     setPhoto(next)
@@ -299,7 +302,18 @@ export default function Convert() {
           )}
 
           {pattern && pattern.threads.length > 0 && (
-            <DownloadPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
+            <>
+              <DownloadPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
+              {shared ? (
+                <p className="font-hand text-[15px] text-nile-deep text-center m-0">
+                  {t.publish.done}
+                </p>
+              ) : (
+                <Button variant="secondary" size="block" onClick={() => setShareOpen(true)}>
+                  {t.publish.open}
+                </Button>
+              )}
+            </>
           )}
         </div>
 
@@ -321,6 +335,18 @@ export default function Convert() {
         threads={customThreads}
         onThreadsChange={setCustomThreads}
       />
+
+      {pattern && (
+        <PublishDialog
+          pattern={pattern}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          onPublished={() => {
+            setShareOpen(false)
+            setShared(true)
+          }}
+        />
+      )}
 
       <ThreadDetailDialog
         thread={selected}
