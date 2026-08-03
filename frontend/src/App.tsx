@@ -11,6 +11,8 @@ import Home from "@/routes/home"
 // conversions and the 589-thread chart — which the landing page never touches;
 // bundled together, every first visit downloaded it anyway. Home stays eager
 // because it is what most people land on.
+// Not linked from anywhere: the bench for tuning the fabric shader.
+const Atelier = lazy(() => import("@/routes/atelier"))
 const Convert = lazy(() => import("@/routes/convert"))
 const Gallery = lazy(() => import("@/routes/gallery"))
 const NotFound = lazy(() => import("@/routes/not-found"))
@@ -52,6 +54,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/convert" element={<Convert />} />
+                <Route path="/atelier" element={<Atelier />} />
                 <Route path="/gallery" element={<Gallery />} />
                 {/* French paths: the audience is French-first, and a
                     readable URL is part of feeling at home. */}
