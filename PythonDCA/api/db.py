@@ -27,9 +27,10 @@ import time
 
 from . import config
 
+# 3 added users.bio, users.icon and users.setup_at.
 # 2 added `comments`. Every statement in SCHEMA is IF NOT EXISTS and init() runs
 # on boot, so a new table needs no migration step of its own.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 _local = threading.local()
 
@@ -63,7 +64,15 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url   TEXT,
     role         TEXT    NOT NULL DEFAULT 'user',
     created_at   INTEGER NOT NULL,
-    banned_at    INTEGER
+    banned_at    INTEGER,
+    bio          TEXT,
+    -- Which of the built-in marks the member chose. NULL means the one derived
+    -- from their id, which is what everyone starts with.
+    icon         TEXT,
+    -- When they last confirmed their own name. NULL means never: the account was
+    -- created from a Google sign-in and still carries whatever Google reported,
+    -- which is what the client uses to offer the choice once.
+    setup_at     INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS oauth_accounts (
@@ -137,6 +146,14 @@ def init() -> None:
     # has run, and the column itself stays — dropping one in SQLite means
     # rebuilding the table, for nothing.
     conn.execute("UPDATE users SET avatar_url = NULL WHERE avatar_url IS NOT NULL")
+
+    # CREATE TABLE IF NOT EXISTS does nothing to a table that already exists, so
+    # columns added after the first release need adding by hand. SQLite has no
+    # ADD COLUMN IF NOT EXISTS and executescript cannot branch, hence the loop.
+    have = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    for column, decl in (("bio", "TEXT"), ("icon", "TEXT"), ("setup_at", "INTEGER")):
+        if column not in have:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {column} {decl}")
 
 
 def purge_expired_sessions() -> int:

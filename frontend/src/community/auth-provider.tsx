@@ -36,14 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
-  const rename = useCallback(async (displayName: string) => {
-    const { user: fresh } = await api.renameMe(displayName)
+  const updateProfile = useCallback(async (edit: api.ProfileEdit) => {
+    const { user: fresh } = await api.updateMe(edit)
     setUser(fresh)
   }, [])
 
   const value = useMemo<AuthValue>(
-    () => ({ user, googleEnabled, signIn: api.signInWithGoogle, signOut, rename }),
-    [user, googleEnabled, signOut, rename],
+    () => ({ user, googleEnabled, signIn: api.signInWithGoogle, signOut, updateProfile }),
+    [user, googleEnabled, signOut, updateProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

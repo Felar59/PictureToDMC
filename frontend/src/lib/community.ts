@@ -8,9 +8,17 @@
 export type PublicUser = {
   id: number
   displayName: string
+  /** Which built-in mark they picked, or null for the one drawn from their id. */
+  icon?: string | null
+  bio?: string | null
 }
 
-export type Me = PublicUser & { email: string | null; isAdmin: boolean }
+export type Me = PublicUser & {
+  email: string | null
+  isAdmin: boolean
+  /** False until they have confirmed a name of their own. */
+  setUp: boolean
+}
 
 export type PostCard = {
   id: number
@@ -76,10 +84,14 @@ export function signOut() {
   return call<{ ok: true }>("/api/auth/logout", { method: "POST" })
 }
 
-export function renameMe(displayName: string) {
+export type ProfileEdit = { displayName?: string; bio?: string; icon?: string | null }
+
+/** Any field left out is left alone, so this serves both the one-time name step
+ *  and a later edit of the bio. */
+export function updateMe(edit: ProfileEdit) {
   return call<{ user: Me }>("/api/auth/me", {
     method: "PATCH",
-    body: JSON.stringify({ displayName }),
+    body: JSON.stringify(edit),
   })
 }
 

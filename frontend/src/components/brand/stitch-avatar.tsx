@@ -86,7 +86,9 @@ export function StitchAvatar({
   className,
 }: {
   /** Anything stable per member — the id, not the name, so renaming keeps the
-   *  same mark. */
+   *  same mark. A member who has chosen one of the built-in marks passes that
+   *  instead, which is why this takes a string: the same hash then lands on their
+   *  choice rather than on their account. */
   seed: string | number
   size?: number
   className?: string

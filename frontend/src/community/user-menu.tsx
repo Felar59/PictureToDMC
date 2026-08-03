@@ -3,15 +3,15 @@ import { useEffect, useRef, useState } from "react"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
+import { useAccountPanel } from "./account-panel-context"
 import { useAuth } from "./auth-context"
 
 /** Signed-out: one button. Signed-in: avatar with a small menu. */
 export function UserMenu({ className }: { className?: string }) {
   const { t } = useI18n()
-  const { user, googleEnabled, signIn, signOut, rename } = useAuth()
+  const { user, googleEnabled, signIn, signOut } = useAuth()
+  const account = useAccountPanel()
   const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState("")
   const hostRef = useRef<HTMLDivElement | null>(null)
 
   // Click-outside and Escape, the two ways anyone expects a menu to close.
@@ -42,14 +42,6 @@ export function UserMenu({ className }: { className?: string }) {
     )
   }
 
-  const submit = async () => {
-    const name = draft.trim()
-    if (name.length < 2) return
-    await rename(name).catch(() => undefined)
-    setEditing(false)
-    setOpen(false)
-  }
-
   return (
     <div ref={hostRef} className={`relative ${className ?? ""}`}>
       <button
@@ -59,7 +51,7 @@ export function UserMenu({ className }: { className?: string }) {
         aria-haspopup="menu"
         className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 cursor-pointer transition-colors hover:border-taupe"
       >
-        <StitchAvatar seed={user.id} size={28} />
+        <StitchAvatar seed={user.icon ?? user.id} size={28} />
         <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
           {user.displayName}
         </span>
@@ -78,58 +70,27 @@ export function UserMenu({ className }: { className?: string }) {
             {user.email && <div className="text-[12.5px] text-stone truncate">{user.email}</div>}
           </div>
 
-          {editing ? (
-            <div className="pt-3 flex flex-col gap-2">
-              <label htmlFor="rename" className="text-[13px] font-bold text-cocoa">
-                {t.account.renameLabel}
-              </label>
-              <input
-                id="rename"
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && void submit()}
-                maxLength={40}
-                className="text-[15px] bg-linen border-[1.5px] border-edge-3 rounded-[12px] px-3 py-2 outline-none focus:border-coral focus:bg-blanc"
-              />
-              <p className="text-[12.5px] text-stone m-0">{t.account.renameHint}</p>
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1" onClick={() => void submit()}>
-                  {t.account.save}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => setEditing(false)}
-                >
-                  {t.account.cancel}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="pt-2 flex flex-col">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setDraft(user.displayName)
-                  setEditing(true)
-                }}
-                className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2 cursor-pointer"
-              >
-                {t.account.rename}
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => void signOut()}
-                className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2 cursor-pointer"
-              >
-                {t.account.signOut}
-              </button>
-            </div>
-          )}
+          <div className="pt-2 flex flex-col">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                account.open()
+              }}
+              className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2 cursor-pointer"
+            >
+              {t.account.panel}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => void signOut()}
+              className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2 cursor-pointer"
+            >
+              {t.account.signOut}
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -73,6 +73,8 @@ def public_user(row: sqlite3.Row) -> dict:
     return {
         "id": row["id"],
         "displayName": row["display_name"],
+        "bio": row["bio"],
+        "icon": row["icon"],
     }
 
 
@@ -82,4 +84,7 @@ def me_payload(row: sqlite3.Row) -> dict:
         **public_user(row),
         "email": row["email"],
         "isAdmin": row["role"] == "admin",
+        # False until they have confirmed a name of their own, so the client can
+        # offer the choice once and never again.
+        "setUp": row["setup_at"] is not None,
     }

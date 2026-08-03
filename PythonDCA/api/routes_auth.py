@@ -116,22 +116,63 @@ def logout(request: Request) -> Response:
     return response
 
 
-@router.patch("/me")
-async def rename(request: Request) -> JSONResponse:
-    """Change the display name.
+MAX_NAME = 40
+MAX_BIO = 300
 
-    The name starts as whatever Google reports, which is why this exists: plenty
-    of people don't want their legal name on a craft gallery.
+
+@router.patch("/me")
+async def update_me(request: Request) -> JSONResponse:
+    """Change the name, the bio, or the chosen mark.
+
+    The name starts as whatever Google reports, which is why this exists at all:
+    plenty of people do not want their legal name on a craft gallery. Any field
+    left out of the body is left alone, so the same endpoint serves the one-time
+    "choose a name" step and a later edit of the bio.
+
+    Saving anything through here counts as having set the account up, which is
+    what stops the client asking for a name a second time.
     """
     user = auth.current_user(request)
     if not user:
         raise HTTPException(401, "Sign in first")
 
     body = await request.json()
-    name = str(body.get("displayName", "")).strip()
-    if not 2 <= len(name) <= 40:
-        raise HTTPException(422, "A name is between 2 and 40 characters")
+    if not isinstance(body, dict):
+        raise HTTPException(422, "Expected an object")
 
-    connect().execute("UPDATE users SET display_name = ? WHERE id = ?", (name, user["id"]))
-    fresh = connect().execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
+    sets: list[str] = []
+    values: list[object] = []
+
+    if "displayName" in body:
+        name = str(body.get("displayName") or "").strip()
+        if not 2 <= len(name) <= MAX_NAME:
+            raise HTTPException(422, f"A name is between 2 and {MAX_NAME} characters")
+        sets.append("display_name = ?")
+        values.append(name)
+
+    if "bio" in body:
+        bio = str(body.get("bio") or "").strip()
+        if len(bio) > MAX_BIO:
+            raise HTTPException(422, f"A bio is at most {MAX_BIO} characters")
+        sets.append("bio = ?")
+        # Empty means none, rather than a stored blank that renders as a gap.
+        values.append(bio or None)
+
+    if "icon" in body:
+        icon = str(body.get("icon") or "").strip()
+        if len(icon) > 32:
+            raise HTTPException(422, "Unknown mark")
+        sets.append("icon = ?")
+        values.append(icon or None)
+
+    if not sets:
+        raise HTTPException(422, "Nothing to change")
+
+    sets.append("setup_at = ?")
+    values.append(now_ms())
+    values.append(user["id"])
+
+    conn = connect()
+    conn.execute(f"UPDATE users SET {', '.join(sets)} WHERE id = ?", values)
+    fresh = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
     return JSONResponse({"user": auth.me_payload(fresh)})

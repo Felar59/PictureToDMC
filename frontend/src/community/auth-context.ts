@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react"
 
-import type { Me } from "@/lib/community"
+import type { Me, ProfileEdit } from "@/lib/community"
 
 export type AuthValue = {
   /** null once loaded and nobody is signed in; undefined while loading. */
@@ -8,7 +8,8 @@ export type AuthValue = {
   googleEnabled: boolean
   signIn: (next?: string) => void
   signOut: () => Promise<void>
-  rename: (displayName: string) => Promise<void>
+  /** Saves any subset of the profile and keeps the local copy in step. */
+  updateProfile: (edit: ProfileEdit) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthValue | null>(null)

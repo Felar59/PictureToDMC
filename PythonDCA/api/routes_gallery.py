@@ -68,6 +68,7 @@ def _card(row: sqlite3.Row, liked: bool) -> dict:
         "author": {
             "id": row["author_id"],
             "displayName": row["display_name"],
+            "icon": row["icon"],
         },
     }
 
@@ -92,7 +93,7 @@ def list_posts(request: Request, category: str = "all", sort: str = "new", page:
                p.like_count, p.created_at, p.author_id,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
-               u.display_name,
+               u.display_name, u.icon,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id
         {where}
@@ -118,7 +119,7 @@ def get_post(post_id: int, request: Request) -> JSONResponse:
     user = auth.current_user(request)
     row = connect().execute(
         """
-        SELECT p.*, u.display_name,
+        SELECT p.*, u.display_name, u.icon,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id WHERE p.id = ?
         """,
@@ -300,7 +301,7 @@ def list_comments(post_id: int) -> JSONResponse:
 
     rows = conn.execute(
         """
-        SELECT c.id, c.body, c.created_at, u.id AS uid, u.display_name
+        SELECT c.id, c.body, c.created_at, u.id AS uid, u.display_name, u.icon
         FROM comments c
         JOIN users u ON u.id = c.author_id
         WHERE c.post_id = ? AND u.banned_at IS NULL
@@ -319,6 +320,7 @@ def list_comments(post_id: int) -> JSONResponse:
                     "author": {
                         "id": r["uid"],
                         "displayName": r["display_name"],
+                        "icon": r["icon"],
                     },
                 }
                 for r in rows
@@ -396,7 +398,7 @@ def get_profile(user_id: int, request: Request) -> JSONResponse:
                p.like_count, p.created_at, p.author_id,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
-               u.display_name,
+               u.display_name, u.icon,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id
         WHERE p.author_id = ?

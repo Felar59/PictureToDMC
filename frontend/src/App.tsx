@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
+import { AccountPanelProvider } from "@/community/account-panel"
 import { AuthProvider } from "@/community/auth-provider"
 import { I18nProvider } from "@/i18n/provider"
 import Home from "@/routes/home"
@@ -43,6 +44,10 @@ export default function App() {
     <I18nProvider>
       <AuthProvider>
       <BrowserRouter>
+      {/* Mounted once, above the routes: the header renders UserMenu twice, and
+          the panel has to be able to open itself on whatever page someone lands
+          on after their first sign-in. */}
+      <AccountPanelProvider>
         <ScrollManager />
         <div className="min-h-screen flex flex-col">
           <SiteHeader />
@@ -66,6 +71,7 @@ export default function App() {
           </main>
           <SiteFooter />
         </div>
+      </AccountPanelProvider>
       </BrowserRouter>
       </AuthProvider>
     </I18nProvider>
