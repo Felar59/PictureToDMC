@@ -3,6 +3,7 @@ import { useCallback, useId, useRef, useState } from "react"
 import { StitchMark } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
+import { measureAlpha } from "@/engine/measure-alpha"
 import { cn } from "@/lib/utils"
 
 export type LoadedPhoto = {
@@ -15,6 +16,12 @@ export type LoadedPhoto = {
   name?: string
   width: number
   height: number
+  /** True when the file carries real transparency. */
+  hasAlpha: boolean
+  /** Share of the picture that will actually be stitched, 0-1. Lets the panel
+   *  quote a stitch count that already excludes the transparent parts, instead
+   *  of promising stitches that never appear. */
+  opaqueRatio: number
 }
 
 /**
@@ -29,8 +36,10 @@ function readPhoto(file: File, onPhoto: (photo: LoadedPhoto) => void) {
     const dataUrl = e.target?.result
     if (typeof dataUrl !== "string") return
     const img = new Image()
-    const done = (width: number, height: number) =>
-      onPhoto({ dataUrl, blob: file, name: file.name, width, height })
+    const done = (width: number, height: number) => {
+      const { hasAlpha, opaqueRatio } = measureAlpha(img, width, height)
+      onPhoto({ dataUrl, blob: file, name: file.name, width, height, hasAlpha, opaqueRatio })
+    }
     img.onload = () => done(img.naturalWidth, img.naturalHeight)
     img.onerror = () => done(0, 0)
     img.src = dataUrl

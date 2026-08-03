@@ -40,6 +40,9 @@ export function DownloadPanel({
   const { t } = useI18n()
   const [grid, setGrid] = useState(true)
   const [legend, setLegend] = useState(true)
+  // Lives here rather than in the settings: it changes the chart you
+  // download, not the pattern itself.
+  const [outline, setOutline] = useState(false)
   const [backcolor, setBackcolor] = useState("#EBE2D7")
   const [busy, setBusy] = useState(false)
 
@@ -52,6 +55,7 @@ export function DownloadPanel({
         cellSize: 14,
         grid,
         legend,
+        outline,
         background: backcolor,
       })
       const blob = await canvasToBlob(canvas)
@@ -85,6 +89,12 @@ export function DownloadPanel({
         hint={t.converter.download.legendHint}
         checked={legend}
         onChange={setLegend}
+      />
+      <ToggleRow
+        label={t.converter.colors.outline}
+        hint={t.converter.colors.outlineHint}
+        checked={outline}
+        onChange={setOutline}
       />
 
       <label className="flex items-center justify-between gap-4">

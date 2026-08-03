@@ -182,15 +182,29 @@ export const en = {
 
     size: {
       stitchesWide: "Stitches wide",
-      note: (w: number, h: number) => `Roughly ${w} × ${h} stitches once converted.`,
+      grid: (w: number, h: number) => `${w} × ${h} points`,
+      total: (n: number) => `${n.toLocaleString("en")} stitches to sew`,
+      split: (on: number, off: number) =>
+        `${on.toLocaleString("en")} to sew · ${off.toLocaleString("en")} left bare`,
+      transparentNote: "your PNG has transparent areas, they stay unstitched",
       unknown: "The height follows your photo's proportions.",
+    },
+
+    retouch: {
+      heading: "Colours, mirror and background",
+      vividness: "Colour brightness",
+      vividnessSteps: ["Natural", "Vivid", "Very vivid"],
+      mirror: "Mirror",
+      mirrorH: "Left-right",
+      mirrorV: "Top-bottom",
+      removeBg: "Remove the background",
+      removeBgHint: "Works on a plain background — sky, a wall, a sheet.",
     },
 
     colors: {
       threadColors: "Thread colors",
-      outline: "Black outline",
-      outlineOn: "Outline on",
-      outlineOff: "Outline off",
+      outline: "Outline the piece",
+      outlineHint: "A dark keyline around the stitched area",
     },
 
     custom: {
@@ -468,15 +482,29 @@ export const fr: Copy = {
 
     size: {
       stitchesWide: "Points en largeur",
-      note: (w: number, h: number) => `Environ ${w} × ${h} points après conversion.`,
+      grid: (w: number, h: number) => `${w} × ${h} points`,
+      total: (n: number) => `${n.toLocaleString("fr")} points à broder`,
+      split: (on: number, off: number) =>
+        `${on.toLocaleString("fr")} à broder · ${off.toLocaleString("fr")} laissés vides`,
+      transparentNote: "votre PNG a des zones transparentes, elles restent vides",
       unknown: "La hauteur suit les proportions de votre photo.",
+    },
+
+    retouch: {
+      heading: "Couleurs, miroir et fond",
+      vividness: "Éclat des couleurs",
+      vividnessSteps: ["Naturel", "Vif", "Très vif"],
+      mirror: "Miroir",
+      mirrorH: "Gauche-droite",
+      mirrorV: "Haut-bas",
+      removeBg: "Retirer le fond",
+      removeBgHint: "Marche sur un fond uni — ciel, mur, drap.",
     },
 
     colors: {
       threadColors: "Nombre de fils",
-      outline: "Contour noir",
-      outlineOn: "Contour activé",
-      outlineOff: "Contour désactivé",
+      outline: "Cerner l'ouvrage",
+      outlineHint: "Un liseré sombre autour de la zone brodée",
     },
 
     custom: {

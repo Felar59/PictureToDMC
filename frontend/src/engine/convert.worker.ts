@@ -20,6 +20,10 @@ export type ConvertRequest = {
   photo: Blob
   stitchWidth: number
   colorCount: number
+  vividness?: number
+  removeBackground?: boolean
+  flipH?: boolean
+  flipV?: boolean
   /** DMC references, not Thread objects — the worker resolves them locally. */
   paletteNums?: string[]
 }
@@ -29,13 +33,22 @@ export type ConvertResponse =
   | { id: number; ok: false; error: string }
 
 self.onmessage = async (event: MessageEvent<ConvertRequest>) => {
-  const { id, photo, stitchWidth, colorCount, paletteNums } = event.data
+  const { id, photo, stitchWidth, colorCount, paletteNums, vividness, removeBackground, flipH, flipV } =
+    event.data
   try {
     const palette = paletteNums
       ? paletteNums.map(findThread).filter((t): t is Thread => Boolean(t))
       : undefined
 
-    const pattern = await convert(photo, { stitchWidth, colorCount, palette })
+    const pattern = await convert(photo, {
+      stitchWidth,
+      colorCount,
+      palette,
+      vividness,
+      removeBackground,
+      flipH,
+      flipV,
+    })
     const wire = toWire(pattern)
 
     // Hand the grid over rather than copying it: 30 000 cells is 60 KB, and

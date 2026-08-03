@@ -1,4 +1,4 @@
-import { rgbToLab } from "./color"
+import { boostChroma, gridToLab, removeFlatBackground, type Adjustments } from "./adjust"
 import { assignThreads, findThread, type Thread } from "./dmc"
 import { kmeans } from "./quantize"
 
@@ -12,15 +12,21 @@ export type Pattern = {
   threads: Thread[]
   /** Stitch count per entry of `threads`, same order. */
   counts: number[]
+  /** Cells that will actually be stitched; the rest stays bare fabric. */
+  stitched: number
 }
 
-export type ConvertOptions = {
+export type ConvertOptions = Adjustments & {
   /** Pattern width in stitches. Height follows the photo's proportions. */
   stitchWidth: number
   /** Number of DMC threads to use. */
   colorCount: number
   /** Restrict matching to these threads (the user's own thread box). */
   palette?: Thread[]
+  /** Mirror horizontally / vertically. Free: a canvas transform on the
+   *  downscale we were already doing, not a second pass over the pixels. */
+  flipH?: boolean
+  flipV?: boolean
 }
 
 /** Below this alpha a pixel is considered background and left unstitched. */
@@ -36,7 +42,7 @@ const ALPHA_FLOOR = 150
  * sees a few thousand cells instead of a few million pixels.
  */
 export async function convert(source: Blob, opts: ConvertOptions): Promise<Pattern> {
-  const { width, height, data } = await sampleToGrid(source, opts.stitchWidth)
+  const { width, height, data } = await sampleToGrid(source, opts)
 
   // Split visible from empty before clustering: transparent regions must not
   // drag a centroid towards whatever colour the encoder left under them.
@@ -44,23 +50,35 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
   // 200-stitch pattern has 30 000 of them.
   const cellCount = width * height
   const cells = new Int16Array(cellCount).fill(-1)
+
+  // Everything from here works on the grid, in Lab.
+  const labs = gridToLab(data, cellCount)
+  const alpha = new Uint8Array(cellCount)
+  for (let i = 0; i < cellCount; i++) {
+    alpha[i] = data[i * 4 + 3] >= ALPHA_FLOOR ? 255 : 0
+  }
+
+  // Background first, boost second: the background is judged on the photo's
+  // own colours, and a lifted chroma would push a soft sky past the tolerance.
+  if (opts.removeBackground) removeFlatBackground(labs, alpha, width, height)
+  boostChroma(labs, opts.vividness ?? 0)
+
   const visibleIndex = new Int32Array(cellCount)
   let visibleCount = 0
   for (let i = 0; i < cellCount; i++) {
-    if (data[i * 4 + 3] >= ALPHA_FLOOR) visibleIndex[visibleCount++] = i
+    if (alpha[i] !== 0) visibleIndex[visibleCount++] = i
   }
 
   if (visibleCount === 0) {
-    return { width, height, cells, threads: [], counts: [] }
+    return { width, height, cells, threads: [], counts: [], stitched: 0 }
   }
 
   const points = new Float64Array(visibleCount * 3)
   for (let n = 0; n < visibleCount; n++) {
-    const src = visibleIndex[n] * 4
-    const lab = rgbToLab(data[src], data[src + 1], data[src + 2])
-    points[n * 3] = lab[0]
-    points[n * 3 + 1] = lab[1]
-    points[n * 3 + 2] = lab[2]
+    const src = visibleIndex[n] * 3
+    points[n * 3] = labs[src]
+    points[n * 3 + 1] = labs[src + 1]
+    points[n * 3 + 2] = labs[src + 2]
   }
 
   const { centroids, labels } = kmeans(points, opts.colorCount)
@@ -77,7 +95,7 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
     counts[labels[n]]++
   }
 
-  return sortByShade({ width, height, cells, threads, counts })
+  return sortByShade({ width, height, cells, threads, counts, stitched: visibleCount })
 }
 
 /**
@@ -89,7 +107,7 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
  */
 async function sampleToGrid(
   source: Blob,
-  stitchWidth: number,
+  opts: ConvertOptions,
 ): Promise<{ width: number; height: number; data: Uint8ClampedArray }> {
   // Decode ONCE. The obvious version asks createImageBitmap for the natural
   // size to work out the aspect ratio, then asks again with resize options —
@@ -97,7 +115,7 @@ async function sampleToGrid(
   // the most expensive step in the pipeline. One decode, then let drawImage
   // scale it.
   const bitmap = await createImageBitmap(source)
-  const width = Math.max(1, Math.round(stitchWidth))
+  const width = Math.max(1, Math.round(opts.stitchWidth))
   const height = Math.max(1, Math.round((width * bitmap.height) / bitmap.width))
 
   // OffscreenCanvas, not document.createElement: this whole pipeline runs
@@ -111,6 +129,10 @@ async function sampleToGrid(
   }
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = "high"
+  if (opts.flipH || opts.flipV) {
+    ctx.translate(opts.flipH ? width : 0, opts.flipV ? height : 0)
+    ctx.scale(opts.flipH ? -1 : 1, opts.flipV ? -1 : 1)
+  }
   ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, width, height)
   bitmap.close()
 
@@ -136,6 +158,7 @@ export type PatternWire = {
   cells: Int16Array
   threadNums: string[]
   counts: number[]
+  stitched: number
 }
 
 export function toWire(pattern: Pattern): PatternWire {
@@ -145,6 +168,7 @@ export function toWire(pattern: Pattern): PatternWire {
     cells: pattern.cells,
     threadNums: pattern.threads.map((t) => t.num),
     counts: pattern.counts,
+    stitched: pattern.stitched,
   }
 }
 
@@ -156,6 +180,7 @@ export function fromWire(wire: PatternWire): Pattern {
     // A code always resolves — it came out of THREADS in the first place.
     threads: wire.threadNums.map((num) => findThread(num)).filter((t): t is Thread => Boolean(t)),
     counts: wire.counts,
+    stitched: wire.stitched,
   }
 }
 

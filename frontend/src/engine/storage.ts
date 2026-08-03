@@ -20,7 +20,10 @@ export type StoredSession = {
   photoName: string
   stitchWidth: number
   colorCount: number
-  outline: boolean
+  vividness: number
+  flipH: boolean
+  flipV: boolean
+  removeBackground: boolean
   useCustomPalette: boolean
   customThreadNums: string[]
   /** Thread substitutions the user made, cluster index -> DMC reference. */

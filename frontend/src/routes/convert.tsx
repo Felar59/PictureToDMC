@@ -5,12 +5,12 @@ import { DownloadPanel } from "@/components/converter/download-panel"
 import { PublishDialog } from "@/community/publish-dialog"
 import { PatternCanvas, type CanvasView } from "@/components/converter/pattern-canvas"
 import { PhotoDropzone, type LoadedPhoto } from "@/components/converter/photo-dropzone"
+import { measureAlpha } from "@/engine/measure-alpha"
+import { SettingsPanel, type Settings } from "@/components/converter/settings-panel"
 import { ThreadDetailDialog } from "@/components/converter/thread-detail-dialog"
 import { ThreadList } from "@/components/converter/thread-list"
 import { Button } from "@/components/ui/button"
-import { FieldLabel, PanelTitle, Readout, SubPanel } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
+import { SubPanel } from "@/components/ui/card"
 import type { Pattern } from "@/engine/convert"
 import { runConversion } from "@/engine/run-conversion"
 import { findThread, type Thread } from "@/engine/dmc"
@@ -24,9 +24,19 @@ export default function Convert() {
 
   // inputs
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null)
-  const [stitchWidth, setStitchWidth] = useState(50)
-  const [colorCount, setColorCount] = useState(8)
-  const [outline, setOutline] = useState(true)
+  const [settings, setSettings] = useState<Settings>({
+    stitchWidth: 50,
+    colorCount: 8,
+    vividness: 0,
+    flipH: false,
+    flipV: false,
+    removeBackground: false,
+  })
+  const patch = useCallback(
+    (next: Partial<Settings>) => setSettings((prev) => ({ ...prev, ...next })),
+    [],
+  )
+  const { stitchWidth } = settings
   const [useCustom, setUseCustom] = useState(false)
   const [customThreads, setCustomThreads] = useState<Thread[]>([])
   const [customOpen, setCustomOpen] = useState(false)
@@ -55,6 +65,45 @@ export default function Convert() {
     [photo, stitchWidth],
   )
 
+  /** What the person actually needs to know before buying fabric: how big, and
+   *  how many stitches there are to sew.
+   *
+   *  Before a conversion these are predictions from the photo's proportions —
+   *  and for a PNG with transparency, the transparent share is measured on load,
+   *  so the count already excludes what will stay bare instead of promising
+   *  stitches that never appear. Once converted, the pattern knows exactly. */
+  const summary = useMemo(() => {
+    if (!patternHeight) {
+      return (
+        <p className="bg-linen rounded-[12px] px-3.5 py-2.5 text-[13.5px] text-clay m-0">
+          {t.converter.size.unknown}
+        </p>
+      )
+    }
+
+    const total = stitchWidth * patternHeight
+    const exact = pattern?.stitched
+    const stitched = exact ?? Math.round(total * (photo?.opaqueRatio ?? 1))
+    const bare = total - stitched
+
+    return (
+      <div className="bg-linen rounded-[12px] px-3.5 py-3">
+        <div className="font-mono text-[13px] text-cocoa">
+          {t.converter.size.grid(stitchWidth, patternHeight)}
+        </div>
+        <div className="font-display font-medium text-[19px] text-ink leading-tight mt-0.5">
+          {t.converter.size.total(stitched)}
+        </div>
+        {bare > 0 && (
+          <div className="text-[12.5px] text-stone leading-snug mt-1">
+            {t.converter.size.split(stitched, bare)}
+            {photo?.hasAlpha && <> — {t.converter.size.transparentNote}</>}
+          </div>
+        )}
+      </div>
+    )
+  }, [t, stitchWidth, patternHeight, pattern, photo])
+
   /** Bring back whatever was open last time. The pattern itself isn't stored —
    *  rebuilding it takes about as long as reading it would have. */
   useEffect(() => {
@@ -75,10 +124,19 @@ export default function Convert() {
           blob: session.photo,
           width: probe.naturalWidth,
           height: probe.naturalHeight,
+          // Re-measured rather than stored: it is a couple of milliseconds, and
+          // a stored ratio could disagree with the engine that reads it.
+          ...measureAlpha(probe, probe.naturalWidth, probe.naturalHeight),
         })
-        setStitchWidth(session.stitchWidth)
-        setColorCount(session.colorCount)
-        setOutline(session.outline)
+        setSettings((prev) => ({
+          ...prev,
+          stitchWidth: session.stitchWidth,
+          colorCount: session.colorCount,
+          vividness: session.vividness ?? 0,
+          flipH: session.flipH ?? false,
+          flipV: session.flipV ?? false,
+          removeBackground: session.removeBackground ?? false,
+        }))
         setUseCustom(session.useCustomPalette)
         setCustomThreads(
           session.customThreadNums.map(findThread).filter((x): x is Thread => Boolean(x)),
@@ -95,7 +153,8 @@ export default function Convert() {
 
   const create = useCallback(async () => {
     if (!photo) return setErrorKey("noImage")
-    if (useCustom && customThreads.length < colorCount) return setErrorKey("notEnoughCustom")
+    if (useCustom && customThreads.length < settings.colorCount)
+      return setErrorKey("notEnoughCustom")
 
     setBusy(true)
     setErrorKey(null)
@@ -107,17 +166,14 @@ export default function Convert() {
       // converting at once can no longer see each other's pattern, and the UI
       // keeps painting while k-means runs.
       const next = await runConversion(photo.blob, {
-        stitchWidth,
-        colorCount,
+        ...settings,
         palette: useCustom ? customThreads : undefined,
       })
       setPattern(next)
       void saveSession({
         photo: photo.blob,
         photoName: photo.name ?? "photo",
-        stitchWidth,
-        colorCount,
-        outline,
+        ...settings,
         useCustomPalette: useCustom,
         customThreadNums: customThreads.map((c) => c.num),
         substitutions: {},
@@ -128,7 +184,7 @@ export default function Convert() {
     } finally {
       setBusy(false)
     }
-  }, [photo, useCustom, customThreads, colorCount, stitchWidth, outline])
+  }, [photo, useCustom, customThreads, settings])
 
   /** Swap one thread for another. A relabel plus a re-render — the stitches
    *  don't move, so there is nothing to recompute. */
@@ -198,61 +254,7 @@ export default function Convert() {
       <div className="grid gap-7 lg:grid-cols-[296px_1fr] xl:grid-cols-[296px_1fr_312px]">
         {/* left: controls */}
         <div className="flex flex-col gap-4">
-          <SubPanel>
-            <PanelTitle className="mb-4">{t.converter.settings.heading}</PanelTitle>
-
-            <div className="flex justify-between items-baseline mb-2">
-              <FieldLabel>{t.converter.size.stitchesWide}</FieldLabel>
-              <Readout>{stitchWidth}</Readout>
-            </div>
-            <Slider
-              value={[stitchWidth]}
-              onValueChange={([v]) => setStitchWidth(v)}
-              min={20}
-              max={200}
-              step={2}
-              aria-label={t.converter.size.stitchesWide}
-            />
-            <div className="flex justify-between text-xs text-sand mt-1.5 mb-5">
-              <span>20</span>
-              <span>200</span>
-            </div>
-
-            <div className="flex justify-between items-baseline mb-2">
-              <FieldLabel>{t.converter.colors.threadColors}</FieldLabel>
-              <Readout>{colorCount}</Readout>
-            </div>
-            <Slider
-              value={[colorCount]}
-              onValueChange={([v]) => setColorCount(v)}
-              min={2}
-              max={20}
-              step={1}
-              aria-label={t.converter.colors.threadColors}
-            />
-            <div className="flex justify-between text-xs text-sand mt-1.5 mb-4">
-              <span>2</span>
-              <span>20</span>
-            </div>
-
-            <label className="flex items-center justify-between gap-3 cursor-pointer pt-4 border-t-2 border-dashed border-edge">
-              <span>
-                <span className="block text-sm font-bold text-bark">
-                  {t.converter.colors.outline}
-                </span>
-                <span className="block text-[13px] text-stone">
-                  {outline ? t.converter.colors.outlineOn : t.converter.colors.outlineOff}
-                </span>
-              </span>
-              <Switch checked={outline} onCheckedChange={setOutline} />
-            </label>
-
-            <p className="bg-linen rounded-[12px] px-3.5 py-2.5 text-[13.5px] text-clay m-0 mt-4">
-              {patternHeight
-                ? t.converter.size.note(stitchWidth, patternHeight)
-                : t.converter.size.unknown}
-            </p>
-          </SubPanel>
+          <SettingsPanel settings={settings} onChange={patch} summary={summary} />
 
           <SubPanel className="flex flex-col gap-3">
             <div>
