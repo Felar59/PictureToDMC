@@ -3,6 +3,8 @@ import { Link } from "react-router-dom"
 import { StitchMark } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
+import { paths } from "@/lib/routes"
+import { useHead } from "@/lib/head"
 
 /**
  * Who is behind the site.
@@ -20,6 +22,8 @@ import { useI18n } from "@/i18n"
  */
 export default function About() {
   const { t } = useI18n()
+
+  useHead({ title: t.head.about.title, description: t.aboutPage.lead })
 
   return (
     <div className="mx-auto max-w-[820px] px-5 sm:px-8 lg:px-11 py-12 lg:py-16">
@@ -53,7 +57,7 @@ export default function About() {
         <h2 className="text-[24px] m-0 mb-2">{t.aboutPage.ctaTitle}</h2>
         <p className="text-[16.5px] text-clay m-0 mb-6">{t.aboutPage.ctaBody}</p>
         <Button asChild size="lg">
-          <Link to="/convert">{t.aboutPage.ctaButton}</Link>
+          <Link to={paths.convert}>{t.aboutPage.ctaButton}</Link>
         </Button>
       </div>
     </div>

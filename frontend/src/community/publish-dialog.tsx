@@ -8,6 +8,7 @@ import type { Pattern } from "@/engine/convert"
 import { cellsToBase64, patternThumbnail } from "@/engine/publish"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { paths } from "@/lib/routes"
 import { useAuth } from "./auth-context"
 
 const CATEGORIES = ["pets", "flowers", "landscapes", "other"] as const
@@ -51,7 +52,7 @@ export function PublishDialog({
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
-    if (!user) return signIn("/convert")
+    if (!user) return signIn(paths.convert)
     setBusy(true)
     setError(null)
     try {

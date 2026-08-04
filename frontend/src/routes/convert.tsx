@@ -20,6 +20,7 @@ import { runConversion } from "@/engine/run-conversion"
 import { findThread, type Thread } from "@/engine/dmc"
 import { clearSession, loadSession, saveSession } from "@/engine/storage"
 import { useI18n } from "@/i18n"
+import { useHead } from "@/lib/head"
 
 type ErrorKey = keyof ReturnType<typeof useI18n>["t"]["converter"]["errors"]
 
@@ -31,6 +32,8 @@ export default function Convert() {
   const { t } = useI18n()
   const [params] = useSearchParams()
   const sample = params.get("exemple")
+
+  useHead({ title: t.head.convert.title, description: t.head.convert.description })
 
   // inputs
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null)

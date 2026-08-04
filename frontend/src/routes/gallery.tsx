@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Pill } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { paths } from "@/lib/routes"
+import { useHead } from "@/lib/head"
 
 const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
 
 export default function Gallery() {
   const { t } = useI18n()
+
+  useHead({ title: t.head.gallery.title, description: t.head.gallery.description })
   const { user, signIn } = useAuth()
 
   const [filter, setFilter] = useState<string>("all")
@@ -60,7 +64,7 @@ export default function Gallery() {
   }, [load])
 
   const like = async (id: number) => {
-    if (!user) return signIn("/gallery")
+    if (!user) return signIn(paths.gallery)
     // Optimistic: the heart has to answer the click immediately.
     setPosts((prev) =>
       prev.map((p) =>
@@ -154,10 +158,10 @@ export default function Gallery() {
           </p>
           {user ? (
             <Button asChild size="sm">
-              <Link to="/convert">{t.gallery.shareCta}</Link>
+              <Link to={paths.convert}>{t.gallery.shareCta}</Link>
             </Button>
           ) : (
-            <Button size="sm" onClick={() => signIn("/gallery")}>
+            <Button size="sm" onClick={() => signIn(paths.gallery)}>
               {t.account.signIn}
             </Button>
           )}

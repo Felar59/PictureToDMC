@@ -1,11 +1,12 @@
 import { Suspense, lazy, useEffect } from "react"
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom"
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom"
 
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
 import { useAuth } from "@/community/auth-context"
 import { AuthProvider } from "@/community/auth-provider"
 import { I18nProvider } from "@/i18n/provider"
+import { legacyRedirects, paths } from "@/lib/routes"
 import Home from "@/routes/home"
 
 // Split per route. /convert drags in the whole engine — k-means, the Lab
@@ -13,6 +14,8 @@ import Home from "@/routes/home"
 // bundled together, every first visit downloaded it anyway. Home stays eager
 // because it is what most people land on.
 const About = lazy(() => import("@/routes/about"))
+const Faq = lazy(() => import("@/routes/faq"))
+const Guide = lazy(() => import("@/routes/guide"))
 const Account = lazy(() => import("@/routes/account"))
 // Not linked from anywhere: the bench for tuning the fabric shader.
 const Atelier = lazy(() => import("@/routes/atelier"))
@@ -79,16 +82,28 @@ export default function App() {
                 reads worse than a beat of nothing. */}
             <Suspense fallback={<div className="min-h-[60vh]" />}>
               <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/convert" element={<Convert />} />
-                <Route path="/atelier" element={<Atelier />} />
-                <Route path="/compte" element={<Account />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/about" element={<About />} />
-                {/* French paths: the audience is French-first, and a
-                    readable URL is part of feeling at home. */}
+                {/* French, intent-specific paths. The URL is the first thing both a
+                    reader and a crawler are told about a page, and "/convert" told
+                    neither of them anything — see lib/routes.ts. */}
+                <Route path={paths.home} element={<Home />} />
+                <Route path={paths.convert} element={<Convert />} />
+                <Route path={paths.gallery} element={<Gallery />} />
+                <Route path={paths.about} element={<About />} />
+                <Route path={paths.faq} element={<Faq />} />
+                <Route path={paths.guide} element={<Guide />} />
+                <Route path={paths.atelier} element={<Atelier />} />
+                <Route path={paths.account} element={<Account />} />
                 <Route path="/piece/:id" element={<Piece />} />
                 <Route path="/brodeur/:id" element={<Profile />} />
+
+                {/* The English paths that shipped first. They are in browser
+                    histories, and a redirect costs three lines where a 404 costs
+                    somebody their bookmark. `replace` so the back button does not
+                    bounce between the two. */}
+                {legacyRedirects.map(([from, to]) => (
+                  <Route key={from} path={from} element={<Navigate to={to} replace />} />
+                ))}
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

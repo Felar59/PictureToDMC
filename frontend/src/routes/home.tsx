@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
 import { demoThreads } from "@/lib/pixel-art"
+import { paths } from "@/lib/routes"
+import { useHead } from "@/lib/head"
 
 /** Per-step badge colors, in the design's order: coral, golden, nile, sky. */
 const STEP_TONES = [
@@ -24,6 +26,27 @@ function SectionShell({ children, className }: { children: React.ReactNode; clas
 
 export default function Home() {
   const { t } = useI18n()
+
+  useHead({
+    title: t.head.home.title,
+    description: t.head.home.description,
+    canonicalPath: "/",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Picture to DMC",
+      applicationCategory: "DesignApplication",
+      operatingSystem: "Web",
+      description: t.head.home.description,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+      featureList: [
+        "Photo to cross-stitch chart",
+        "Real DMC thread matching",
+        "Printable chart with a thread list",
+        "Runs entirely in the browser",
+      ],
+    },
+  })
 
   return (
     <>
@@ -45,10 +68,10 @@ export default function Home() {
 
             <div className="flex gap-3.5 items-center flex-wrap">
               <Button asChild size="lg">
-                <Link to="/convert">{t.home.ctaUpload}</Link>
+                <Link to={paths.convert}>{t.home.ctaUpload}</Link>
               </Button>
               <Button asChild variant="secondary">
-                <Link to="/gallery">{t.home.ctaSample}</Link>
+                <Link to={paths.gallery}>{t.home.ctaSample}</Link>
               </Button>
             </div>
 
@@ -96,7 +119,7 @@ export default function Home() {
                       behind it — vivid, 9 threads, 74 wide. The panel is a promise,
                       and this is the shortest possible way to let someone check it
                       without having to find a photograph of their own first. */}
-                  <Link to="/convert?exemple=fraise" aria-label={t.home.demoTry}>
+                  <Link to={`${paths.convert}?exemple=fraise`} aria-label={t.home.demoTry}>
                     {/* A share of the chart's width, not a fixed size: at 86px it
                         was a fifth of the panel on desktop and a third of it at
                         375px, where it started covering a leaf. */}
@@ -242,7 +265,7 @@ export default function Home() {
           <div className="font-hand text-[17px] text-quill mb-2">{t.home.ctaKicker}</div>
           <h2 className="text-[28px] sm:text-[34px] mt-0 mb-6">{t.home.ctaTitle}</h2>
           <Button asChild size="lg">
-            <Link to="/convert">{t.home.ctaButton}</Link>
+            <Link to={paths.convert}>{t.home.ctaButton}</Link>
           </Button>
         </div>
       </SectionShell>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 import { UserMenu } from "@/community/user-menu"
+import { paths } from "@/lib/routes"
 import { LanguageSwitch } from "./language-switch"
 
 type NavItem = { to: string; label: string }
@@ -41,10 +42,11 @@ export function SiteHeader() {
   // Gallery first: it is the only one that goes somewhere, and finished pieces are
   // a better argument for the product than an explanation of it.
   const items: NavItem[] = [
-    { to: "/gallery", label: t.nav.gallery },
+    { to: paths.gallery, label: t.nav.gallery },
     { to: "/#how-it-works", label: t.nav.howItWorks },
-    { to: "/about", label: t.nav.about },
-    { to: "/#faq", label: t.nav.faq },
+    { to: paths.guide, label: t.nav.guide },
+    { to: paths.faq, label: t.nav.faq },
+    { to: paths.about, label: t.nav.about },
   ]
 
   const isActive = (to: string) =>
@@ -60,7 +62,7 @@ export function SiteHeader() {
    * navigation link the whole time. On the converter it is worse than competing:
    * "Start a pattern" points at the page you are already on.
    */
-  const onConverter = pathname === "/convert"
+  const onConverter = pathname === paths.convert
   const ctaVariant = pathname.startsWith("/piece/") ? "secondary" : "primary"
 
   return (
@@ -86,7 +88,7 @@ export function SiteHeader() {
               variant={ctaVariant}
               className="hidden sm:inline-flex text-[15px] px-[22px] py-[11px]"
             >
-              <Link to="/convert">{t.nav.start}</Link>
+              <Link to={paths.convert}>{t.nav.start}</Link>
             </Button>
           )}
 
@@ -116,7 +118,7 @@ export function SiteHeader() {
             <LanguageSwitch />
             {!onConverter && (
               <Button asChild size="sm" variant={ctaVariant}>
-                <Link to="/convert">{t.nav.start}</Link>
+                <Link to={paths.convert}>{t.nav.start}</Link>
               </Button>
             )}
           </div>

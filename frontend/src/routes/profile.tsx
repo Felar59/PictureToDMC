@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Tag } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { paths } from "@/lib/routes"
 
 type Profile = {
   user: api.PublicUser
@@ -75,7 +76,7 @@ export default function ProfilePage() {
       <div className="text-center py-24 flex flex-col items-center gap-4">
         <p className="text-coral-deeper m-0">{t.profile.notFound}</p>
         <Button asChild variant="secondary">
-          <Link to="/gallery">{t.piece.backToGallery}</Link>
+          <Link to={paths.gallery}>{t.piece.backToGallery}</Link>
         </Button>
       </div>
     )
@@ -124,7 +125,7 @@ export default function ProfilePage() {
           </p>
           {isMe && (
             <Button asChild>
-              <Link to="/convert">{t.gallery.shareCta}</Link>
+              <Link to={paths.convert}>{t.gallery.shareCta}</Link>
             </Button>
           )}
         </div>

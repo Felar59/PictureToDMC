@@ -10,6 +10,7 @@ export const en = {
   nav: {
     howItWorks: "How it works",
     gallery: "Gallery",
+    guide: "How to",
     about: "About us",
     faq: "FAQ",
     convert: "Convert a photo",
@@ -477,6 +478,170 @@ export const en = {
     ctaButton: "Make a chart",
   },
 
+  /**
+   * The FAQ page, and the guide.
+   *
+   * Both exist because a page that answers a question is what search rewards, and
+   * because four questions on an anchor of the home page cannot be found by anyone
+   * looking for one of them. Every answer here is true of the code as it stands —
+   * the old FAQ said a photograph was uploaded to a server, which was once true and
+   * had quietly stopped being so.
+   */
+  faqPage: {
+    kicker: "everything people ask",
+    title: "Questions and answers",
+    lead: "How the converter works, what the settings do, and what happens to your photograph.",
+    groups: [
+      {
+        heading: "The basics",
+        items: [
+          {
+            q: "Is it really free?",
+            a: "Yes. Every chart, every download, no account and no watermark. There is nothing to buy and nothing held back for a paid version.",
+          },
+          {
+            q: "What happens to my photograph?",
+            a: "Nothing \u2014 it never leaves your computer. The whole conversion runs in your browser, so your picture is never uploaded, never stored and never seen by us. Sharing a finished piece sends the grid, and only that.",
+          },
+          {
+            q: "Do I need an account?",
+            a: "Only to put a piece in the gallery. Converting a photograph and downloading its chart needs nothing at all.",
+          },
+          {
+            q: "Which files can I use?",
+            a: "JPG, PNG, WebP and AVIF. A transparent PNG works too \u2014 the transparent parts are simply left unstitched, so you get the subject on bare fabric.",
+          },
+        ],
+      },
+      {
+        heading: "Choosing the settings",
+        items: [
+          {
+            q: "How many thread colours should I pick?",
+            a: "Between 8 and 15 suits most photographs. Fewer reads bolder and stitches much faster; more keeps fine detail but means more thread changes, and past about 20 the extra shades are usually neighbours you cannot tell apart on cloth.",
+          },
+          {
+            q: "How wide should I make it?",
+            a: "The width in stitches decides both the detail and the finished size. A face needs about 80 stitches across before it looks like the person; a simple motif is happy at 40. Divide the stitch count by your fabric's count for the size \u2014 80 stitches on 14-count aida is a little under 15 cm.",
+          },
+          {
+            q: "What does aida count mean?",
+            a: "The number of stitches per inch. 14-count is the usual starting point: comfortable to see and to work. A higher count is finer cloth, a smaller finished piece and more squinting.",
+          },
+          {
+            q: "What is the vividness setting for?",
+            a: "Photographs are duller than thread. Matched faithfully, a mid-saturation photo picks mid-saturation shades and the finished piece can read flat next to the picture it came from. Vivid lifts the colour without touching brightness, which is corrective rather than a filter.",
+          },
+          {
+            q: "Why does removing the background take longer?",
+            a: "Because it runs a real segmentation model over your photograph, in your browser, to find the subject. A few seconds the first time \u2014 the model has to be fetched \u2014 and quicker after. It works best on a plain background: a cat on a patterned rug will not come out cleanly.",
+          },
+        ],
+      },
+      {
+        heading: "The chart itself",
+        items: [
+          {
+            q: "What is in the file I download?",
+            a: "A PNG with your pattern drawn at 20 pixels a stitch, a counting grid with a heavier rule every ten stitches, and the thread list underneath: every DMC reference, its name, and how many stitches of it you need.",
+          },
+          {
+            q: "Can I get one colour at a time?",
+            a: "Yes. In the download panel, click any thread and you get that thread on its own, with the outline of the whole piece around it so you can see where those stitches go. It is the sheet to work from with one skein in your hand \u2014 and it is how you tell two near-identical shades apart.",
+          },
+          {
+            q: "Are the colours real DMC threads?",
+            a: "Every one. The converter matches against 483 plain-cotton DMC shades, judged the way an eye judges colour rather than the way a computer adds numbers. Metallic, satin and \u00c9toile ranges are deliberately excluded \u2014 they share their colour codes with plain cotton, and being sent out for shiny black thread when you wanted black is not helpful.",
+          },
+          {
+            q: "Can I use only the threads I already own?",
+            a: "Yes. Give it your DMC references and it will match using nothing else.",
+          },
+          {
+            q: "Can I sell what I stitch?",
+            a: "As far as we are concerned, yes \u2014 the chart is yours. Do check you have the right to use the photograph itself, which is a separate question and not ours to answer.",
+          },
+        ],
+      },
+    ],
+  },
+
+  guide: {
+    kicker: "from a photograph to a hoop",
+    title: "How to make a cross-stitch chart from a photo",
+    lead: "The whole thing, start to finish: about a minute of work and a few evenings of stitching.",
+    intro:
+      "A cross-stitch chart is a grid where every square tells you which colour of thread to put there. Turning a photograph into one means two decisions \u2014 how big, and how many colours \u2014 and then reading the answer. This page walks through both, and through the settings worth touching once you have.",
+    steps: [
+      {
+        heading: "Pick a photograph that will survive being small",
+        body: "A chart is a very low-resolution picture: 60 stitches across is 60 pixels of information. What survives that is a clear subject, good contrast, and not much background \u2014 a pet against a wall, a flower, a single object. What does not survive is a busy scene, a distant face, or fine texture. If you have a choice, take the one where the subject fills the frame.",
+      },
+      {
+        heading: "Choose the width in stitches",
+        body: "This decides the detail and the finished size at once. 40 stitches is a small motif, 60 to 90 is the usual range for something recognisable, and past 150 you are committing to months. Divide by your fabric's count for the size: 80 stitches on 14-count aida is about 14.5 cm across.",
+      },
+      {
+        heading: "Choose how many threads",
+        body: "Eight to fifteen suits most photographs. Fewer is bolder, faster and often prettier; more keeps detail at the cost of a thread change every few stitches. The counter tells you how many stitches each colour takes, which is the honest measure of how much work you have signed up for.",
+      },
+      {
+        heading: "Adjust, if it needs it",
+        body: "Turn the picture if it came off a phone sideways. Lift the vividness if the result looks washed out next to the photograph \u2014 thread is more saturated than a screen. Remove the background if you want the subject on bare cloth. Every change redraws the grid straight away, so you can judge it rather than imagine it.",
+      },
+      {
+        heading: "Swap any thread you do not like",
+        body: "Tap a thread in the list to see exactly which stitches it covers, and use the wheel beside it to pick a different shade from the full DMC chart. This is worth doing for skin tones and for skies, where the nearest match by number is not always the one that looks right.",
+      },
+      {
+        heading: "Download the chart, and buy the thread",
+        body: "The PNG holds the grid, the counting rules and the thread list with a stitch count per colour. One skein of stranded cotton covers roughly 1,500 stitches at two strands on 14-count, so the counts tell you what to buy. Print it as large as your printer allows \u2014 you will be counting squares on it for a while.",
+      },
+      {
+        heading: "Stitch it",
+        body: "Start in the middle and work outwards, so a miscount cannot push the design off the fabric. Two strands on 14-count aida is the usual choice. Cross every stitch the same way \u2014 top arm in the same direction throughout \u2014 and the finished surface catches the light evenly.",
+      },
+    ],
+    ctaTitle: "Try it on a photograph",
+    ctaBody: "It costs nothing and takes about a minute to see whether your picture works.",
+    ctaButton: "Make a chart",
+  },
+
+  /**
+   * What each route calls itself.
+   *
+   * Separate from the page copy because these are written for two readers who never
+   * see the page: a search result and a shared link. A title is about 60 characters
+   * before it is truncated and a description about 155, so each one leads with the
+   * words somebody would have typed rather than with the site's name.
+   */
+  head: {
+    home: {
+      title: "Photo to cross-stitch pattern \u2014 free, real DMC threads",
+      description:
+        "Turn any photo into a printable cross-stitch chart, with the real DMC thread references and a stitch count for each. Free, no account, and your photo never leaves your browser.",
+    },
+    convert: {
+      title: "Convert a photo into a cross-stitch chart",
+      description:
+        "Drop in a photo, choose the width in stitches and how many threads, and download the printable chart with its DMC thread list. It all happens in your browser.",
+    },
+    gallery: {
+      title: "Cross-stitch pattern gallery",
+      description:
+        "Pieces shared by the community: browse the charts, see which threads they used, and take any of them for free.",
+    },
+    about: {
+      title: "About us",
+      description:
+        "A small free tool for turning a photo into a cross-stitch chart, made by two people. Where it came from, and why everything runs in your browser.",
+    },
+    account: {
+      title: "My account",
+      description: "Your name in the gallery, your bio and your mark.",
+    },
+  },
+
   notFound: {
     title: "This page slipped off the hoop",
     body: "The page you're after doesn't exist — or hasn't been stitched yet.",
@@ -494,6 +659,7 @@ export const fr: Copy = {
   nav: {
     howItWorks: "Comment ça marche",
     gallery: "Galerie",
+    guide: "Comment faire",
     about: "Qui sommes-nous",
     faq: "FAQ",
     convert: "Convertir une photo",
@@ -940,6 +1106,153 @@ export const fr: Copy = {
     ctaTitle: "Essayez",
     ctaBody: "Choisissez une photo et voyez ce qu'elle donne en fil.",
     ctaButton: "Créer une grille",
+  },
+
+  faqPage: {
+    kicker: "tout ce qu'on nous demande",
+    title: "Questions et r\u00e9ponses",
+    lead: "Comment fonctionne le convertisseur, \u00e0 quoi servent les r\u00e9glages, et ce que devient votre photo.",
+    groups: [
+      {
+        heading: "L'essentiel",
+        items: [
+          {
+            q: "C'est vraiment gratuit ?",
+            a: "Oui. Toutes les grilles, tous les t\u00e9l\u00e9chargements, sans compte et sans filigrane. Il n'y a rien \u00e0 acheter et rien de gard\u00e9 pour une version payante.",
+          },
+          {
+            q: "Que devient ma photo ?",
+            a: "Rien \u2014 elle ne quitte jamais votre ordinateur. Toute la conversion se fait dans votre navigateur : votre image n'est jamais envoy\u00e9e, jamais stock\u00e9e, jamais vue par nous. Partager un ouvrage envoie la grille, et rien d'autre.",
+          },
+          {
+            q: "Faut-il un compte ?",
+            a: "Seulement pour mettre un ouvrage dans la galerie. Convertir une photo et t\u00e9l\u00e9charger sa grille ne demande rien du tout.",
+          },
+          {
+            q: "Quels fichiers puis-je utiliser ?",
+            a: "JPG, PNG, WebP et AVIF. Un PNG transparent fonctionne aussi \u2014 les zones transparentes restent simplement vides, ce qui donne le sujet sur la toile nue.",
+          },
+        ],
+      },
+      {
+        heading: "Choisir les r\u00e9glages",
+        items: [
+          {
+            q: "Combien de couleurs de fil choisir ?",
+            a: "Entre 8 et 15 convient \u00e0 la plupart des photos. Moins donne un rendu plus graphique et se brode beaucoup plus vite ; plus garde le d\u00e9tail mais multiplie les changements de fil, et au-del\u00e0 d'une vingtaine les nuances ajout\u00e9es sont souvent des voisines qu'on ne distingue pas sur la toile.",
+          },
+          {
+            q: "Quelle largeur choisir ?",
+            a: "La largeur en points d\u00e9cide \u00e0 la fois du d\u00e9tail et de la taille finie. Un visage a besoin d'environ 80 points de large pour ressembler \u00e0 la personne ; un motif simple se contente de 40. Divisez le nombre de points par le compte de votre toile \u2014 80 points sur de l'aida 14 fils font un peu moins de 15 cm.",
+          },
+          {
+            q: "Que veut dire \u00ab aida 14 fils \u00bb ?",
+            a: "Le nombre de points par pouce (2,54 cm). Le 14 fils est le point de d\u00e9part habituel : confortable \u00e0 voir et \u00e0 broder. Un compte plus \u00e9lev\u00e9 donne une toile plus fine, un ouvrage plus petit et davantage de fatigue pour les yeux.",
+          },
+          {
+            q: "\u00c0 quoi sert l'\u00e9clat des couleurs ?",
+            a: "Les photos sont plus ternes que le fil. Associ\u00e9e fid\u00e8lement, une photo peu satur\u00e9e donne des nuances peu satur\u00e9es, et l'ouvrage fini peut para\u00eetre fade \u00e0 c\u00f4t\u00e9 de l'image d'origine. \u00ab Vif \u00bb rel\u00e8ve la couleur sans toucher \u00e0 la luminosit\u00e9 : c'est une correction, pas un filtre.",
+          },
+          {
+            q: "Pourquoi retirer le fond prend-il plus de temps ?",
+            a: "Parce qu'un vrai mod\u00e8le de segmentation passe sur votre photo, dans votre navigateur, pour trouver le sujet. Quelques secondes la premi\u00e8re fois \u2014 le mod\u00e8le doit \u00eatre t\u00e9l\u00e9charg\u00e9 \u2014 puis plus rapide. \u00c7a marche mieux sur un fond uni : un chat sur un tapis \u00e0 motifs ne se d\u00e9tachera pas proprement.",
+          },
+        ],
+      },
+      {
+        heading: "La grille",
+        items: [
+          {
+            q: "Qu'y a-t-il dans le fichier t\u00e9l\u00e9charg\u00e9 ?",
+            a: "Un PNG avec votre motif dessin\u00e9 \u00e0 20 pixels par point, un quadrillage de comptage avec un trait plus \u00e9pais tous les dix points, et la liste des fils en dessous : chaque r\u00e9f\u00e9rence DMC, son nom, et le nombre de points qu'il vous faut.",
+          },
+          {
+            q: "Peut-on avoir une couleur \u00e0 la fois ?",
+            a: "Oui. Dans le panneau de t\u00e9l\u00e9chargement, cliquez sur un fil et vous obtenez ce fil seul, avec le contour de tout l'ouvrage autour pour situer les points. C'est la feuille \u00e0 suivre avec un \u00e9cheveau en main \u2014 et c'est comme \u00e7a qu'on distingue deux nuances presque identiques.",
+          },
+          {
+            q: "Les couleurs sont-elles de vrais fils DMC ?",
+            a: "Toutes. Le convertisseur associe parmi 483 r\u00e9f\u00e9rences DMC en coton moulin\u00e9, jug\u00e9es comme l'\u0153il juge une couleur et non comme une machine additionne des nombres. Les gammes m\u00e9tallis\u00e9e, satin\u00e9e et \u00c9toile sont volontairement \u00e9cart\u00e9es : elles partagent leurs codes avec le coton uni, et \u00eatre envoy\u00e9 acheter du noir brillant quand on voulait du noir n'aide personne.",
+          },
+          {
+            q: "Puis-je n'utiliser que les fils que j'ai d\u00e9j\u00e0 ?",
+            a: "Oui. Donnez vos r\u00e9f\u00e9rences DMC et rien d'autre ne sera utilis\u00e9.",
+          },
+          {
+            q: "Puis-je vendre ce que je brode ?",
+            a: "De notre c\u00f4t\u00e9, oui \u2014 la grille est \u00e0 vous. V\u00e9rifiez simplement que vous avez le droit d'utiliser la photo elle-m\u00eame, ce qui est une autre question et pas la n\u00f4tre.",
+          },
+        ],
+      },
+    ],
+  },
+
+  guide: {
+    kicker: "de la photo au tambour",
+    title: "Comment faire une grille de point de croix \u00e0 partir d'une photo",
+    lead: "Tout, du d\u00e9but \u00e0 la fin : une minute de travail et quelques soir\u00e9es de broderie.",
+    intro:
+      "Une grille de point de croix est un quadrillage o\u00f9 chaque case dit quelle couleur de fil y mettre. Transformer une photo en grille demande deux d\u00e9cisions \u2014 quelle taille, et combien de couleurs \u2014 puis de lire le r\u00e9sultat. Cette page passe par les deux, et par les r\u00e9glages qui valent le d\u00e9tour ensuite.",
+    steps: [
+      {
+        heading: "Choisir une photo qui survit \u00e0 la r\u00e9duction",
+        body: "Une grille est une image en tr\u00e8s basse r\u00e9solution : 60 points de large, c'est 60 pixels d'information. Ce qui survit \u00e0 \u00e7a : un sujet net, du contraste, et peu de fond \u2014 un animal devant un mur, une fleur, un objet seul. Ce qui n'y survit pas : une sc\u00e8ne charg\u00e9e, un visage lointain, une texture fine. Si vous avez le choix, prenez celle o\u00f9 le sujet remplit le cadre.",
+      },
+      {
+        heading: "Choisir la largeur en points",
+        body: "Elle d\u00e9cide du d\u00e9tail et de la taille finie en m\u00eame temps. 40 points, c'est un petit motif ; 60 \u00e0 90 est la plage habituelle pour quelque chose de reconnaissable ; au-del\u00e0 de 150 vous vous engagez sur des mois. Divisez par le compte de votre toile pour la taille : 80 points sur de l'aida 14 fils font environ 14,5 cm.",
+      },
+      {
+        heading: "Choisir le nombre de fils",
+        body: "Huit \u00e0 quinze convient \u00e0 la plupart des photos. Moins est plus franc, plus rapide et souvent plus joli ; plus garde le d\u00e9tail au prix d'un changement de fil tous les quelques points. Le compteur indique combien de points prend chaque couleur, ce qui est la mesure honn\u00eate du travail auquel vous venez de dire oui.",
+      },
+      {
+        heading: "Ajuster, si besoin",
+        body: "Tournez l'image si elle sort d'un t\u00e9l\u00e9phone tenu de travers. Relevez l'\u00e9clat si le r\u00e9sultat para\u00eet d\u00e9lav\u00e9 \u00e0 c\u00f4t\u00e9 de la photo \u2014 le fil est plus satur\u00e9 qu'un \u00e9cran. Retirez le fond si vous voulez le sujet sur la toile nue. Chaque changement redessine la grille aussit\u00f4t : vous jugez au lieu d'imaginer.",
+      },
+      {
+        heading: "Remplacer un fil qui ne vous pla\u00eet pas",
+        body: "Touchez un fil dans la liste pour voir exactement quels points il couvre, et servez-vous de la roue \u00e0 c\u00f4t\u00e9 pour choisir une autre nuance dans toute la gamme DMC. \u00c7a vaut le coup pour les carnations et pour les ciels, o\u00f9 la correspondance la plus proche en chiffres n'est pas toujours celle qui rend bien.",
+      },
+      {
+        heading: "T\u00e9l\u00e9charger la grille, et acheter le fil",
+        body: "Le PNG contient le quadrillage, les traits de comptage et la liste des fils avec un nombre de points par couleur. Un \u00e9cheveau de coton moulin\u00e9 couvre environ 1 500 points \u00e0 deux brins sur du 14 fils : les comptes vous disent donc quoi acheter. Imprimez aussi grand que votre imprimante le permet \u2014 vous allez compter des cases dessus un bon moment.",
+      },
+      {
+        heading: "Broder",
+        body: "Commencez par le milieu et travaillez vers l'ext\u00e9rieur : une erreur de comptage ne pourra pas pousser le motif hors de la toile. Deux brins sur de l'aida 14 fils est le choix habituel. Croisez tous les points dans le m\u00eame sens \u2014 le bras du dessus toujours dans la m\u00eame direction \u2014 et la surface finie accroche la lumi\u00e8re r\u00e9guli\u00e8rement.",
+      },
+    ],
+    ctaTitle: "Essayez sur une photo",
+    ctaBody: "\u00c7a ne co\u00fbte rien et il faut une minute pour voir si votre image fonctionne.",
+    ctaButton: "Cr\u00e9er une grille",
+  },
+
+  head: {
+    home: {
+      title: "Photo en grille de point de croix \u2014 gratuit, vrais fils DMC",
+      description:
+        "Transformez une photo en grille de point de croix imprimable, avec les vraies r\u00e9f\u00e9rences de fils DMC et le nombre de points de chacun. Gratuit, sans compte, et votre photo ne quitte jamais votre navigateur.",
+    },
+    convert: {
+      title: "Convertir une photo en grille de point de croix",
+      description:
+        "D\u00e9posez une photo, choisissez la largeur en points et le nombre de fils, et t\u00e9l\u00e9chargez la grille imprimable avec sa liste de fils DMC. Tout se passe dans votre navigateur.",
+    },
+    gallery: {
+      title: "Galerie de grilles de point de croix",
+      description:
+        "Les ouvrages partag\u00e9s par la communaut\u00e9 : parcourez les grilles, voyez les fils utilis\u00e9s, et r\u00e9cup\u00e9rez n'importe laquelle gratuitement.",
+    },
+    about: {
+      title: "Qui sommes-nous",
+      description:
+        "Un petit outil gratuit pour transformer une photo en grille de point de croix, fait par deux personnes. D'o\u00f9 il vient, et pourquoi tout tourne dans votre navigateur.",
+    },
+    account: {
+      title: "Mon compte",
+      description: "Votre nom dans la galerie, votre bio et votre marque.",
+    },
   },
 
   notFound: {

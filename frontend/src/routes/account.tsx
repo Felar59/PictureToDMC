@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
 import { useI18n } from "@/i18n"
 import { ApiError } from "@/lib/community"
+import { paths } from "@/lib/routes"
+import { useHead } from "@/lib/head"
 
 /**
  * The account page: name, bio, and — later — a choice of mark.
@@ -26,6 +28,8 @@ export default function Account() {
   const navigate = useNavigate()
   const [search] = useSearchParams()
   const welcome = search.has("bienvenue")
+
+  useHead({ title: t.head.account.title, description: t.head.account.description, noindex: true })
 
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
@@ -53,7 +57,7 @@ export default function Account() {
     return (
       <div className="text-center py-24 flex flex-col items-center gap-4">
         <p className="text-clay m-0">{t.account.signInFirst}</p>
-        <Button onClick={() => signIn("/compte")}>{t.account.signIn}</Button>
+        <Button onClick={() => signIn(paths.account)}>{t.account.signIn}</Button>
       </div>
     )
   }
@@ -68,7 +72,7 @@ export default function Account() {
       await updateProfile({ displayName: trimmed, bio: bio.trim() })
       // Straight into the gallery on the way in; on a later edit, stay put and
       // say it worked, because there is nowhere better to be.
-      if (welcome) void navigate("/gallery", { replace: true })
+      if (welcome) void navigate(paths.gallery, { replace: true })
       else setSaved(true)
     } catch (err) {
       const reserved = err instanceof ApiError && err.code === "reserved-name"

@@ -15,6 +15,7 @@ import { base64ToCells } from "@/engine/publish"
 import { patternImageData } from "@/engine/render"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { paths } from "@/lib/routes"
 
 /**
  * One published piece: the work, then what you can do with it, then what people
@@ -175,7 +176,7 @@ export default function Piece() {
     setRemoveFailed(false)
     try {
       await api.deletePost(post.id)
-      void navigate("/gallery", { replace: true })
+      void navigate(paths.gallery, { replace: true })
     } catch {
       setRemoveFailed(true)
       setRemoving(false)
@@ -199,7 +200,7 @@ export default function Piece() {
       <div className="text-center py-24 flex flex-col items-center gap-4">
         <p className="text-coral-deeper m-0">{t.piece.notFound}</p>
         <Button asChild variant="secondary">
-          <Link to="/gallery">{t.piece.backToGallery}</Link>
+          <Link to={paths.gallery}>{t.piece.backToGallery}</Link>
         </Button>
       </div>
     )
@@ -208,7 +209,7 @@ export default function Piece() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20 py-10">
       <Link
-        to="/gallery"
+        to={paths.gallery}
         className="inline-flex items-center min-h-11 text-[14px] font-bold text-stone hover:text-coral-deep transition-colors"
       >
         ← {t.piece.backToGallery}
