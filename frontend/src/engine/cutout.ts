@@ -84,7 +84,14 @@ export async function cutoutMask(source: Blob): Promise<Float32Array> {
 
   // Squashed to the square, not cropped — rembg does the same, and a crop would
   // throw away whatever falls outside it.
-  const bitmap = await createImageBitmap(source)
+  // EXIF orientation is stated, not assumed. A DOM <img> applies a photograph's
+  // orientation tag; createImageBitmap's default for it has moved with the spec and
+  // is not worth relying on. If the two disagree the grid comes out turned
+  // differently from the photograph shown next to it — which would quietly break the
+  // orientation tiles, since those are <img> elements showing this same file. Saying
+  // it explicitly makes both paths agree, and costs nothing where it was already the
+  // default.
+  const bitmap = await createImageBitmap(source, { imageOrientation: "from-image" })
   const canvas = new OffscreenCanvas(SIDE, SIDE)
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
   if (!ctx) {

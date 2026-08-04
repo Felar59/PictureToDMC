@@ -1,9 +1,12 @@
+import { useId } from "react"
+
+import { CornerStitch } from "@/components/brand/icons"
 import { FieldLabel, PanelTitle, Readout, SubPanel } from "@/components/ui/card"
-import { RotateGlyph } from "@/components/brand/icons"
 import { Pill } from "@/components/ui/pill"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { useI18n } from "@/i18n"
+import { cn } from "@/lib/utils"
 
 /**
  * The converter's settings.
@@ -21,6 +24,9 @@ import { useI18n } from "@/i18n"
 
 const VIVIDNESS_STEPS = [0, 55, 100] as const
 
+/** The four orientations, clockwise. */
+const QUARTERS = [0, 90, 180, 270] as const
+
 export type Settings = {
   stitchWidth: number
   colorCount: number
@@ -34,6 +40,8 @@ export function SettingsPanel({
   settings,
   onChange,
   onCommit,
+  /** The loaded photograph, shown at each angle by the orientation tiles. */
+  photoUrl,
   /** Grid size and stitch totals — the answer to "what am I getting". */
   summary,
 }: {
@@ -50,9 +58,12 @@ export function SettingsPanel({
    * the background switch — commits at once, because there is no drag to wait for.
    */
   onCommit: () => void
+  photoUrl?: string | null
   summary: React.ReactNode
 }) {
   const { t } = useI18n()
+  const rotationLabelId = useId()
+  const rotationHintId = useId()
   const step = VIVIDNESS_STEPS.indexOf(settings.vividness as (typeof VIVIDNESS_STEPS)[number])
   const commit = (patch: Partial<Settings>) => {
     onChange(patch)
@@ -132,25 +143,70 @@ export function SettingsPanel({
             </div>
           </div>
 
-          {/* One button that turns the picture a quarter at a time, rather than two
-              mirror toggles. Turning is what people actually want from a photograph
-              held the wrong way up; mirroring is what you want when you have traced
-              something, which is not this. The current angle is shown, because four
-              presses returning you to where you started should be visible. */}
-          <div>
-            <FieldLabel className="block mb-2">{t.converter.retouch.rotation}</FieldLabel>
-            <div className="flex items-center gap-2.5">
-              <Pill
-                selected={settings.rotation !== 0}
-                onClick={() => commit({ rotation: (settings.rotation + 90) % 360 })}
-                className="px-3 text-[13px]"
-              >
-                <RotateGlyph />
-                {t.converter.retouch.rotate90}
-              </Pill>
-              <span className="font-mono text-[12.5px] text-stone">
-                {t.converter.retouch.rotationValue(settings.rotation)}
-              </span>
+          {/* Four pictures of your own photograph, one framed. Pick the one that is
+              the right way up.
+              This replaced a single "quarter turn" button that cycled 0-90-180-270,
+              and the difference is not decoration:
+                * a phone photo that came in upside down cost three presses and three
+                  full reconversions. Now it is one click and one rebuild.
+                * nothing has to describe the transformation, because the outcome is
+                  the label. "Un quart de tour" is a geometry term, "90°" asks for a
+                  mental model of angle, and neither is a thing to ask of someone who
+                  is nervous with a computer. Recognising the right picture is.
+                * the cycling button also latched: `selected` was `rotation !== 0`, so
+                  a screen reader announced it pressed at 90 and then said nothing
+                  different through 180 and 270.
+              Free to draw: the photograph is already in memory and already rendered
+              as an <img> by the canvas, so these are four CSS transforms and never
+              touch the worker. */}
+          <div role="group" aria-labelledby={rotationLabelId} aria-describedby={rotationHintId}>
+            <FieldLabel id={rotationLabelId} className="block mb-1">
+              {t.converter.retouch.rotation}
+            </FieldLabel>
+            <p id={rotationHintId} className="text-[12.5px] leading-snug text-stone m-0 mb-2.5">
+              {photoUrl ? t.converter.retouch.rotationHint : t.converter.retouch.rotationHintEmpty}
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {QUARTERS.map((deg) => {
+                const active = settings.rotation === deg
+                return (
+                  <button
+                    key={deg}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={t.converter.retouch.rotationOptions[deg]}
+                    disabled={!photoUrl}
+                    // Guarded: re-picking the angle you are already on used to cost a
+                    // full reconversion for no change at all.
+                    onClick={() => !active && commit({ rotation: deg })}
+                    className={cn(
+                      "aspect-square p-[3px] rounded-chip border-[1.5px] transition-[border-color,box-shadow,transform] duration-150",
+                      "active:scale-[.97] disabled:cursor-not-allowed disabled:bg-linen disabled:border-edge-2",
+                      active
+                        ? "border-ink shadow-card-sm cursor-default [box-shadow:inset_0_0_0_1.5px_var(--color-ink),0_3px_14px_rgba(83,63,42,.08)]"
+                        : "bg-blanc border-edge-3 cursor-pointer hover:border-coral hover:shadow-soft",
+                    )}
+                  >
+                    <span className="flex items-center justify-center size-full rounded-[8px] overflow-hidden bg-linen">
+                      {photoUrl ? (
+                        <img
+                          src={photoUrl}
+                          alt=""
+                          decoding="async"
+                          className="size-full object-contain"
+                          // A square tile plus object-contain means the fitted box's
+                          // longest side is the tile's side, so turning it a quarter
+                          // swaps the sides and it still fits. True for any source
+                          // aspect ratio — and only true while the tile is square.
+                          style={{ transform: `rotate(${deg}deg)` }}
+                        />
+                      ) : (
+                        <CornerStitch deg={deg} />
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 

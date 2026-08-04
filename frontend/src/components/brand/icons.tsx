@@ -120,38 +120,39 @@ export function SoloStitch({ active = false }: { active?: boolean }) {
 }
 
 /**
- * A quarter turn: three quarters of a rounded square, with a head on the end.
+ * Which corner your picture's top-left ends up in, after a turn.
  *
- * SVG rather than composed divs, which the rest of this family is — an arc is the
- * one shape you cannot build out of boxes without it looking like a staircase. Kept
- * in the family's grammar all the same: round caps, one stroke weight, and the
- * corner radius the buttons use.
+ * The stand-in shown on the orientation tiles before there is a photograph to show.
+ * Four squares with one inked, and the inked one moves round the corners with the
+ * angle — 0 top-left, 90 top-right, 180 bottom-right, 270 bottom-left. It is the
+ * family's pixel-square vocabulary rather than an arrow, and it is honest about what
+ * a rotation does to a picture.
+ *
+ * This replaced an arrow glyph that had two faults worth remembering: its arrowhead
+ * reached x=15.1 with a 1.9 round-capped stroke inside a 16-wide box, so the tip was
+ * clipped; and an upward chevron at the top right of a square reads as "up", not as
+ * "clockwise". Neither was visible at 15px, which is its own indictment.
  */
-export function RotateGlyph({ size = 15, className }: { size?: number; className?: string }) {
+export function CornerStitch({ deg = 0, className }: { deg?: number; className?: string }) {
+  // Index of the inked square in a 2x2 laid out top-left, top-right, bottom-left,
+  // bottom-right — so the ink travels clockwise as the angle grows.
+  const inked = [0, 1, 3, 2][(((Math.round(deg / 90) % 4) + 4) % 4)]
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
+    <span
+      className={cn("grid grid-cols-2 gap-[3px]", className)}
+      style={{ width: 29, height: 29 }}
       aria-hidden="true"
-      className={cn("shrink-0", className)}
     >
-      {/* Open at the top right, which is where the arrowhead goes. */}
-      <path
-        d="M13 5.4V3.2A1.2 1.2 0 0 0 11.8 2H4.2A1.2 1.2 0 0 0 3 3.2v9.6A1.2 1.2 0 0 0 4.2 14h7.6a1.2 1.2 0 0 0 1.2-1.2v-1.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-      <path
-        d="M10.9 7.6 13 5.2l2.1 2.4"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={cn(
+            "block size-[13px] rounded-[2px]",
+            i === inked ? "bg-cocoa" : "bg-edge-5",
+          )}
+        />
+      ))}
+    </span>
   )
 }
 
