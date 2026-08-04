@@ -185,7 +185,12 @@ export function ProductPreview({ pattern }: { pattern: Pattern }) {
                   {copy.name}
                 </div>
                 <p className="text-[14px] leading-[1.45] text-clay m-0">{copy.tip}</p>
-                <Tag className="text-[12.5px] px-3 py-1 mt-0.5">{copy.fabric}</Tag>
+                {/* Cream with a hairline, not the default linen: this section now
+                    appears both inside a blanc dialog and on the converter's linen
+                    page, and a linen pill on a linen page is just bold text. */}
+                <Tag className="text-[12.5px] px-3 py-1 mt-0.5 bg-blanc border border-edge-3">
+                  {copy.fabric}
+                </Tag>
               </div>
             </li>
           )

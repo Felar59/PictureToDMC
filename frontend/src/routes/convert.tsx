@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DownloadGlyph } from "@/components/brand/icons"
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
 import { ChartDialog } from "@/community/chart-dialog"
+import { ProductPreview } from "@/components/showcase/product-preview"
 import { PublishDialog } from "@/community/publish-dialog"
 import { PatternCanvas, type CanvasView } from "@/components/converter/pattern-canvas"
 import { PhotoDropzone, type LoadedPhoto } from "@/components/converter/photo-dropzone"
@@ -345,6 +346,17 @@ export default function Convert() {
           )}
         </div>
       </div>
+
+      {/* Imagine it finished, once there is something to imagine.
+          Below the workbench rather than inside it: the three columns are the
+          thing you are working in, and this is the reward for having worked. Same
+          section the published-piece page shows, so the motif is seen on the same
+          four objects whether you just made it or found it in the gallery. */}
+      {pattern && pattern.threads.length > 0 && (
+        <div className="@container border-t border-edge-2 mt-14 pt-12">
+          <ProductPreview pattern={pattern} />
+        </div>
+      )}
 
       {pattern && (
         <ChartDialog
