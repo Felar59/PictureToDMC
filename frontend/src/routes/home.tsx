@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom"
 
+import strawberryChart from "@/assets/demo/strawberry-chart.avif"
+import strawberryPhoto from "@/assets/demo/strawberry.avif"
 import { PhotoSlot } from "@/components/brand/photo-slot"
 import { ThreadArrow } from "@/components/brand/icons"
-import { PixelGrid } from "@/components/brand/pixel-grid"
 import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
-import { BERRY_COLS, berry, demoThreads } from "@/lib/pixel-art"
+import { demoThreads } from "@/lib/pixel-art"
 
 /** Per-step badge colors, in the design's order: coral, golden, nile, sky. */
 const STEP_TONES = [
@@ -66,12 +67,26 @@ export default function Home() {
                 26rem container up. The design's own 196px slot needed 473px,
                 which never fitted this column at any viewport. */}
             <div className="flex flex-col @min-[26rem]:flex-row items-center justify-center gap-4">
+              {/* A real photograph and the chart the converter actually returned
+                  for it, rather than a hand-drawn berry that claimed six threads
+                  it had never matched. The promise on this panel is the product's
+                  only substantive claim, so it is now made with its own output —
+                  same fruit, 8 threads, 90 x 90, and the bobbins below are the ones
+                  off that chart. */}
               <div className="text-center">
                 <Link to="/convert" aria-label={t.home.ctaUpload}>
                   <PhotoSlot
-                    caption={t.home.demoPhotoPlaceholder}
-                    className="size-[160px] transition-colors hover:border-coral"
-                  />
+                    radius={16}
+                    className="size-[160px] p-3 transition-colors hover:border-coral"
+                  >
+                    <img
+                      src={strawberryPhoto}
+                      alt={t.home.demoPhotoAlt}
+                      width={360}
+                      height={360}
+                      className="block size-full object-contain"
+                    />
+                  </PhotoSlot>
                 </Link>
                 <div className="text-[12.5px] font-bold text-sand mt-2">{t.home.demoPhoto}</div>
               </div>
@@ -79,8 +94,14 @@ export default function Home() {
               <ThreadArrow className="rotate-90 @min-[26rem]:rotate-0" />
 
               <div className="text-center">
-                <div className="bg-aida rounded-[16px] p-2.5 shadow-[inset_0_0_0_1.5px_var(--color-edge-4)]">
-                  <PixelGrid pixels={berry} cols={BERRY_COLS} size={9} radius={2} />
+                <div className="bg-aida rounded-[16px] size-[160px] p-3 shadow-[inset_0_0_0_1.5px_var(--color-edge-4)]">
+                  <img
+                    src={strawberryChart}
+                    alt={t.home.demoPatternAlt}
+                    width={360}
+                    height={360}
+                    className="block size-full rounded-[6px]"
+                  />
                 </div>
                 <div className="text-[12.5px] font-bold text-sand mt-2">{t.home.demoPattern}</div>
               </div>

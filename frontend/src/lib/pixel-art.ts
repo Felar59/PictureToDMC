@@ -35,12 +35,22 @@ export const berry = mk(
   { r: "#D9463F", d: "#B23A34", g: "#6FAE7C", G: "#4E8A5F", y: "#F2CE6B", ".": "#F3ECDC" },
 )
 
-/** The six threads the berry demo is matched to, in the design's order. */
+/**
+ * The threads the hero's example is actually made of.
+ *
+ * Copied off the chart the converter produced for that strawberry, most-used
+ * first, rather than picked to look nice: the row beside them claims the photo was
+ * matched to this many DMC threads, and it is the first claim the site makes.
+ * These are the eight it really used, with their real chart colours — 606 Bright
+ * Orange-red at 1 251 stitches down to 740 Tangerine at 121.
+ */
 export const demoThreads = [
-  { code: "321", name: "Red", hex: "#D9463F" },
-  { code: "815", name: "Garnet Medium", hex: "#B23A34" },
-  { code: "913", name: "Nile Green Medium", hex: "#6FAE7C" },
-  { code: "890", name: "Pistachio Very Dark", hex: "#4E8A5F" },
-  { code: "727", name: "Topaz Very Light", hex: "#F2CE6B" },
-  { code: "Ecru", name: "Ecru", hex: "#F3ECDC" },
+  { code: "606", name: "Orange-red - Bright", hex: "#F70F00" },
+  { code: "666", name: "Red - Bright", hex: "#CE1B33" },
+  { code: "956", name: "Geranium", hex: "#F7566D" },
+  { code: "3326", name: "Rose - Light", hex: "#F9979C" },
+  { code: "581", name: "Moss Green", hex: "#838A29" },
+  { code: "347", name: "Salmon - Very Dark", hex: "#AB1B33" },
+  { code: "166", name: "Lime Green", hex: "#ADC238" },
+  { code: "740", name: "Tangerine", hex: "#FD6F1A" },
 ]

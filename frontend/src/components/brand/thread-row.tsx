@@ -22,6 +22,7 @@ export function ThreadRow({
   count,
   surface,
   isolate,
+  dense,
   className,
 }: {
   thread: Thread
@@ -29,12 +30,26 @@ export function ThreadRow({
   /** `card` sits on the linen page, `chip` sits inside a blanc dialog. */
   surface: "card" | "chip"
   isolate?: { active: boolean; onToggle: () => void }
+  /** One line instead of two, for a list that is scanned rather than clicked. */
+  dense?: boolean
   /** How the row sizes itself — the two callers lay their rows out differently. */
   className?: string
 }) {
   const { t } = useI18n()
 
-  const body = (
+  // Dense puts the row on one line and drops the second baseline. It exists
+  // because the same list is read for two different reasons: in the dialog you
+  // are picking one thread to work from, and the row is a target you have to be
+  // able to hit; on a piece page you are scanning an inventory, and a
+  // two-line row per thread buried the comments under a 40-thread wall.
+  const body = dense ? (
+    <>
+      <Bobbin hex={thread.hex} width={15} height={21} radius={4} />
+      <span className="text-[13px] font-extrabold text-ink shrink-0">{thread.num}</span>
+      <span className="flex-1 min-w-0 truncate text-[12px] text-stone">{thread.name}</span>
+      <span className="font-mono text-[11.5px] text-cocoa shrink-0">{t.piece.stitches(count)}</span>
+    </>
+  ) : (
     <>
       <Bobbin hex={thread.hex} width={22} height={30} radius={6} />
       <span className="flex-1 min-w-0">
@@ -52,7 +67,9 @@ export function ThreadRow({
     </>
   )
 
-  const shape = "flex items-center gap-3 rounded-chip px-3 py-2.5 min-h-[56px]"
+  const shape = dense
+    ? "flex items-center gap-2 rounded-chip px-2.5 py-1.5"
+    : "flex items-center gap-3 rounded-chip px-3 py-2.5 min-h-[56px]"
 
   if (!isolate) {
     return (

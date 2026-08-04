@@ -174,6 +174,19 @@ export type ChartOptions = {
   legendTitle?: string
   /** What a stitch count is called — "pts", "st". Same reason. */
   countSuffix?: string
+  /**
+   * Draw one thread only: the sheet you work from with a single skein in hand.
+   *
+   * Index into `pattern.threads`. The stitches of every other thread are left
+   * blank, but the keyline still traces the *whole* piece rather than this
+   * thread's own scattered patches — that silhouette is the only thing telling you
+   * where on the cloth these stitches go, and without it a pale thread covering a
+   * tenth of the grid prints as a few marks in an empty field. So `outline`
+   * defaults to on here, unlike on the full chart.
+   *
+   * The legend narrows to the one thread, since the rest are not on the page.
+   */
+  onlyThread?: number
 }
 
 /**
@@ -204,11 +217,21 @@ const BACKSTITCH_APART = 26 * 26
 export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanvasElement {
   const grid = opts.grid ?? true
   const legend = opts.legend ?? true
-  const outline = opts.outline ?? false
+  // -1 rather than undefined from here on, so the hot loop compares two numbers.
+  const only =
+    opts.onlyThread !== undefined && opts.onlyThread >= 0 && opts.onlyThread < pattern.threads.length
+      ? opts.onlyThread
+      : -1
+  // On a one-thread sheet the keyline is what makes it readable, so it is on
+  // unless the caller says otherwise.
+  const outline = opts.outline ?? only >= 0
   const backstitch = opts.backstitch ?? false
   const outlineColor = opts.outlineColor ?? "#141008"
   const heavyEvery = opts.heavyEvery ?? 10
   const background = opts.background ?? "#EBE2D7"
+
+  /** The legend's rows: every thread, or just the one being drawn. */
+  const shown = only >= 0 ? [only] : pattern.threads.map((_, i) => i)
 
   const layout = (cell: number) => {
     const artW = pattern.width * cell
@@ -218,7 +241,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     // count, and four columns of that on a narrow chart left no room for names.
     const legendCols = Math.max(1, Math.min(3, Math.floor(artW / 290)))
     const legendRowH = Math.max(30, Math.round(cell * 1.8))
-    const legendRows = legend ? Math.ceil(pattern.threads.length / legendCols) : 0
+    const legendRows = legend ? Math.ceil(shown.length / legendCols) : 0
     const legendH = legend ? legendRows * legendRowH + margin * 2 : 0
     return {
       cell,
@@ -254,6 +277,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     for (let x = 0; x < pattern.width; x++) {
       const t = pattern.cells[y * pattern.width + x]
       if (t < 0) continue
+      if (only >= 0 && t !== only) continue
       ctx.fillStyle = pattern.threads[t].hex
       ctx.fillRect(margin + x * cell, margin + y * cell, cell, cell)
     }
@@ -388,7 +412,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     ctx.stroke()
   }
 
-  if (legend && pattern.threads.length) {
+  if (legend && shown.length) {
     /* The shopping list, and the one part of the chart that is read rather than
        counted — so it is set like a list and not like a grid. Each row is a
        swatch, the reference, the thread's name, and how many stitches of it you
@@ -427,13 +451,14 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     // however wide the numbers are.
     ctx.font = `800 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
     let codeW = 0
-    for (const thread of pattern.threads) {
-      codeW = Math.max(codeW, ctx.measureText(thread.num).width)
+    for (const index of shown) {
+      codeW = Math.max(codeW, ctx.measureText(pattern.threads[index].num).width)
     }
     const suffix = opts.countSuffix ?? "pts"
     const countW = ctx.measureText(`0000 ${suffix}`).width
 
-    pattern.threads.forEach((thread, i) => {
+    shown.forEach((index, i) => {
+      const thread = pattern.threads[index]
       const col = i % legendCols
       const row = Math.floor(i / legendCols)
       const x = margin + col * colW
@@ -467,7 +492,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
       ctx.textAlign = "right"
       ctx.font = `600 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
       ctx.fillStyle = faded
-      ctx.fillText(`${pattern.counts[i]} ${suffix}`, x + colW - gap, y)
+      ctx.fillText(`${pattern.counts[index]} ${suffix}`, x + colW - gap, y)
       ctx.textAlign = "left"
 
       // Whatever room is left goes to the name, clipped rather than allowed to

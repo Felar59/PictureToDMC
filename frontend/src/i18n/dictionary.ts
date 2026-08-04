@@ -28,7 +28,8 @@ export const en = {
     heroNote: "from photo to chart in about a minute ↷",
     demoPhoto: "your photo",
     demoPattern: "your pattern",
-    demoPhotoPlaceholder: "drop a photo — pet, portrait, flowers…",
+    demoPhotoAlt: "A photo of a strawberry",
+    demoPatternAlt: "The same strawberry as a cross-stitch pattern, in 8 DMC threads",
     demoMatched: (n: number) => `matched to ${n} DMC threads`,
 
     stepsKicker: "as easy as one, two, three (and four)",
@@ -168,6 +169,8 @@ export const en = {
       // section answers what the piece is made of.
       heading: "The threads in this piece",
       order: "most-used thread first",
+      all: (n: number) => `See all ${n} colours`,
+      less: "Show fewer",
     },
     photoAlt: (title: string) => `${title}, stitched`,
     patternAlt: (title: string) => `The grid for ${title}`,
@@ -257,6 +260,15 @@ export const en = {
       close: "Show every colour",
       failed: "This thread's grid couldn't be drawn.",
       retry: "Try again",
+      download: (num: string) => `Download DMC ${num} on its own`,
+      saving: "Preparing…",
+      // Says what it is for, which is the bit that is not obvious: two shades you
+      // cannot tell apart on the full chart never have to be told apart at all.
+      downloadHint: "one sheet per skein — handy for two shades that look alike",
+      // Its own title, because the chart's would say "1 colour" and read as though
+      // the whole piece took one thread.
+      legendTitle: (num: string, stitches: number, w: number, h: number) =>
+        `DMC ${num} alone · ${stitches.toLocaleString("en")} stitches · grid ${w} x ${h}`,
     },
   },
 
@@ -456,7 +468,8 @@ export const fr: Copy = {
     heroNote: "de la photo à la grille en une minute ↷",
     demoPhoto: "votre photo",
     demoPattern: "votre grille",
-    demoPhotoPlaceholder: "une photo — animal, portrait, fleurs…",
+    demoPhotoAlt: "La photo d'une fraise",
+    demoPatternAlt: "La même fraise en grille de point de croix, en 8 fils DMC",
     demoMatched: (n: number) => `associée à ${n} fils DMC`,
 
     stepsKicker: "aussi simple que un, deux, trois (et quatre)",
@@ -587,6 +600,8 @@ export const fr: Copy = {
     threads: {
       heading: "Les fils de cet ouvrage",
       order: "du fil le plus utilisé au moins utilisé",
+      all: (n: number) => `Voir les ${n} couleurs`,
+      less: "Réduire",
     },
     photoAlt: (title: string) => `${title}, brodé`,
     patternAlt: (title: string) => `La grille de ${title}`,
@@ -676,6 +691,11 @@ export const fr: Copy = {
       close: "Voir toutes les couleurs",
       failed: "La grille de ce fil n'a pas pu être dessinée.",
       retry: "Réessayer",
+      download: (num: string) => `Télécharger le DMC ${num} seul`,
+      saving: "Préparation…",
+      downloadHint: "une feuille par écheveau — pratique pour deux teintes qui se ressemblent",
+      legendTitle: (num: string, stitches: number, w: number, h: number) =>
+        `DMC ${num} seul · ${stitches.toLocaleString("fr")} points · grille ${w} x ${h}`,
     },
   },
 

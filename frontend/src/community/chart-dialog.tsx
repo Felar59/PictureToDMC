@@ -6,7 +6,7 @@ import { ChartPanel } from "@/components/converter/chart-panel"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import type { Pattern } from "@/engine/convert"
-import { isolateImageData, patternImageData } from "@/engine/render"
+import { canvasToBlob, isolateImageData, patternImageData, renderChart } from "@/engine/render"
 import { useI18n } from "@/i18n"
 
 /**
@@ -67,7 +67,12 @@ export function ChartDialog({
           ) : null}
 
           {solo !== null && (
-            <SoloPlanche pattern={pattern} index={solo} onClose={() => setSolo(null)} />
+            <SoloPlanche
+              pattern={pattern}
+              index={solo}
+              onClose={() => setSolo(null)}
+              onError={onError}
+            />
           )}
 
           <ul className="grid gap-2.5 list-none p-0 m-0 mt-4 @min-[34rem]:grid-cols-2 @min-[56rem]:grid-cols-3">
@@ -109,15 +114,60 @@ function SoloPlanche({
   pattern,
   index,
   onClose,
+  onError,
 }: {
   pattern: Pattern
   index: number
   onClose: () => void
+  onError: (key: string) => void
 }) {
   const { t } = useI18n()
   const thread = pattern.threads[index]
   const hostRef = useRef<HTMLDivElement | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const [saving, setSaving] = useState(false)
+
+  /**
+   * The sheet for this one skein, as a PNG.
+   *
+   * With two threads a shade apart, this is how you get both done in one sitting:
+   * take the two sheets, work one and then the other, and the pair that is hard to
+   * tell apart on a full chart never has to be told apart at all.
+   *
+   * The keyline is left at its default, which `onlyThread` turns on — a single
+   * thread covers a fraction of the grid, and without the silhouette of the whole
+   * piece around it the page is a scatter of marks in an empty field. For a white
+   * thread on pale paper it would be an empty field full stop.
+   */
+  const download = async () => {
+    if (saving) return
+    setSaving(true)
+    try {
+      const canvas = renderChart(pattern, {
+        onlyThread: index,
+        legendTitle: t.chart.isolate.legendTitle(
+          thread.num,
+          pattern.counts[index],
+          pattern.width,
+          pattern.height,
+        ),
+        countSuffix: t.chart.countSuffix,
+      })
+      const blob = await canvasToBlob(canvas)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `BroderieDMC-${thread.num}.png`
+      a.click()
+      // Deferred: revoking in the same tick is a way to have Safari cancel the
+      // download it was just handed.
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    } catch {
+      onError("download")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   // isolateImageData allocates three sub-pixels per stitch per side, so a tall
   // pattern at the slider's maximum is a multi-megabyte buffer the browser is
@@ -201,9 +251,19 @@ function SoloPlanche({
         </>
       )}
 
-      <Button variant="quiet" size="sm" className="self-center" onClick={onClose}>
-        {t.chart.isolate.close}
-      </Button>
+      {/* The download is the point of the panel, so it is the coral one — and the
+          only coral inside this block. Getting out of it is quiet. */}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button size="sm" onClick={() => void download()} disabled={saving}>
+          {saving ? t.chart.isolate.saving : t.chart.isolate.download(thread.num)}
+        </Button>
+        <Button variant="quiet" size="sm" onClick={onClose}>
+          {t.chart.isolate.close}
+        </Button>
+      </div>
+      <p className="font-hand text-[13px] text-sand text-center m-0 -mt-2">
+        {t.chart.isolate.downloadHint}
+      </p>
     </div>
   )
 }
