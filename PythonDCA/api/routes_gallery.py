@@ -20,6 +20,15 @@ MAX_TITLE = 80
 MAX_THREADS = 64
 MAX_CELLS = 200 * 200
 MAX_COMMENT = 1000
+# How many pieces one account may publish, and over how long.
+#
+# A rolling twenty-four hours rather than a calendar day: a day that resets at
+# midnight hands anyone who waits until 23:59 ten pieces in two minutes, which is
+# the shape of flood this is here to prevent. The cost is that "per day" is now
+# "since this time yesterday", so the refusal says when there will be room again
+# instead of leaving someone to guess.
+DAILY_POST_LIMIT = 5
+DAY_MS = 24 * 60 * 60 * 1000
 # A pattern thumbnail is a few kB; the hoop photo is the one that can be big.
 MAX_THUMB_BYTES = 256 * 1024
 MAX_PHOTO_BYTES = 6 * 1024 * 1024
@@ -71,6 +80,10 @@ def _card(row: sqlite3.Row, liked: bool) -> dict:
             "id": row["author_id"],
             "displayName": row["display_name"],
             "icon": row["icon"],
+            # Every query feeding this joins `u.role` in for it. Same field
+            # `public_user` hands out, so a card and a profile agree about who is
+            # wearing the flower.
+            "isAdmin": row["role"] == "admin",
         },
     }
 
@@ -95,7 +108,7 @@ def list_posts(request: Request, category: str = "all", sort: str = "new", page:
                p.like_count, p.created_at, p.author_id, p.palette,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
-               u.display_name, u.icon,
+               u.display_name, u.icon, u.role,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id
         {where}
@@ -121,7 +134,7 @@ def get_post(post_id: int, request: Request) -> JSONResponse:
     user = auth.current_user(request)
     row = connect().execute(
         """
-        SELECT p.*, u.display_name, u.icon,
+        SELECT p.*, u.display_name, u.icon, u.role,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id WHERE p.id = ?
         """,
@@ -160,6 +173,45 @@ def get_photo(post_id: int) -> Response:
         row["photo"],
         media_type=row["photo_mime"] or "image/jpeg",
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+def _check_daily_limit(conn: sqlite3.Connection, user: sqlite3.Row) -> None:
+    """Refuse a sixth piece in twenty-four hours.
+
+    Called from inside the same transaction as the insert, which is the only place
+    it is correct: counted before `BEGIN IMMEDIATE`, five requests arriving
+    together would each find four and each add one. `idx_posts_author` covers the
+    (author, time) lookup, so this is an index range scan and not a table scan.
+
+    Admins are exempt. The limit is here to keep the gallery from being flooded,
+    not to ration the two people who would have to clean up the flood.
+
+    The 429 carries a body the client can act on rather than a sentence it would
+    have to parse: which limit was hit, and how many minutes until the oldest of
+    the five falls out of the window. Every message a member reads is written in
+    their own language on the other side, and this module has no locale.
+    """
+    if user["role"] == "admin":
+        return
+
+    row = conn.execute(
+        "SELECT COUNT(*) AS n, MIN(created_at) AS oldest FROM posts"
+        " WHERE author_id = ? AND created_at > ?",
+        (user["id"], now_ms() - DAY_MS),
+    ).fetchone()
+    if row["n"] < DAILY_POST_LIMIT:
+        return
+
+    wait_ms = max(0, int(row["oldest"]) + DAY_MS - now_ms())
+    raise HTTPException(
+        429,
+        {
+            "code": "daily-limit",
+            "limit": DAILY_POST_LIMIT,
+            # Rounded up, so "1 minute" never means "any moment now, try again".
+            "retryInMinutes": -(-wait_ms // 60_000),
+        },
     )
 
 
@@ -222,6 +274,8 @@ async def publish(request: Request) -> JSONResponse:
     conn = connect()
     conn.execute("BEGIN IMMEDIATE")
     try:
+        _check_daily_limit(conn, user)
+
         row = conn.execute(
             "SELECT MAX(next) AS next FROM ("
             "  SELECT COALESCE(MAX(id), 0) AS next FROM posts"
@@ -336,7 +390,7 @@ def list_comments(post_id: int) -> JSONResponse:
 
     rows = conn.execute(
         """
-        SELECT c.id, c.body, c.created_at, u.id AS uid, u.display_name, u.icon
+        SELECT c.id, c.body, c.created_at, u.id AS uid, u.display_name, u.icon, u.role
         FROM comments c
         JOIN users u ON u.id = c.author_id
         WHERE c.post_id = ? AND u.banned_at IS NULL
@@ -356,6 +410,7 @@ def list_comments(post_id: int) -> JSONResponse:
                         "id": r["uid"],
                         "displayName": r["display_name"],
                         "icon": r["icon"],
+                        "isAdmin": r["role"] == "admin",
                     },
                 }
                 for r in rows
@@ -433,7 +488,7 @@ def get_profile(user_id: int, request: Request) -> JSONResponse:
                p.like_count, p.created_at, p.author_id, p.palette,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
-               u.display_name, u.icon,
+               u.display_name, u.icon, u.role,
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id
         WHERE p.author_id = ?

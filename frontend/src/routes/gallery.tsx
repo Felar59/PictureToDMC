@@ -78,7 +78,10 @@ export default function Gallery() {
   }
 
   const remove = async (id: number) => {
-    if (!window.confirm(t.gallery.confirmDelete)) return
+    // Only an admin ever sees the ✕ on a piece that isn't theirs, and they see it
+    // on every card in the gallery. So the prompt says whose it is.
+    const own = posts.find((p) => p.id === id)?.author.id === user?.id
+    if (!window.confirm(own ? t.gallery.confirmDelete : t.gallery.confirmDeleteOther)) return
     setPosts((prev) => prev.filter((p) => p.id !== id))
     await api.deletePost(id).catch(() => void load(0, true))
   }

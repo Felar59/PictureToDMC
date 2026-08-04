@@ -88,6 +88,17 @@ def google_callback(request: Request, code: str | None = None, state: str | None
             (identity.sub, user_id),
         )
 
+    # An account named in PTD_ADMINS gets the role here as well as on boot: the
+    # boot pass can only reach accounts that already exist, and the first admin
+    # signs in before there is a row to promote.
+    #
+    # Only on an address Google says it verified. Nothing else in this package
+    # trusts `email_verified`, because nothing else acts on the address — this
+    # does, so it checks. The alternative is granting the site's keys to whoever
+    # can put the right string in an unverified claim.
+    if identity.email and identity.email_verified and identity.email in config.ADMIN_EMAILS:
+        conn.execute("UPDATE users SET role = 'admin' WHERE id = ? AND role != 'admin'", (user_id,))
+
     banned = conn.execute("SELECT banned_at FROM users WHERE id = ?", (user_id,)).fetchone()
     if banned and banned["banned_at"] is not None:
         return fail("banned")

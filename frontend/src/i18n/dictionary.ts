@@ -122,6 +122,10 @@ export const en = {
     failedState: "That sign-in link had expired. Try again.",
     failedBanned: "This account has been suspended.",
     whySignIn: "Signing in is only needed to share a piece — converting is free and anonymous.",
+    /** The flower's tooltip. Cute first, unmistakable second — it has to be clear
+     *  that this person can delete things — and with no pronoun in it, because the
+     *  same badge is worn by whoever holds the role. */
+    adminBadge: "Gallery gardener · admin",
   },
 
   publish: {
@@ -143,6 +147,12 @@ export const en = {
     done: "Published — thank you!",
     failed: "It didn't publish. Try again.",
     tooBig: "That photo is too heavy, even after shrinking. Try a smaller one.",
+    /** Not an error — there is simply no room until one of today's falls out of
+     *  the window, so it says when rather than leaving you to guess. */
+    dailyLimit: (limit: number, minutes: number) =>
+      minutes < 90
+        ? `${limit} pieces in a day is the most the gallery takes. There'll be room again in ${minutes} min.`
+        : `${limit} pieces in a day is the most the gallery takes — nicely done! There'll be room again in about ${Math.round(minutes / 60)} h.`,
   },
 
   piece: {
@@ -156,6 +166,8 @@ export const en = {
     seeStitched: "See it stitched",
     remove: "Delete this piece",
     removeConfirm: "Delete this piece for good? The chart and the comments go with it.",
+    removeConfirmOther:
+      "This piece isn't yours. Delete it for good anyway? You can, because you're an admin — the chart and the comments go with it.",
     removing: "Deleting…",
     removeFailed: "It wasn't deleted. Try again.",
     stitches: (n: number) => `${n} st`,
@@ -204,6 +216,8 @@ export const en = {
     sending: "Posting…",
     signIn: "Sign in to comment.",
     deleteAria: "Delete this comment",
+    deleteOtherAria: "Delete this comment (admin)",
+    confirmDeleteOther: (who: string) => `Delete ${who}'s comment? You're doing this as an admin.`,
     failed: "Your comment wasn't posted. Try again.",
     loading: "Loading comments…",
   },
@@ -214,6 +228,8 @@ export const en = {
     previewHint: "your chart in miniature — the file prints larger and sharper",
     previewFailed: "Draw the preview again — your download works either way.",
     refresh: "Refresh the preview",
+    backstitch: "Backstitch",
+    backstitchHint: "Outlines the colour zones — the line you sew over the top",
     outlineColor: "Outline colour",
     legendTitle: (colours: number, stitches: number, w: number, h: number) =>
       `DMC · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
@@ -250,6 +266,7 @@ export const en = {
     likeAria: (title: string) => `Like “${title}”`,
     deleteAria: (title: string) => `Delete “${title}”`,
     confirmDelete: "Delete this piece for good?",
+    confirmDeleteOther: "This piece isn't yours. Delete it for good anyway? You're an admin.",
     stitchCount: (n: number) => `${n} stitches`,
   },
 
@@ -510,6 +527,7 @@ export const fr: Copy = {
     failedState: "Ce lien de connexion avait expiré. Réessayez.",
     failedBanned: "Ce compte a été suspendu.",
     whySignIn: "La connexion sert uniquement à partager un ouvrage — convertir reste libre et anonyme.",
+    adminBadge: "Jardinier·ère de la galerie · admin",
   },
 
   publish: {
@@ -531,6 +549,10 @@ export const fr: Copy = {
     done: "Publié — merci !",
     failed: "La publication a échoué. Réessayez.",
     tooBig: "Cette photo reste trop lourde même réduite. Essayez-en une plus petite.",
+    dailyLimit: (limit: number, minutes: number) =>
+      minutes < 90
+        ? `${limit} ouvrages par jour, c'est le maximum. Il y aura de la place dans ${minutes} min.`
+        : `${limit} ouvrages en une journée, joli rythme ! C'est le maximum : il y aura de la place dans ${Math.round(minutes / 60)} h environ.`,
   },
 
   piece: {
@@ -545,6 +567,8 @@ export const fr: Copy = {
     remove: "Supprimer cet ouvrage",
     removeConfirm:
       "Supprimer cet ouvrage définitivement ? La grille et les commentaires partent avec.",
+    removeConfirmOther:
+      "Cet ouvrage n'est pas le vôtre. Le supprimer définitivement quand même ? Vous pouvez, vous êtes admin — la grille et les commentaires partent avec.",
     removing: "Suppression…",
     removeFailed: "Il n'a pas été supprimé. Réessayez.",
     stitches: (n: number) => `${n} pts`,
@@ -594,6 +618,9 @@ export const fr: Copy = {
     sending: "Publication…",
     signIn: "Connectez-vous pour commenter.",
     deleteAria: "Supprimer ce commentaire",
+    deleteOtherAria: "Supprimer ce commentaire (admin)",
+    confirmDeleteOther: (who: string) =>
+      `Supprimer le commentaire de ${who} ? Vous le faites en tant qu'admin.`,
     failed: "Votre commentaire n'a pas été publié. Réessayez.",
     loading: "Chargement des commentaires…",
   },
@@ -605,6 +632,8 @@ export const fr: Copy = {
     previewFailed:
       "Redessinez l'aperçu — le téléchargement fonctionne dans tous les cas.",
     refresh: "Rafraîchir l'aperçu",
+    backstitch: "Point de piqûre",
+    backstitchHint: "Cerne les zones de couleur — le fil qu'on brode par-dessus",
     outlineColor: "Couleur du liseré",
     legendTitle: (colours: number, stitches: number, w: number, h: number) =>
       `DMC · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
@@ -641,6 +670,8 @@ export const fr: Copy = {
     likeAria: (title: string) => `Aimer « ${title} »`,
     deleteAria: (title: string) => `Supprimer « ${title} »`,
     confirmDelete: "Supprimer définitivement cet ouvrage ?",
+    confirmDeleteOther:
+      "Cet ouvrage n'est pas le vôtre. Le supprimer définitivement quand même ? Vous êtes admin.",
     stitchCount: (n: number) => `${n} points`,
   },
 

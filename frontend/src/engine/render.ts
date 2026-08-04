@@ -1,3 +1,4 @@
+import { labDist2 } from "./color"
 import type { Pattern } from "./convert"
 
 /**
@@ -156,6 +157,9 @@ export type ChartOptions = {
   cellSize?: number
   grid?: boolean
   legend?: boolean
+  /** Backstitch: a line along every seam between two colours the eye can tell
+   *  apart, in `outlineColor`. See BACKSTITCH_APART. */
+  backstitch?: boolean
   /** Keyline around the stitched area. */
   outline?: boolean
   /** Its colour. A dark line is right on pale fabric and disappears on a dark
@@ -178,11 +182,30 @@ export type ChartOptions = {
  */
 const MAX_CANVAS_SIDE = 16000
 
+/**
+ * How different two neighbouring threads must be for the seam between them to be
+ * worth a backstitch line, as a squared Lab distance.
+ *
+ * The same 26 the gallery card uses to decide whether two swatches are worth
+ * showing separately, and for the same reason: below it the two sides read as one
+ * colour, so a line there is a line drawn through the middle of a single shape.
+ * Above it there is a real edge — 310 Black to 3799 Pewter is 24.3 and stays
+ * unruled, green to blue is 70.9 and gets its line.
+ *
+ * What this buys is the thing that makes a converted photo look like a drawing
+ * rather than a mosaic: the boundary that matters (cat against sky, petal against
+ * leaf) is outlined, while the four steps of shading inside the cat are not. What
+ * it costs is that a subject shading gently into its background gets no contour
+ * there, which is correct — there is no edge to stitch.
+ */
+const BACKSTITCH_APART = 26 * 26
+
 /** The printable chart: stitches, counting grid, and the thread legend. */
 export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanvasElement {
   const grid = opts.grid ?? true
   const legend = opts.legend ?? true
   const outline = opts.outline ?? false
+  const backstitch = opts.backstitch ?? false
   const outlineColor = opts.outlineColor ?? "#141008"
   const heavyEvery = opts.heavyEvery ?? 10
   const background = opts.background ?? "#EBE2D7"
@@ -258,6 +281,69 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
       }
     }
     ctx.stroke()
+  }
+
+  /**
+   * Backstitch — the line you sew over the finished cross stitches to give a
+   * shape its edge back.
+   *
+   * It is not a keyline around the whole piece, which is what `outline` above
+   * draws. It runs along the seams *inside* the motif, between colours that are
+   * actually different, plus the silhouette where the stitching meets bare cloth.
+   * On a real chart this is a separate pass in one dark thread, held in the hand
+   * after the cross stitching is done, and it is most of what stops a converted
+   * photograph reading as a grid of coloured squares.
+   *
+   * Drawn before the grid, like the outline, so the counting rules stay readable
+   * on top of it.
+   */
+  if (backstitch) {
+    // Off the grid counts as bare cloth, which is what closes the contour along
+    // the four edges of a motif that runs to the border.
+    const at = (x: number, y: number) =>
+      x < 0 || y < 0 || x >= pattern.width || y >= pattern.height
+        ? -1
+        : pattern.cells[y * pattern.width + x]
+
+    const seam = (a: number, b: number) => {
+      if (a === b) return false
+      // Bare cloth is different from every thread: that seam is the silhouette.
+      if (a < 0 || b < 0) return true
+      return labDist2(pattern.threads[a].lab, pattern.threads[b].lab) > BACKSTITCH_APART
+    }
+
+    ctx.strokeStyle = outlineColor
+    // Thinner than the outline's keyline (cell/5): this is a thread laid along a
+    // seam, not a border drawn around the work, and it has to read as the lighter
+    // of the two when both are on.
+    ctx.lineWidth = Math.max(1.5, cell / 7)
+    // Butt caps leave a notch at every corner where two segments meet at a right
+    // angle, and a contour is nothing but corners.
+    ctx.lineCap = "round"
+    ctx.beginPath()
+    // Each seam is visited once, from the cell to its right or below — the other
+    // half of the pair is the neighbour already behind us. Walking all four sides
+    // of every cell would test every interior seam twice for the same lines.
+    for (let y = 0; y < pattern.height; y++) {
+      for (let x = 0; x <= pattern.width; x++) {
+        if (!seam(at(x - 1, y), at(x, y))) continue
+        const px = margin + x * cell
+        const py = margin + y * cell
+        ctx.moveTo(px, py)
+        ctx.lineTo(px, py + cell)
+      }
+    }
+    for (let x = 0; x < pattern.width; x++) {
+      for (let y = 0; y <= pattern.height; y++) {
+        if (!seam(at(x, y - 1), at(x, y))) continue
+        const px = margin + x * cell
+        const py = margin + y * cell
+        ctx.moveTo(px, py)
+        ctx.lineTo(px + cell, py)
+      }
+    }
+    ctx.stroke()
+    ctx.lineCap = "butt"
   }
 
   if (grid) {

@@ -11,11 +11,13 @@ export type PublicUser = {
   /** Which built-in mark they picked, or null for the one drawn from their id. */
   icon?: string | null
   bio?: string | null
+  /** Wears the flower, and may delete anyone's piece or comment. Public because
+   *  the badge is the point — see `public_user` in the backend. */
+  isAdmin: boolean
 }
 
 export type Me = PublicUser & {
   email: string | null
-  isAdmin: boolean
   /** False until they have confirmed a name of their own. */
   setUp: boolean
 }
@@ -40,10 +42,19 @@ export type PostDetail = PostCard & { cells: string; threadCodes: string[] }
 
 export class ApiError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  /** Set when the server sent a structured reason rather than a sentence. */
+  readonly code?: string
+  /** The rest of that object — whatever the code implies. `daily-limit` carries
+   *  the limit and how many minutes are left. */
+  readonly data?: Record<string, unknown>
+  constructor(status: number, message: string, detail?: Record<string, unknown>) {
     super(message)
     this.name = "ApiError"
     this.status = status
+    if (typeof detail?.code === "string") {
+      this.code = detail.code
+      this.data = detail
+    }
   }
 }
 
@@ -58,12 +69,18 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(0, "network")
   }
   if (!res.ok) {
-    // FastAPI puts the reason in `detail`; fall back to the status.
+    // FastAPI puts the reason in `detail`; fall back to the status. A string is a
+    // sentence the server wrote; an object carries a code and its particulars, so
+    // the client can write the sentence itself — which is what a refusal the
+    // member reads has to be, since only the client knows their language.
     const detail = await res
       .json()
-      .then((b) => (typeof b?.detail === "string" ? b.detail : null))
+      .then((body) => body?.detail ?? null)
       .catch(() => null)
-    throw new ApiError(res.status, detail ?? `HTTP ${res.status}`)
+    if (detail && typeof detail === "object") {
+      throw new ApiError(res.status, String(detail.code ?? `HTTP ${res.status}`), detail)
+    }
+    throw new ApiError(res.status, typeof detail === "string" ? detail : `HTTP ${res.status}`)
   }
   return (await res.json()) as T
 }

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { ProductDialog } from "@/components/showcase/product-dialog"
 import { Button } from "@/components/ui/button"
+import { AdminFlower } from "@/community/admin-flower"
 import { useAuth } from "@/community/auth-context"
 import { ChartDialog } from "@/community/chart-dialog"
 import { Comments } from "@/community/comments"
@@ -163,7 +164,8 @@ export default function Piece() {
    */
   const remove = async () => {
     if (!post || removing) return
-    if (!window.confirm(t.piece.removeConfirm)) return
+    const own = user?.id === post.author.id
+    if (!window.confirm(own ? t.piece.removeConfirm : t.piece.removeConfirmOther)) return
     setRemoving(true)
     setRemoveFailed(false)
     try {
@@ -217,6 +219,10 @@ export default function Piece() {
                 {t.gallery.by(post.author.displayName)}
               </span>
             </Link>
+            {/* Outside the link: the flower carries its own tooltip, and nesting
+                one focusable thing inside another is how you get a tab stop that
+                goes somewhere nobody asked for. */}
+            {post.author.isAdmin && <AdminFlower className="text-[15px] shrink-0" />}
             {/* No separator between the name and the figures: it wraps to its own
                 line on a phone and leaves a dot dangling at the end of the
                 author. The change of face already separates them. */}
@@ -311,9 +317,9 @@ export default function Piece() {
           </Button>
         </div>
 
-        {/* The author's own way out. Set apart from the two things a visitor came
-            for, and quiet: a delete button that looks like an action invites the
-            click it must not get. */}
+        {/* The way out — the author's, or an admin's. Set apart from the two
+            things a visitor came for, and quiet: a delete button that looks like
+            an action invites the click it must not get. */}
         {mine && (
           <div className="flex flex-col items-center gap-2 mt-1">
             <button

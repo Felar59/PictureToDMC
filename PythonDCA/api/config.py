@@ -16,6 +16,18 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
 DB_PATH = os.environ.get("PTD_DB", "/var/lib/picturetodmc/db.sqlite")
 
+# Who runs the place, by e-mail — comma separated, e.g.
+# PTD_ADMINS=felix@r2s.fr,catherine@example.com
+#
+# Deliberately a server-side setting and not something a request can ask for:
+# the accounts named here are promoted on boot and when they next sign in, and
+# `users.role` is written from nowhere else in this package except the shell
+# script. A privilege no handler grants cannot be escalated by a crafted body.
+# Comparison is on the lowercased address, because that is how sign-in stores it.
+ADMIN_EMAILS = frozenset(
+    part.strip().lower() for part in os.environ.get("PTD_ADMINS", "").split(",") if part.strip()
+)
+
 # Cookies get the Secure flag on https origins only, otherwise local http
 # development can never hold a session.
 COOKIE_SECURE = PUBLIC_ORIGIN.startswith("https://")

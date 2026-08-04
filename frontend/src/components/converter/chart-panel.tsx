@@ -114,9 +114,10 @@ export function ChartPanel({
   const captionId = useId()
   const [grid, setGrid] = useState(true)
   const [legend, setLegend] = useState(true)
-  // Lives here rather than in the settings: it changes the chart you
+  // Both live here rather than in the settings: they change the chart you
   // download, not the pattern itself.
   const [outline, setOutline] = useState(false)
+  const [backstitch, setBackstitch] = useState(false)
   const [backcolor, setBackcolor] = useState("#EBE2D7")
   const [outlineColor, setOutlineColor] = useState("#141008")
   const [busy, setBusy] = useState(false)
@@ -154,6 +155,7 @@ export function ChartPanel({
           grid,
           legend,
           outline,
+          backstitch,
           outlineColor: settledOutline,
           background: settledColor,
           ...wording,
@@ -166,7 +168,7 @@ export function ChartPanel({
       setPreview(null)
       setFailed(true)
     }
-  }, [pattern, grid, legend, outline, settledOutline, settledColor, wording])
+  }, [pattern, grid, legend, outline, backstitch, settledOutline, settledColor, wording])
 
   useEffect(drawPreview, [drawPreview])
 
@@ -191,6 +193,7 @@ export function ChartPanel({
         grid,
         legend,
         outline,
+        backstitch,
         outlineColor,
         background: backcolor,
         ...wording,
@@ -307,10 +310,20 @@ export function ChartPanel({
             onChange={setOutline}
           />
 
-          {/* Only offered once the outline is on. A colour picker for a line that
-              isn't being drawn is a control to read past, and this panel already
-              has five. */}
-          {outline && (
+          {/* Under the outline, because it is the same idea taken inwards: that
+              one draws the edge of the work, this one draws the edges inside it. */}
+          <ToggleRow
+            label={t.chart.backstitch}
+            hint={t.chart.backstitchHint}
+            checked={backstitch}
+            onChange={setBackstitch}
+          />
+
+          {/* Only offered once there is a line to colour — either of the two will
+              do, and they share the colour because on cloth they are one thread.
+              A colour picker for a line that isn't being drawn is a control to
+              read past, and this panel already has five. */}
+          {(outline || backstitch) && (
             <ColorRow
               label={t.chart.outlineColor}
               value={outlineColor}

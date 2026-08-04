@@ -13,6 +13,9 @@ Pixel Embroidery Converter is a web application that transforms any image into a
 - **Colour Highlight**: Hover a thread to light up every stitch in that color.
 - **Pixelization Level**: Adjust the pattern width in stitches to control the level of detail.
 - **Black Outline Option**: Enable or disable a black outline on the cross-stitch points for better visibility.
+- **Backstitch**: Trace the seams between colours that are actually different — the
+  contour line you sew over the finished cross stitches. Threshold is a measured Lab
+  distance, so shading steps inside one shape are left alone.
 - **Bilingual**: Full French / English UI with a language switch (persisted per browser).
 
 ---
@@ -93,6 +96,46 @@ journalctl -u picturetodmc -f
 gh run list --limit 5        # deployment history
 gh workflow run Deploy       # redeploy without a commit
 ```
+
+---
+
+## Admins, and the publishing limit
+
+An admin may delete **any** piece and **any** comment; everyone else may only
+delete their own. There is no admin screen — the ✕ and the delete link simply
+appear on other people's work, and the confirmation prompt says whose it is. An
+admin's name carries a 🌸 in the gallery, on their page and under their comments,
+so a deletion is never anonymous.
+
+Two ways to grant the role, both server-side. **Nothing a request contains can
+grant it**, which is the whole point: no handler in `PythonDCA/api/` writes
+`users.role` from a request body.
+
+```bash
+# 1. The env file — promoted on every boot, and when the account next signs in.
+sudo nano /etc/picturetodmc.env      # PTD_ADMINS=felix@r2s.fr,catherine@…
+sudo systemctl restart picturetodmc
+
+# 2. From a shell, when there is no address to hand or a role must come back.
+cd /var/www/picturetodmc/app
+../venv/bin/python -m PythonDCA.admin --list
+../venv/bin/python -m PythonDCA.admin felix@r2s.fr
+../venv/bin/python -m PythonDCA.admin --revoke "Someone Else"
+```
+
+`PTD_ADMINS` promotes and never demotes: a typo in the unit file would otherwise
+unmake every admin on the next restart, at the moment nobody could put it back
+through the site. Removing an address there and running `--revoke` is the pair.
+Promotion at sign-in requires the address to be one Google says it *verified* —
+the only place in the codebase that trusts `email_verified`, because it is the
+only place that acts on the address.
+
+**Five pieces per account per day** (`DAILY_POST_LIMIT` in `routes_gallery.py`),
+counted over a rolling 24 hours rather than reset at midnight — a calendar day
+hands anyone who waits for 23:59 ten pieces in two minutes. The check runs inside
+the same transaction as the insert, so simultaneous requests cannot both find four
+and both add one. Admins are exempt. A refused publish returns `429` with
+`{code, limit, retryInMinutes}` and the dialog says when there will be room.
 
 ---
 
