@@ -180,10 +180,26 @@
     inset 0 2px 0 rgba(255, 255, 255, .18);
 }
 
-/* Wavy golden underline — once per page, on the key noun. */
+/* A golden brush laid behind the key noun — once per page.
+ *
+ * This was `underline wavy`, and a wavy underline is the one decoration a reader
+ * already has a meaning for: a spelling mistake. Every browser and word processor
+ * uses it for exactly that, so the flourish read as an error on the most
+ * prominent word on the page.
+ *
+ * A soft band sitting on the baseline instead. Same golden, same "marked by hand"
+ * intent, no borrowed meaning — and it survives a line break, which the
+ * decoration did not do gracefully. */
 @utility underline-stitch {
-  text-decoration: underline wavy var(--color-golden) 3px;
-  text-underline-offset: 8px;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 62%,
+    color-mix(in oklab, var(--color-golden) 42%, transparent) 62%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border-radius: 3px;
+  padding: 0 0.06em;
 }
 
 /* Dotted underline for tertiary / link buttons. */
@@ -258,22 +274,40 @@
   animation: stitch-in .35s ease-out both;
 }
 
-/* Warm, thin scrollbars inside panels. */
+/* Warm, thin scrollbars inside panels.
+ *
+ * The thumb is inset with a transparent border rather than sitting flush in the
+ * track. A webkit scrollbar is laid over the padding box, so on a 24px-rounded
+ * dialog the bar ran straight through the corner and stuck out of the card —
+ * `overflow: hidden` cannot clip it because it *is* the overflow. Holding it a few
+ * pixels off the edge keeps it inside the radius, and coral makes it look chosen
+ * rather than left over. */
 .scroll-linen {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-taupe) transparent;
+  scrollbar-color: color-mix(in oklab, var(--color-coral) 55%, var(--color-edge-4)) transparent;
 }
 
 .scroll-linen::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
 }
 
 .scroll-linen::-webkit-scrollbar-thumb {
-  background: var(--color-taupe);
+  background: color-mix(in oklab, var(--color-coral) 55%, var(--color-edge-4));
   border-radius: 999px;
+  /* The border is the inset: it is painted in the track's colour, so the visible
+     thumb is 6px wide and floats clear of both edges. */
+  border: 4px solid transparent;
+  background-clip: content-box;
+}
+
+.scroll-linen::-webkit-scrollbar-thumb:hover {
+  background: var(--color-coral-deep);
+  background-clip: content-box;
 }
 
 .scroll-linen::-webkit-scrollbar-track {
   background: transparent;
+  /* Keeps the track itself out of the rounded corners. */
+  margin: 14px 0;
 }

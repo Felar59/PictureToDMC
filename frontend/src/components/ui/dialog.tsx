@@ -53,7 +53,13 @@ export function Dialog({
           className,
         )}
       >
-        <div className="flex items-center justify-between gap-4 p-6 border-b-2 border-dashed border-edge-2 sticky top-0 bg-blanc rounded-t-[24px]">
+        {/* z-10, because `sticky` alone does not win.
+            A sticky element with `z-index: auto` paints among the positioned boxes
+            in DOM order — and anything below it carrying a transform (the toggle
+            switches' thumbs animate with translate-x) gets its own stacking context
+            that behaves like z-index 0. Later in the document, so it won: scrolling
+            the chart dialog dragged little white knobs straight across the title. */}
+        <div className="flex items-center justify-between gap-4 p-6 border-b-2 border-dashed border-edge-2 sticky top-0 z-10 bg-blanc rounded-t-[24px]">
           <h2 className="text-xl m-0">{title}</h2>
           <button
             type="button"

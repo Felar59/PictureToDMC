@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
@@ -6,27 +5,19 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useAuth } from "./auth-context"
 
-/** Signed-out: one button. Signed-in: avatar with a small menu. */
+/**
+ * Signed out: one button. Signed in: your mark and your name, linking to your
+ * account.
+ *
+ * This used to open a two-item dropdown — "my account" and "sign out" — which is a
+ * menu whose whole job was to offer a link to a page that could hold both. So the
+ * pill goes straight there, and signing out lives on the page it belongs to. One
+ * click instead of two, nothing to dismiss, and no click-outside or Escape handling
+ * to get wrong.
+ */
 export function UserMenu({ className }: { className?: string }) {
   const { t } = useI18n()
-  const { user, googleEnabled, signIn, signOut } = useAuth()
-  const [open, setOpen] = useState(false)
-  const hostRef = useRef<HTMLDivElement | null>(null)
-
-  // Click-outside and Escape, the two ways anyone expects a menu to close.
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => {
-      if (!hostRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
-    document.addEventListener("mousedown", onDown)
-    document.addEventListener("keydown", onKey)
-    return () => {
-      document.removeEventListener("mousedown", onDown)
-      document.removeEventListener("keydown", onKey)
-    }
-  }, [open])
+  const { user, googleEnabled, signIn } = useAuth()
 
   // undefined means we haven't heard back from /api/auth/me yet. Render nothing
   // rather than flashing "Sign in" at someone who already is.
@@ -42,53 +33,15 @@ export function UserMenu({ className }: { className?: string }) {
   }
 
   return (
-    <div ref={hostRef} className={`relative ${className ?? ""}`}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 cursor-pointer transition-colors hover:border-taupe"
-      >
-        <StitchAvatar seed={user.icon ?? user.id} size={28} />
-        <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
-          {user.displayName}
-        </span>
-      </button>
-
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 top-full mt-2 w-[260px] bg-blanc border-[1.5px] border-edge-3 rounded-[16px] shadow-panel p-3 z-50 animate-stitch-in"
-        >
-          <div className="px-1 pb-2 border-b-2 border-dashed border-edge-2">
-            <div className="text-[12px] uppercase tracking-[.06em] font-extrabold text-sand">
-              {t.account.signedInAs}
-            </div>
-            <div className="text-[15px] font-bold truncate">{user.displayName}</div>
-            {user.email && <div className="text-[12.5px] text-stone truncate">{user.email}</div>}
-          </div>
-
-          <div className="pt-2 flex flex-col">
-            <Link
-              to="/compte"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2"
-            >
-              {t.account.panel}
-            </Link>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => void signOut()}
-              className="text-left text-[14.5px] font-bold text-cocoa hover:text-coral-deep px-1 py-2 cursor-pointer"
-            >
-              {t.account.signOut}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    <Link
+      to="/compte"
+      title={t.account.panel}
+      className={`flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 transition-colors hover:border-taupe ${className ?? ""}`}
+    >
+      <StitchAvatar seed={user.icon ?? user.id} size={28} />
+      <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
+        {user.displayName}
+      </span>
+    </Link>
   )
 }

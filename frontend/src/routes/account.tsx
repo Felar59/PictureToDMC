@@ -22,7 +22,7 @@ import { ApiError } from "@/lib/community"
  */
 export default function Account() {
   const { t } = useI18n()
-  const { user, signIn, updateProfile } = useAuth()
+  const { user, signIn, signOut, updateProfile } = useAuth()
   const navigate = useNavigate()
   const [search] = useSearchParams()
   const welcome = search.has("bienvenue")
@@ -156,6 +156,17 @@ export default function Account() {
             </p>
           )}
         </div>
+      </div>
+
+      {/* Signing out lives here now, not in a header dropdown — the pill in the
+          header links straight to this page. Set apart from the form and quiet: it
+          is the one thing on the page that throws work away, and it should not sit
+          next to Save looking like a second way to finish. */}
+      <div className="mt-6 pt-5 border-t-2 border-dashed border-edge-2 flex items-center justify-between gap-4 flex-wrap">
+        <p className="font-hand text-[15px] text-sand m-0">{t.account.signedInAs} {user.email}</p>
+        <Button variant="quiet" size="sm" onClick={() => void signOut()}>
+          {t.account.signOut}
+        </Button>
       </div>
     </div>
   )

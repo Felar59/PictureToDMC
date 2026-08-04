@@ -29,6 +29,21 @@ export type ConvertOptions = Adjustments & {
    *  downscale we were already doing, not a second pass over the pixels. */
   flipH?: boolean
   flipV?: boolean
+  /**
+   * Quarter turns, clockwise: 0, 90, 180 or 270 degrees.
+   *
+   * Also free, and for the same reason — one more transform on a draw that was
+   * happening anyway. At 90 and 270 the grid's proportions swap, so the stitch
+   * *width* still means what the slider says while the height follows the turned
+   * photograph.
+   */
+  rotation?: number
+}
+
+/** To one of the four quarter turns, whatever arrives. */
+function quarterTurn(rotation: number | undefined): 0 | 90 | 180 | 270 {
+  const turns = (((Math.round((rotation ?? 0) / 90) % 4) + 4) % 4) as 0 | 1 | 2 | 3
+  return (turns * 90) as 0 | 90 | 180 | 270
 }
 
 /** Below this alpha a pixel is considered background and left unstitched. */
@@ -71,9 +86,13 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
     if (cutoutSupported()) {
       try {
         const mask = await cutoutMask(source)
+        // The mask is of the *file*, so it has to be read through the same
+        // transform the grid was drawn with — otherwise a turned photograph gets
+        // its subject cut out sideways.
         applyCutout(alpha, width, height, mask, {
           flipH: opts.flipH,
           flipV: opts.flipV,
+          rotation: quarterTurn(opts.rotation),
         })
         cut = true
       } catch (error) {
@@ -199,14 +218,22 @@ async function sampleToGrid(
   // the most expensive step in the pipeline. One decode, then let drawImage
   // scale it.
   const bitmap = await createImageBitmap(source)
+  const rotation = quarterTurn(opts.rotation)
+  // A quarter turn trades the photograph's axes, so the grid's proportions follow
+  // the turned picture rather than the file.
+  const turned = rotation === 90 || rotation === 270
+  const sourceW = turned ? bitmap.height : bitmap.width
+  const sourceH = turned ? bitmap.width : bitmap.height
   const width = Math.max(1, Math.round(opts.stitchWidth))
-  const height = Math.max(1, Math.round((width * bitmap.height) / bitmap.width))
-  const step = supersampleStep(width, height, bitmap.width)
+  const height = Math.max(1, Math.round((width * sourceH) / sourceW))
+  const step = supersampleStep(width, height, sourceW)
+  const canvasW = width * step
+  const canvasH = height * step
 
   // OffscreenCanvas, not document.createElement: this whole pipeline runs
   // inside a Web Worker, where there is no document. It works on the main
   // thread too, so there is one code path rather than two.
-  const canvas = new OffscreenCanvas(width * step, height * step)
+  const canvas = new OffscreenCanvas(canvasW, canvasH)
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
   if (!ctx) {
     bitmap.close()
@@ -214,20 +241,25 @@ async function sampleToGrid(
   }
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = "high"
-  if (opts.flipH || opts.flipV) {
-    ctx.translate(opts.flipH ? width * step : 0, opts.flipV ? height * step : 0)
-    ctx.scale(opts.flipH ? -1 : 1, opts.flipV ? -1 : 1)
-  }
+
+  // Everything happens about the centre, which is what makes a rotation and a
+  // mirror compose without either one having to know about the other.
+  ctx.translate(canvasW / 2, canvasH / 2)
+  if (rotation !== 0) ctx.rotate((rotation * Math.PI) / 180)
+  if (opts.flipH || opts.flipV) ctx.scale(opts.flipH ? -1 : 1, opts.flipV ? -1 : 1)
+  // In the rotated frame the box to fill has its sides swapped back.
+  const drawW = turned ? canvasH : canvasW
+  const drawH = turned ? canvasW : canvasH
   ctx.drawImage(
     bitmap,
     0,
     0,
     bitmap.width,
     bitmap.height,
-    0,
-    0,
-    width * step,
-    height * step,
+    -drawW / 2,
+    -drawH / 2,
+    drawW,
+    drawH,
   )
   bitmap.close()
 

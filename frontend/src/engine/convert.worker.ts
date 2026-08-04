@@ -24,6 +24,8 @@ export type ConvertRequest = {
   removeBackground?: boolean
   flipH?: boolean
   flipV?: boolean
+  /** Quarter turns clockwise. */
+  rotation?: number
   /** DMC references, not Thread objects — the worker resolves them locally. */
   paletteNums?: string[]
 }
@@ -33,8 +35,18 @@ export type ConvertResponse =
   | { id: number; ok: false; error: string }
 
 self.onmessage = async (event: MessageEvent<ConvertRequest>) => {
-  const { id, photo, stitchWidth, colorCount, paletteNums, vividness, removeBackground, flipH, flipV } =
-    event.data
+  const {
+    id,
+    photo,
+    stitchWidth,
+    colorCount,
+    paletteNums,
+    vividness,
+    removeBackground,
+    flipH,
+    flipV,
+    rotation,
+  } = event.data
   try {
     const palette = paletteNums
       ? paletteNums.map(findThread).filter((t): t is Thread => Boolean(t))
@@ -48,6 +60,7 @@ self.onmessage = async (event: MessageEvent<ConvertRequest>) => {
       removeBackground,
       flipH,
       flipV,
+      rotation,
     })
     const wire = toWire(pattern)
 

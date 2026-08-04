@@ -63,6 +63,7 @@ export async function runConversion(photo: Blob, opts: ConvertOptions): Promise<
     removeBackground: opts.removeBackground,
     flipH: opts.flipH,
     flipV: opts.flipV,
+    rotation: opts.rotation,
     paletteNums: opts.palette?.map((t) => t.num),
   }
 

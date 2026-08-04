@@ -119,6 +119,129 @@ export function SoloStitch({ active = false }: { active?: boolean }) {
   )
 }
 
+/**
+ * A quarter turn: three quarters of a rounded square, with a head on the end.
+ *
+ * SVG rather than composed divs, which the rest of this family is — an arc is the
+ * one shape you cannot build out of boxes without it looking like a staircase. Kept
+ * in the family's grammar all the same: round caps, one stroke weight, and the
+ * corner radius the buttons use.
+ */
+export function RotateGlyph({ size = 15, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      className={cn("shrink-0", className)}
+    >
+      {/* Open at the top right, which is where the arrowhead goes. */}
+      <path
+        d="M13 5.4V3.2A1.2 1.2 0 0 0 11.8 2H4.2A1.2 1.2 0 0 0 3 3.2v9.6A1.2 1.2 0 0 0 4.2 14h7.6a1.2 1.2 0 0 0 1.2-1.2v-1.6"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.9 7.6 13 5.2l2.1 2.4"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
+ * A sheet of paper coming down out of a tray — "save this to your machine".
+ *
+ * A page with a corner turned, and an arrow into it. DownloadGlyph above is the
+ * bare arrow used inside the coral button, where a page outline would crowd; this
+ * is the one for a button that has room and wants to say *what* is being saved.
+ */
+export function ChartDownloadGlyph({ size = 18, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      className={cn("shrink-0", className)}
+    >
+      {/* The sheet, with the top-right corner folded. */}
+      <path
+        d="M11.4 2.2H5.6A1.6 1.6 0 0 0 4 3.8v12.4a1.6 1.6 0 0 0 1.6 1.6h8.8a1.6 1.6 0 0 0 1.6-1.6V6.8l-4.6-4.6Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M11.2 2.4v3.6a1 1 0 0 0 1 1h3.4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      {/* Down into the sheet. */}
+      <path
+        d="M10 9.4v4.4m0 0L8.2 12m1.8 1.8L11.8 12"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
+ * A hoop with a thread leaving it — "put this in the gallery".
+ *
+ * Not an arrow out of a box, which is the platform's share icon and means "send
+ * this elsewhere". This piece is not going elsewhere; it is going up on the wall
+ * with everyone else's, and the hoop is the object that says so.
+ */
+export function ShareHoopGlyph({ size = 18, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      className={cn("shrink-0", className)}
+    >
+      <circle cx="9" cy="11" r="6.1" stroke="currentColor" strokeWidth="1.7" />
+      {/* The tightening screw at the top of a real hoop. */}
+      <path
+        d="M9 4.9V2.8"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <rect
+        x="7.5"
+        y="1.1"
+        width="3"
+        height="2.2"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      {/* One cross stitch inside, because that is what is in the hoop. */}
+      <path
+        d="M7.1 9.1l3.8 3.8M10.9 9.1l-3.8 3.8"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 /** The colour wheel on a thread row — "swap this for any DMC shade". */
 export function ColorWheel({ size = 12 }: { size?: number }) {
   return (

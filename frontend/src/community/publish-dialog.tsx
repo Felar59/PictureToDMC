@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
 
+import { ShareHoopGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { Pill } from "@/components/ui/pill"
@@ -172,6 +173,9 @@ export function PublishDialog({
 
         <div className="flex gap-3 flex-wrap pt-1">
           <Button className="flex-1 min-w-[160px]" onClick={() => void submit()} disabled={!canSubmit}>
+            {/* Only once there is something to publish — beside "Sign in first" the
+                hoop would be promising an action that is still one step away. */}
+            {user && !busy && <ShareHoopGlyph />}
             {busy ? t.publish.working : user ? t.publish.submit : t.publish.needSignIn}
           </Button>
           <Button variant="secondary" onClick={onClose}>

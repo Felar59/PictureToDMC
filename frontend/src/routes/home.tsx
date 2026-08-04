@@ -3,7 +3,6 @@ import { Link } from "react-router-dom"
 import strawberryChart from "@/assets/demo/strawberry-chart.avif"
 import strawberryPhoto from "@/assets/demo/strawberry.avif"
 import { PhotoSlot } from "@/components/brand/photo-slot"
-import { ThreadArrow } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
@@ -90,15 +89,21 @@ export default function Home() {
                 />
 
                 {/* The "before", and the way in: it is the only clickable thing on
-                    the panel, so the photograph is what invites the upload. */}
-                <div className="absolute left-2 top-2 flex items-center gap-1.5">
+                    the panel, so the photograph is what invites the upload.
+                    Labelled rather than pointed at. An arrow between the two was
+                    either lost against the grid behind it or reaching across the
+                    motif, and one word does the same job in less room. */}
+                <div className="absolute left-2 top-2">
+                  <div className="text-[11px] font-extrabold uppercase tracking-[.09em] text-sand mb-1 pl-1">
+                    {t.home.demoBefore}
+                  </div>
                   <Link to="/convert" aria-label={t.home.ctaUpload}>
                     {/* A share of the chart's width, not a fixed size: at 86px it
                         was a fifth of the panel on desktop and a third of it at
                         375px, where it started covering a leaf. */}
                     <PhotoSlot
                       radius={12}
-                      className="w-[20cqw] aspect-square p-1.5 bg-blanc shadow-card transition-colors hover:border-coral"
+                      className="w-[26cqw] aspect-square p-1.5 bg-blanc shadow-card transition-colors hover:border-coral"
                     >
                       <img
                         src={strawberryPhoto}
@@ -109,11 +114,6 @@ export default function Home() {
                       />
                     </PhotoSlot>
                   </Link>
-                  {/* Full size — shrunk, it disappeared into the grid behind it, and
-                      this arrow is the only thing saying the two pictures are the
-                      same fruit. Dropped entirely on a narrow panel, where it would
-                      reach across the motif instead of the empty corner. */}
-                  <ThreadArrow className="hidden @min-[23rem]:inline-flex" />
                 </div>
               </div>
 

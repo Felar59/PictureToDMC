@@ -1,4 +1,5 @@
 import { FieldLabel, PanelTitle, Readout, SubPanel } from "@/components/ui/card"
+import { RotateGlyph } from "@/components/brand/icons"
 import { Pill } from "@/components/ui/pill"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
@@ -24,23 +25,39 @@ export type Settings = {
   stitchWidth: number
   colorCount: number
   vividness: number
-  flipH: boolean
-  flipV: boolean
+  /** Quarter turns clockwise: 0, 90, 180, 270. */
+  rotation: number
   removeBackground: boolean
 }
 
 export function SettingsPanel({
   settings,
   onChange,
+  onCommit,
   /** Grid size and stitch totals — the answer to "what am I getting". */
   summary,
 }: {
   settings: Settings
+  /** Live, for the readouts. Does not rebuild the grid on its own. */
   onChange: (patch: Partial<Settings>) => void
+  /**
+   * Rebuild now.
+   *
+   * Split from onChange because a slider fires continuously while dragged, and
+   * reconverting on every pixel of travel would queue dozens of runs to show one
+   * answer. The number under your thumb follows the drag; the grid follows the
+   * release. Anything that is a single click — a vividness step, a quarter turn,
+   * the background switch — commits at once, because there is no drag to wait for.
+   */
+  onCommit: () => void
   summary: React.ReactNode
 }) {
   const { t } = useI18n()
   const step = VIVIDNESS_STEPS.indexOf(settings.vividness as (typeof VIVIDNESS_STEPS)[number])
+  const commit = (patch: Partial<Settings>) => {
+    onChange(patch)
+    onCommit()
+  }
 
   return (
     <SubPanel>
@@ -53,6 +70,7 @@ export function SettingsPanel({
       <Slider
         value={[settings.stitchWidth]}
         onValueChange={([v]) => onChange({ stitchWidth: v })}
+        onValueCommit={onCommit}
         min={20}
         max={200}
         step={2}
@@ -70,6 +88,7 @@ export function SettingsPanel({
       <Slider
         value={[settings.colorCount]}
         onValueChange={([v]) => onChange({ colorCount: v })}
+        onValueCommit={onCommit}
         min={2}
         max={20}
         step={1}
@@ -104,7 +123,7 @@ export function SettingsPanel({
                 <Pill
                   key={label}
                   selected={step === i}
-                  onClick={() => onChange({ vividness: VIVIDNESS_STEPS[i] })}
+                  onClick={() => commit({ vividness: VIVIDNESS_STEPS[i] })}
                   className="flex-1 px-2 text-[13px]"
                 >
                   {label}
@@ -113,29 +132,25 @@ export function SettingsPanel({
             </div>
           </div>
 
+          {/* One button that turns the picture a quarter at a time, rather than two
+              mirror toggles. Turning is what people actually want from a photograph
+              held the wrong way up; mirroring is what you want when you have traced
+              something, which is not this. The current angle is shown, because four
+              presses returning you to where you started should be visible. */}
           <div>
-            <FieldLabel className="block mb-2">{t.converter.retouch.mirror}</FieldLabel>
-            <div className="flex gap-1.5">
+            <FieldLabel className="block mb-2">{t.converter.retouch.rotation}</FieldLabel>
+            <div className="flex items-center gap-2.5">
               <Pill
-                selected={settings.flipH}
-                onClick={() => onChange({ flipH: !settings.flipH })}
-                className="flex-1 px-2 text-[13px]"
+                selected={settings.rotation !== 0}
+                onClick={() => commit({ rotation: (settings.rotation + 90) % 360 })}
+                className="px-3 text-[13px]"
               >
-                <span aria-hidden="true" className="mr-1">
-                  ⇄
-                </span>
-                {t.converter.retouch.mirrorH}
+                <RotateGlyph />
+                {t.converter.retouch.rotate90}
               </Pill>
-              <Pill
-                selected={settings.flipV}
-                onClick={() => onChange({ flipV: !settings.flipV })}
-                className="flex-1 px-2 text-[13px]"
-              >
-                <span aria-hidden="true" className="mr-1">
-                  ⇅
-                </span>
-                {t.converter.retouch.mirrorV}
-              </Pill>
+              <span className="font-mono text-[12.5px] text-stone">
+                {t.converter.retouch.rotationValue(settings.rotation)}
+              </span>
             </div>
           </div>
 
@@ -153,7 +168,7 @@ export function SettingsPanel({
             </span>
             <Switch
               checked={settings.removeBackground}
-              onCheckedChange={(v) => onChange({ removeBackground: v })}
+              onCheckedChange={(v) => commit({ removeBackground: v })}
             />
           </label>
         </div>

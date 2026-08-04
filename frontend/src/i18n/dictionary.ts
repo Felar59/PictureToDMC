@@ -10,6 +10,7 @@ export const en = {
   nav: {
     howItWorks: "How it works",
     gallery: "Gallery",
+    about: "About us",
     faq: "FAQ",
     convert: "Convert a photo",
     start: "Start a pattern",
@@ -17,7 +18,7 @@ export const en = {
   },
 
   home: {
-    badge: "100% free · no account needed",
+    badge: "100% free",
     heroTitleBefore: "Turn any photo into a ",
     heroTitleAccent: "cross-stitch",
     heroTitleAfter: " pattern",
@@ -28,6 +29,7 @@ export const en = {
     heroNote: "from photo to chart in about a minute ↷",
     demoPhoto: "your photo",
     demoPattern: "your pattern",
+    demoBefore: "before",
     demoPhotoAlt: "A photo of a strawberry",
     demoPatternAlt: "The same strawberry as a cross-stitch pattern, in 8 DMC threads",
     demoMatched: (n: number) => `matched to ${n} DMC threads`,
@@ -332,14 +334,17 @@ export const en = {
     },
 
     retouch: {
-      heading: "Colours, mirror and background",
+      heading: "Adjust",
       vividness: "Colour brightness",
       vividnessSteps: ["Natural", "Vivid", "Very vivid"],
-      mirror: "Mirror",
-      mirrorH: "Left-right",
-      mirrorV: "Top-bottom",
+      rotation: "Turn the picture",
+      rotate90: "Quarter turn",
+      rotationValue: (deg: number) => (deg === 0 ? "upright" : `turned ${deg}°`),
       removeBg: "Remove the background",
-      removeBgHint: "Works on a plain background — sky, a wall, a sheet.",
+      // Two facts, and the second is the one people were not told: cutting the
+      // background out runs a model over the photograph, so the grid takes a few
+      // seconds longer to come back. Saying so beats looking broken.
+      removeBgHint: "Works on a plain background — the grid takes a little longer to build.",
     },
 
     colors: {
@@ -433,6 +438,41 @@ export const en = {
     madeBy: "Made by",
   },
 
+  /** Placeholder prose, structured but not final — Felix will supply the real
+   *  copy. Written as something plausible rather than lorem ipsum, so the page can
+   *  be judged as a page. */
+  aboutPage: {
+    kicker: "who is behind this",
+    title: "Qui sommes-nous",
+    lead:
+      "Picture to DMC is a small, free tool made by two people who kept wanting a chart from a photo and kept not finding one that was honest about the threads.",
+    blocks: [
+      {
+        heading: "It started with one photograph",
+        body:
+          "A picture of a dog, a Sunday afternoon, and an evening lost to counting squares by hand. The first version was a script that did the counting. Everything since has been the same idea, better dressed.",
+      },
+      {
+        heading: "Every colour is a thread you can buy",
+        body:
+          "The converter matches each stitch to one of the 489 plain-cotton DMC shades, judged the way an eye judges colour rather than the way a computer adds numbers. What you download names real references, with the number of stitches of each, so you can walk into a shop with the list.",
+      },
+      {
+        heading: "Free, and staying that way",
+        body:
+          "No account to convert, no watermark, nothing to buy. Signing in exists so you can put a finished piece in the gallery, and that is all it is for.",
+      },
+      {
+        heading: "It runs in your browser",
+        body:
+          "Your photograph is never uploaded to make a chart — the whole conversion happens on your own machine. Sharing a finished piece sends the grid, which is a few kilobytes, and the photograph only if you choose to add one.",
+      },
+    ],
+    ctaTitle: "Have a go",
+    ctaBody: "Pick a photograph and see what it looks like in thread.",
+    ctaButton: "Make a chart",
+  },
+
   notFound: {
     title: "This page slipped off the hoop",
     body: "The page you're after doesn't exist — or hasn't been stitched yet.",
@@ -450,6 +490,7 @@ export const fr: Copy = {
   nav: {
     howItWorks: "Comment ça marche",
     gallery: "Galerie",
+    about: "Qui sommes-nous",
     faq: "FAQ",
     convert: "Convertir une photo",
     start: "Créer une grille",
@@ -457,7 +498,7 @@ export const fr: Copy = {
   },
 
   home: {
-    badge: "100 % gratuit · sans compte",
+    badge: "100 % gratuit",
     heroTitleBefore: "Transformez une photo en grille de ",
     heroTitleAccent: "point de croix",
     heroTitleAfter: "",
@@ -468,6 +509,7 @@ export const fr: Copy = {
     heroNote: "de la photo à la grille en une minute ↷",
     demoPhoto: "votre photo",
     demoPattern: "votre grille",
+    demoBefore: "avant",
     demoPhotoAlt: "La photo d'une fraise",
     demoPatternAlt: "La même fraise en grille de point de croix, en 8 fils DMC",
     demoMatched: (n: number) => `associée à ${n} fils DMC`,
@@ -760,14 +802,15 @@ export const fr: Copy = {
     },
 
     retouch: {
-      heading: "Couleurs, miroir et fond",
+      heading: "Modifier",
       vividness: "Éclat des couleurs",
       vividnessSteps: ["Naturel", "Vif", "Très vif"],
-      mirror: "Miroir",
-      mirrorH: "Gauche-droite",
-      mirrorV: "Haut-bas",
+      rotation: "Tourner l'image",
+      rotate90: "Un quart de tour",
+      rotationValue: (deg: number) => (deg === 0 ? "droite" : `tournée de ${deg}°`),
       removeBg: "Retirer le fond",
-      removeBgHint: "Marche sur un fond uni — ciel, mur, drap.",
+      removeBgHint:
+        "Marche sur fond uni — le temps de mise à jour de la grille est allongé.",
     },
 
     colors: {
@@ -859,6 +902,38 @@ export const fr: Copy = {
     contact: "Contact",
     privacy: "Confidentialité",
     madeBy: "Créé par",
+  },
+
+  aboutPage: {
+    kicker: "qui est derrière tout ça",
+    title: "Qui sommes-nous",
+    lead:
+      "Picture to DMC est un petit outil gratuit, fait par deux personnes qui voulaient une grille à partir d'une photo et qui n'en trouvaient pas une seule honnête sur les fils.",
+    blocks: [
+      {
+        heading: "Ça a commencé avec une photo",
+        body:
+          "Une photo de chien, un dimanche après-midi, et une soirée passée à compter les carreaux à la main. La première version était un script qui comptait à notre place. Tout ce qui a suivi, c'est la même idée, mieux habillée.",
+      },
+      {
+        heading: "Chaque couleur est un fil qui existe",
+        body:
+          "Le convertisseur associe chaque point à l'une des 489 références DMC en coton mouliné, jugées comme l'œil juge une couleur et non comme une machine additionne des nombres. Ce que vous téléchargez donne de vraies références, avec le nombre de points de chacune — de quoi entrer en boutique avec la liste.",
+      },
+      {
+        heading: "Gratuit, et ça ne changera pas",
+        body:
+          "Pas de compte pour convertir, pas de filigrane, rien à acheter. Se connecter sert à mettre un ouvrage terminé dans la galerie, et à rien d'autre.",
+      },
+      {
+        heading: "Tout se passe dans votre navigateur",
+        body:
+          "Votre photo n'est jamais envoyée pour faire une grille : la conversion entière tourne sur votre machine. Partager un ouvrage envoie la grille, quelques kilo-octets, et la photo seulement si vous décidez d'en ajouter une.",
+      },
+    ],
+    ctaTitle: "Essayez",
+    ctaBody: "Choisissez une photo et voyez ce qu'elle donne en fil.",
+    ctaButton: "Créer une grille",
   },
 
   notFound: {

@@ -15,7 +15,7 @@ export function SiteFooter() {
         </div>
 
         <nav className="flex flex-wrap gap-6 text-sm font-bold text-cocoa">
-          <Link to="/#how-it-works" className="hover:text-coral-deep transition-colors">
+          <Link to="/about" className="hover:text-coral-deep transition-colors">
             {t.footer.about}
           </Link>
           <Link to="/#faq" className="hover:text-coral-deep transition-colors">

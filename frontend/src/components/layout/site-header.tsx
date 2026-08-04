@@ -17,8 +17,11 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
       onClick={onClick}
       className={cn(
         "text-[15.5px] font-bold transition-colors",
+        // A short rounded bar under the label, not a wavy underline. Wavy is what
+        // every browser and word processor uses for a misspelling, so the active
+        // link looked like a typo the site had failed to notice.
         active
-          ? "text-coral-deep [text-decoration:underline_wavy_var(--color-golden)_2px] [text-underline-offset:6px]"
+          ? "text-coral-deep relative after:absolute after:-bottom-[7px] after:left-0 after:right-0 after:h-[3px] after:rounded-full after:bg-coral"
           : "text-cocoa hover:text-coral-deep",
       )}
     >
@@ -35,9 +38,12 @@ export function SiteHeader() {
   // Never leave the mobile sheet open across a navigation.
   useEffect(() => setMenuOpen(false), [pathname, hash])
 
+  // Gallery first: it is the only one that goes somewhere, and finished pieces are
+  // a better argument for the product than an explanation of it.
   const items: NavItem[] = [
-    { to: "/#how-it-works", label: t.nav.howItWorks },
     { to: "/gallery", label: t.nav.gallery },
+    { to: "/#how-it-works", label: t.nav.howItWorks },
+    { to: "/about", label: t.nav.about },
     { to: "/#faq", label: t.nav.faq },
   ]
 

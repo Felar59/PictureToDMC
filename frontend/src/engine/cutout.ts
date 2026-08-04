@@ -142,29 +142,89 @@ export function applyCutout(
   width: number,
   height: number,
   mask: Float32Array,
-  opts: { flipH?: boolean; flipV?: boolean; threshold?: number } = {},
+  opts: { flipH?: boolean; flipV?: boolean; rotation?: number; threshold?: number } = {},
 ): void {
   const threshold = opts.threshold ?? 0.5
+  const rotation = opts.rotation ?? 0
+  // At a quarter turn the grid's rows run down the mask's columns, so a row of
+  // stitches spans mask *columns* and the two ranges trade places.
+  const turned = rotation === 90 || rotation === 270
 
   for (let y = 0; y < height; y++) {
-    // The mask rows this row of stitches covers.
-    const y0 = Math.floor((y / height) * SIDE)
-    const y1 = Math.max(y0 + 1, Math.floor(((y + 1) / height) * SIDE))
     for (let x = 0; x < width; x++) {
       const i = y * width + x
       if (alpha[i] === 0) continue
 
-      const x0 = Math.floor((x / width) * SIDE)
-      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) / width) * SIDE))
+      // The cell's own footprint, as a fraction of the grid.
+      const u0 = x / width
+      const u1 = (x + 1) / width
+      const v0 = y / height
+      const v1 = (y + 1) / height
+
+      // Undo the turn: where on the *file* does this cell come from? Rotating the
+      // picture clockwise by 90 sends source (su,sv) to grid (1-sv, su), so the
+      // inverse is su = v, sv = 1-u — and likewise round the other three.
+      let a0: number
+      let a1: number
+      let b0: number
+      let b1: number
+      if (rotation === 90) {
+        a0 = v0
+        a1 = v1
+        b0 = 1 - u1
+        b1 = 1 - u0
+      } else if (rotation === 180) {
+        a0 = 1 - u1
+        a1 = 1 - u0
+        b0 = 1 - v1
+        b1 = 1 - v0
+      } else if (rotation === 270) {
+        a0 = 1 - v1
+        a1 = 1 - v0
+        b0 = u0
+        b1 = u1
+      } else {
+        a0 = u0
+        a1 = u1
+        b0 = v0
+        b1 = v1
+      }
+
+      // The mirrors are applied in the grid's frame, after the turn, so they act on
+      // whichever source axis now runs across the picture.
+      if (opts.flipH) {
+        const lo = turned ? 1 - b1 : 1 - a1
+        const hi = turned ? 1 - b0 : 1 - a0
+        if (turned) {
+          b0 = lo
+          b1 = hi
+        } else {
+          a0 = lo
+          a1 = hi
+        }
+      }
+      if (opts.flipV) {
+        const lo = turned ? 1 - a1 : 1 - b1
+        const hi = turned ? 1 - a0 : 1 - b0
+        if (turned) {
+          a0 = lo
+          a1 = hi
+        } else {
+          b0 = lo
+          b1 = hi
+        }
+      }
+
+      const x0 = Math.floor(a0 * SIDE)
+      const x1 = Math.max(x0 + 1, Math.floor(a1 * SIDE))
+      const y0 = Math.floor(b0 * SIDE)
+      const y1 = Math.max(y0 + 1, Math.floor(b1 * SIDE))
 
       let sum = 0
       let n = 0
       for (let my = y0; my < y1 && my < SIDE; my++) {
-        // The grid was drawn flipped, so the mask is read flipped.
-        const sy = opts.flipV ? SIDE - 1 - my : my
         for (let mx = x0; mx < x1 && mx < SIDE; mx++) {
-          const sx = opts.flipH ? SIDE - 1 - mx : mx
-          sum += mask[sy * SIDE + sx]
+          sum += mask[my * SIDE + mx]
           n++
         }
       }

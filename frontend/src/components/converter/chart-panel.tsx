@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
-import { DownloadGlyph } from "@/components/brand/icons"
+import { ChartDownloadGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import type { Pattern } from "@/engine/convert"
@@ -18,8 +18,17 @@ import { useI18n } from "@/i18n"
  * routine to disagree with the file.
  */
 
-/** Stitch size of the saved PNG: big enough to print and count on. */
-const FILE_CELL = 14
+/**
+ * Stitch size of the saved PNG: big enough to print and count on.
+ *
+ * 20, up from 14. The file is what someone works from for a fortnight, on paper,
+ * next to a hoop — and at 14 the stitches were small enough that the counting grid
+ * and the legend both fought for legibility on the same page. The chart is bigger
+ * now and the legend's type is sized against the page rather than against a stitch,
+ * so both read. renderChart still shrinks the cell to fit if a 200-stitch pattern
+ * would otherwise ask for a canvas the browser refuses.
+ */
+const FILE_CELL = 20
 
 /**
  * Stitch size of the preview — half the file's.
@@ -30,10 +39,13 @@ const FILE_CELL = 14
  * stops being a preview: the fine grid is 1px and the decade rules 2px, and
  * below ~6px per stitch the two collapse into each other once the browser
  * downscales the bitmap into a 256px column. At 7 a decade block is 70px, so
- * the counting grid still reads as a counting grid. The legend survives the
- * shrink because renderChart floors its row height at 26px whatever the cell
- * size — only its column count follows the drawing width, so a wide chart may
- * pack its DMC codes into more columns in the file than it shows here.
+ * the counting grid still reads as a counting grid.
+ *
+ * The legend is no longer the same shape here as in the file: its rows are sized
+ * against the *drawing's* width, so a preview at half the cell gets roughly half
+ * the legend type and may lay it out in fewer columns. That is the right trade —
+ * the preview exists to show you the grid and the options, and the legend it shows
+ * is a fair miniature of the one you will get rather than a pixel-exact copy.
  */
 const PREVIEW_CELL = 7
 
@@ -338,7 +350,7 @@ export function ChartPanel({
           />
 
           <Button size="block" onClick={download} disabled={busy}>
-            <DownloadGlyph />
+            <ChartDownloadGlyph />
             {busy ? t.converter.download.working : t.converter.download.button}
           </Button>
 

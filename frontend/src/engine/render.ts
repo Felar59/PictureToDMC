@@ -237,10 +237,18 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     const artW = pattern.width * cell
     const artH = pattern.height * cell
     const margin = Math.round(cell * 1.5)
-    // Wider than before: a column now holds a swatch, a reference, a name and a
-    // count, and four columns of that on a narrow chart left no room for names.
-    const legendCols = Math.max(1, Math.min(3, Math.floor(artW / 290)))
-    const legendRowH = Math.max(30, Math.round(cell * 1.8))
+    // The legend is sized against the page, not against a stitch.
+    //
+    // It used to be `max(30, cell * 1.8)`, which sounds reasonable and is not: the
+    // body type is 40% of the row, so a 14px cell produced 12px text on a chart
+    // 1300px wide. Printed, that is unreadable; on screen you zoom. The row is now
+    // a fraction of the art's width, which is the thing the reader's eye is scaled
+    // to, and the floor and ceiling keep a postage-stamp chart and a 200-stitch
+    // monster both sane.
+    const legendRowH = Math.min(72, Math.max(34, Math.round(artW / 26)))
+    // A column has to hold a swatch, a reference, a name and a count, so how many
+    // fit depends on how big that type now is rather than on a fixed 290px.
+    const legendCols = Math.max(1, Math.min(3, Math.floor(artW / (legendRowH * 7.5))))
     const legendRows = legend ? Math.ceil(shown.length / legendCols) : 0
     const legendH = legend ? legendRows * legendRowH + margin * 2 : 0
     return {
@@ -371,7 +379,14 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
   }
 
   if (grid) {
-    ctx.lineWidth = 1
+    // Both rules scale with the stitch. Fixed at 1px and 2px, a chart drawn at a
+    // 20px cell had a counting grid proportionally half as strong as the same chart
+    // at 10px — so the bigger and more readable the chart got, the fainter the
+    // thing you actually count on became.
+    const hair = Math.max(1, Math.round(cell / 16))
+    const rule = Math.max(2, Math.round(cell / 6))
+
+    ctx.lineWidth = hair
     ctx.strokeStyle = "rgba(30,25,20,.35)"
     ctx.beginPath()
     for (let x = 0; x <= pattern.width; x++) {
@@ -392,7 +407,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     // 52-wide pattern was ruled at 0, 10 ... 50 and then finished on a hairline,
     // so the chart was framed on the left and top and simply stopped on the right
     // and bottom. A grid you count on has to be closed.
-    ctx.lineWidth = 2
+    ctx.lineWidth = rule
     ctx.strokeStyle = "rgba(20,16,12,.85)"
     ctx.beginPath()
     const verticals = new Set<number>([0, pattern.width])
@@ -500,19 +515,35 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
       const nameX = codeX + codeW + gap
       const nameRoom = x + colW - gap - countW - gap - nameX
       if (nameRoom > bodySize * 2) {
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(nameX, y - legendRowH / 2, nameRoom, legendRowH)
-        ctx.clip()
         ctx.font = `500 ${bodySize}px "Nunito Sans", system-ui, sans-serif`
         ctx.fillStyle = faded
-        ctx.fillText(thread.name, nameX, y)
-        ctx.restore()
+        // Ellipsis rather than a hard clip. Clipping cut "Pewter Gray - Very Dark"
+        // to "Pewter Gray - Very Da", which does not read as a shortened name — it
+        // reads as a chart with a mistake in it.
+        ctx.fillText(ellipsise(ctx, thread.name, nameRoom), nameX, y)
       }
     })
   }
 
   return canvas
+}
+
+/**
+ * Trim text to a width, ending in an ellipsis if anything was dropped.
+ *
+ * Binary search rather than a character-by-character walk: measureText is the
+ * expensive call, and a thread name is short enough that a dozen probes settle it.
+ */
+function ellipsise(ctx: CanvasRenderingContext2D, text: string, room: number): string {
+  if (ctx.measureText(text).width <= room) return text
+  let lo = 0
+  let hi = text.length
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (ctx.measureText(`${text.slice(0, mid).trimEnd()}…`).width <= room) lo = mid
+    else hi = mid - 1
+  }
+  return lo > 0 ? `${text.slice(0, lo).trimEnd()}…` : "…"
 }
 
 export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {

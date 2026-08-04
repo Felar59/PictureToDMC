@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { DownloadGlyph } from "@/components/brand/icons"
+import { ChartDownloadGlyph, ShareHoopGlyph } from "@/components/brand/icons"
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
 import { ChartDialog } from "@/community/chart-dialog"
 import { ProductPreview } from "@/components/showcase/product-preview"
@@ -30,14 +30,28 @@ export default function Convert() {
     stitchWidth: 50,
     colorCount: 8,
     vividness: 0,
-    flipH: false,
-    flipV: false,
+    rotation: 0,
     removeBackground: false,
   })
   const patch = useCallback(
     (next: Partial<Settings>) => setSettings((prev) => ({ ...prev, ...next })),
     [],
   )
+  /**
+   * Bumped whenever a change should rebuild the grid.
+   *
+   * A counter rather than watching `settings`, because the two are deliberately
+   * not the same event: a slider changes `settings` on every pixel of the drag so
+   * the readout can follow your thumb, and reconverting there would queue thirty
+   * runs to show one answer. The panel commits on release instead, and everything
+   * that is a single click commits immediately.
+   */
+  const [revision, setRevision] = useState(0)
+  const commit = useCallback(() => setRevision((r) => r + 1), [])
+  /** Identifies the run in flight, so a slower one cannot overwrite a newer. */
+  const runIdRef = useRef(0)
+  /** Whether a grid has ever been built — adjustments only auto-rebuild after. */
+  const hasBuiltRef = useRef(false)
   const { stitchWidth } = settings
   const [useCustom, setUseCustom] = useState(false)
   const [customThreads, setCustomThreads] = useState<Thread[]>([])
@@ -136,8 +150,7 @@ export default function Convert() {
           stitchWidth: session.stitchWidth,
           colorCount: session.colorCount,
           vividness: session.vividness ?? 0,
-          flipH: session.flipH ?? false,
-          flipV: session.flipV ?? false,
+          rotation: session.rotation ?? 0,
           removeBackground: session.removeBackground ?? false,
         }))
         setUseCustom(session.useCustomPalette)
@@ -154,40 +167,81 @@ export default function Convert() {
     }
   }, [])
 
-  const create = useCallback(async () => {
-    if (!photo) return setErrorKey("noImage")
-    if (useCustom && customThreads.length < settings.colorCount)
-      return setErrorKey("notEnoughCustom")
+  /**
+   * Build the grid.
+   *
+   * `keepPrevious` is what makes an adjustment feel like an adjustment. Clearing
+   * the pattern is right the first time — there is nothing to keep, and the
+   * shimmer says work is happening. On a re-run it is wrong: the grid you were
+   * looking at vanishes, the column collapses to a placeholder, and it comes back a
+   * moment later slightly different. Holding the old one until the new one lands
+   * turns that into a redraw.
+   */
+  const create = useCallback(
+    async (keepPrevious = false) => {
+      if (!photo) return setErrorKey("noImage")
+      if (useCustom && customThreads.length < settings.colorCount)
+        return setErrorKey("notEnoughCustom")
 
-    setBusy(true)
-    setErrorKey(null)
-    setPattern(null)
-    setView("pattern")
+      setBusy(true)
+      setErrorKey(null)
+      if (!keepPrevious) setPattern(null)
+      setView("pattern")
 
-    try {
-      // Runs in a Web Worker in this tab. Nothing is uploaded, so two people
-      // converting at once can no longer see each other's pattern, and the UI
-      // keeps painting while k-means runs.
-      const next = await runConversion(photo.blob, {
-        ...settings,
-        palette: useCustom ? customThreads : undefined,
-      })
-      setPattern(next)
-      void saveSession({
-        photo: photo.blob,
-        photoName: photo.name ?? "photo",
-        ...settings,
-        useCustomPalette: useCustom,
-        customThreadNums: customThreads.map((c) => c.num),
-        substitutions: {},
-      })
-    } catch (err) {
-      console.error(err)
-      setErrorKey("generic")
-    } finally {
-      setBusy(false)
-    }
-  }, [photo, useCustom, customThreads, settings])
+      // One token per run. Adjustments can be made faster than a conversion
+      // finishes — three quarter-turns in a second is easy — and without this the
+      // slowest run wins instead of the last one, leaving the grid showing a
+      // setting nobody has selected any more.
+      const token = ++runIdRef.current
+
+      try {
+        // Runs in a Web Worker in this tab. Nothing is uploaded, so two people
+        // converting at once can no longer see each other's pattern, and the UI
+        // keeps painting while k-means runs.
+        const next = await runConversion(photo.blob, {
+          ...settings,
+          palette: useCustom ? customThreads : undefined,
+        })
+        if (token !== runIdRef.current) return // a newer run has been started
+        setPattern(next)
+        hasBuiltRef.current = true
+        void saveSession({
+          photo: photo.blob,
+          photoName: photo.name ?? "photo",
+          ...settings,
+          useCustomPalette: useCustom,
+          customThreadNums: customThreads.map((c) => c.num),
+          substitutions: {},
+        })
+      } catch (err) {
+        if (token !== runIdRef.current) return
+        console.error(err)
+        setErrorKey("generic")
+      } finally {
+        if (token === runIdRef.current) setBusy(false)
+      }
+    },
+    [photo, useCustom, customThreads, settings],
+  )
+
+  // Read through a ref so the effect below can fire on `revision` alone. With
+  // `create` in its dependencies it would also run on every keystroke that changes
+  // a setting, which is the debounce this was built to avoid.
+  const createRef = useRef(create)
+  createRef.current = create
+
+  /**
+   * Rebuild when a change is committed — but only once there is a grid to rebuild.
+   *
+   * Before the first conversion the button is the whole point: someone who has just
+   * dropped a photograph is still choosing a width, and converting under them on
+   * every touch would be both slow and presumptuous. After it, the grid on screen is
+   * the answer to the current settings and has to keep being that.
+   */
+  useEffect(() => {
+    if (revision === 0 || !hasBuiltRef.current) return
+    void createRef.current(true)
+  }, [revision])
 
   /** Swap one thread for another. A relabel plus a re-render — the stitches
    *  don't move, so there is nothing to recompute. */
@@ -257,7 +311,12 @@ export default function Convert() {
       <div className="grid gap-7 lg:grid-cols-[296px_1fr] xl:grid-cols-[296px_1fr_312px]">
         {/* left: controls */}
         <div className="flex flex-col gap-4">
-          <SettingsPanel settings={settings} onChange={patch} summary={summary} />
+          <SettingsPanel
+            settings={settings}
+            onChange={patch}
+            onCommit={commit}
+            summary={summary}
+          />
 
           <SubPanel className="flex flex-col gap-3">
             <div>
@@ -279,7 +338,9 @@ export default function Convert() {
             </Button>
           </SubPanel>
 
-          <Button size="block" onClick={create} disabled={busy || !photo}>
+          {/* Wrapped, not passed straight through: `create` takes a flag, and a
+              click handler would hand it a MouseEvent as the first argument. */}
+          <Button size="block" onClick={() => void create()} disabled={busy || !photo}>
             {busy ? t.converter.canvas.building : pattern ? t.converter.recreate : t.converter.create}
           </Button>
         </div>
@@ -314,6 +375,7 @@ export default function Convert() {
                 </p>
               ) : (
                 <Button variant="secondary" size="block" onClick={() => setShareOpen(true)}>
+                  <ShareHoopGlyph />
                   {t.publish.open}
                 </Button>
               )}
@@ -340,7 +402,7 @@ export default function Convert() {
               full width keep it unmistakable. */}
           {pattern && pattern.threads.length > 0 && (
             <Button variant="secondary" size="block" onClick={() => setChartOpen(true)}>
-              <DownloadGlyph />
+              <ChartDownloadGlyph />
               {t.converter.download.button}
             </Button>
           )}

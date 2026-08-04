@@ -21,8 +21,13 @@ export type StoredSession = {
   stitchWidth: number
   colorCount: number
   vividness: number
-  flipH: boolean
-  flipV: boolean
+  /** Quarter turns clockwise. Optional because sessions saved before the mirror
+   *  controls became a rotation do not carry it. */
+  rotation?: number
+  /** No longer offered in the UI, and kept only so an older stored session still
+   *  parses. Nothing writes them. */
+  flipH?: boolean
+  flipV?: boolean
   removeBackground: boolean
   useCustomPalette: boolean
   customThreadNums: string[]
