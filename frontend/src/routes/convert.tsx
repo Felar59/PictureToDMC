@@ -75,6 +75,15 @@ export default function Convert() {
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null)
   const [view, setView] = useState<CanvasView>("pattern")
   const [hovered, setHovered] = useState<string | null>(null)
+  /**
+   * A thread picked out and kept picked out.
+   *
+   * Hover alone could not work: there is no hover on a phone, and the copy was
+   * telling people to survoler a thread on a device where that gesture does not
+   * exist. A tap pins one instead, and hovering still previews for a mouse — the
+   * pin is what the list is actually for, the hover is a convenience on top.
+   */
+  const [pinned, setPinned] = useState<string | null>(null)
   const [selected, setSelected] = useState<Thread | null>(null)
   const [restored, setRestored] = useState(false)
   const [chartOpen, setChartOpen] = useState(false)
@@ -337,10 +346,11 @@ export default function Convert() {
   }
 
   // The canvas draws the pattern itself now, so there is nothing to encode here.
-  const hoveredIndex = useMemo(
-    () => (pattern && hovered ? pattern.threads.findIndex((c) => c.num === hovered) : -1),
-    [pattern, hovered],
-  )
+  // Hover wins while it lasts, then the pin takes over again.
+  const hoveredIndex = useMemo(() => {
+    const num = hovered ?? pinned
+    return pattern && num ? pattern.threads.findIndex((c) => c.num === num) : -1
+  }, [pattern, hovered, pinned])
 
   // Revoke the object URL we created for a restored photo.
   const lastUrl = useRef<string | null>(null)
@@ -379,9 +389,13 @@ export default function Convert() {
         </div>
       )}
 
+      {/* min-w-0 on each column: a grid item's automatic minimum size is its
+          min-content width, so any child that refuses to shrink stretches the whole
+          track instead. That is how the workbench came to be 560px wide on a 375px
+          phone. */}
       <div className="grid gap-7 lg:grid-cols-[296px_1fr] xl:grid-cols-[296px_1fr_312px]">
         {/* left: controls */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           <SettingsPanel
             settings={settings}
             onChange={patch}
@@ -418,7 +432,7 @@ export default function Convert() {
         </div>
 
         {/* centre: the cloth */}
-        <div className="flex flex-col gap-6 lg:border-x-2 lg:border-dashed lg:border-edge-2 lg:px-7">
+        <div className="flex flex-col gap-6 min-w-0 lg:border-x-2 lg:border-dashed lg:border-edge-2 lg:px-7">
           {photo ? (
             <PatternCanvas
               pattern={pattern}
@@ -456,11 +470,13 @@ export default function Convert() {
         </div>
 
         {/* right: the thread drawer, and the way out */}
-        <div className="lg:col-span-2 xl:col-span-1 flex flex-col gap-4">
+        <div className="lg:col-span-2 xl:col-span-1 flex flex-col gap-4 min-w-0">
           <ThreadList
             threads={pattern?.threads ?? []}
             onSelect={setSelected}
             onHover={setHovered}
+            pinned={pinned}
+            onPin={(num) => setPinned((prev) => (prev === num ? null : num))}
           />
           {/* The download sits under the threads and opens the same dialog a
               published piece does — preview on the left, the options that change

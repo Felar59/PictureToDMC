@@ -1,6 +1,7 @@
 import { Bobbin } from "@/components/brand/bobbin"
 import { ColorWheel } from "@/components/brand/icons"
 import { useI18n } from "@/i18n"
+import { cn } from "@/lib/utils"
 import type { Thread } from "@/engine/dmc"
 
 /** Rows that fit in the drawer before it starts scrolling (max-h / row height). */
@@ -19,10 +20,15 @@ export function ThreadList({
   threads,
   onSelect,
   onHover,
+  pinned,
+  onPin,
 }: {
   threads: Thread[]
   onSelect: (t: Thread) => void
   onHover: (num: string | null) => void
+  /** The thread currently kept picked out, if any. */
+  pinned?: string | null
+  onPin?: (num: string) => void
 }) {
   const { t } = useI18n()
 
@@ -44,23 +50,42 @@ export function ThreadList({
           <ul className="flex flex-col gap-2 list-none p-0 m-0 max-h-[min(52vh,560px)] overflow-y-auto scroll-linen pr-1.5">
             {threads.map((thread) => (
               <li key={thread.num}>
+                {/* The row is a button now, not a div with mouse handlers.
+                    It listened only for mouseenter and mouseleave, so on a phone —
+                    where there is no hover at all — picking a thread out of the grid
+                    was simply unavailable, while the hint underneath told people to
+                    survoler one. A keyboard could not reach it either. Tapping pins
+                    the thread; hovering still previews for a mouse. */}
                 <div
-                  className="bg-blanc border-[1.5px] border-edge rounded-[14px] px-3 py-2.5 flex items-center gap-3 transition-colors hover:border-taupe"
-                  onMouseEnter={() => onHover(thread.num)}
-                  onMouseLeave={() => onHover(null)}
+                  className={cn(
+                    "border-[1.5px] rounded-[14px] flex items-center gap-3 transition-colors",
+                    pinned === thread.num
+                      ? "bg-golden-wash border-golden-edge"
+                      : "bg-blanc border-edge hover:border-taupe",
+                  )}
                 >
-                  <Bobbin hex={thread.hex} />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13.5px] font-extrabold">DMC {thread.num}</div>
-                    <div className="text-xs text-stone truncate">{thread.name}</div>
-                  </div>
+                  <button
+                    type="button"
+                    aria-pressed={pinned === thread.num}
+                    aria-label={t.converter.threads.pinAria(thread.num)}
+                    onClick={() => onPin?.(thread.num)}
+                    onMouseEnter={() => onHover(thread.num)}
+                    onMouseLeave={() => onHover(null)}
+                    // 44px tall, which is the floor for a target a thumb has to find.
+                    className="flex-1 min-w-0 flex items-center gap-3 text-left px-3 py-2.5 min-h-[44px] cursor-pointer"
+                  >
+                    <Bobbin hex={thread.hex} />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13.5px] font-extrabold">DMC {thread.num}</span>
+                      <span className="block text-[12.5px] text-stone truncate">{thread.name}</span>
+                    </span>
+                  </button>
 
                   <button
                     type="button"
                     onClick={() => onSelect(thread)}
                     aria-label={t.converter.threads.swapAria(thread.num)}
-                    className="size-[30px] shrink-0 rounded-full bg-linen border-[1.5px] border-edge-3 flex items-center justify-center cursor-pointer transition-colors hover:border-coral"
+                    className="size-11 mr-1.5 shrink-0 rounded-full bg-linen border-[1.5px] border-edge-3 flex items-center justify-center cursor-pointer transition-colors hover:border-coral"
                   >
                     <ColorWheel />
                   </button>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 import { PixelGrid } from "@/components/brand/pixel-grid"
 import type { Pattern } from "@/engine/convert"
@@ -68,12 +68,23 @@ function useImageData(data: ImageData | null) {
  */
 function useFittedSize(ratio: number) {
   const hostRef = useRef<HTMLDivElement | null>(null)
-  const [available, setAvailable] = useState(MAX_WIDTH)
+  // Starts unknown, not at MAX_WIDTH.
+  //
+  // Seeding it with 560 made the first paint 560 wide, and that guess used to come
+  // true: the cloth around the canvas was `shrink-0`, the workbench's grid track is
+  // content-sized, so the track grew to fit the guess and the observer then measured
+  // 560 and agreed with it. A stable fixed point 205px wider than a phone — the page
+  // scrolled sideways and nothing in the CSS looked wrong, because by then nothing
+  // was. Both halves are fixed: the cloth can shrink now, and this no longer
+  // proposes a width before it has seen the room.
+  const [available, setAvailable] = useState<number | null>(null)
 
-  useEffect(() => {
+  // Layout effect, so the measurement lands before the browser paints and there is
+  // no frame at the fallback width.
+  useLayoutEffect(() => {
     const host = hostRef.current
     if (!host) return
-    const measure = () => setAvailable(host.clientWidth || MAX_WIDTH)
+    const measure = () => setAvailable(host.clientWidth || null)
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(host)
@@ -81,7 +92,7 @@ function useFittedSize(ratio: number) {
   }, [])
 
   // The aida frame around the canvas is p-6, so 48px of it is not drawable.
-  let width = Math.max(120, Math.min(available - AIDA_PADDING * 2, MAX_WIDTH))
+  let width = Math.max(120, Math.min((available ?? MAX_WIDTH) - AIDA_PADDING * 2, MAX_WIDTH))
   let height = width * ratio
   if (ratio > MAX_ASPECT) {
     height = width * MAX_ASPECT
@@ -155,7 +166,7 @@ export function PatternCanvas({
             disabled={v === "original" ? !original : !pattern && !busy}
             aria-pressed={view === v}
             className={cn(
-              "font-display text-sm px-[18px] py-2 rounded-full cursor-pointer transition-colors disabled:cursor-not-allowed disabled:text-edge-5",
+              "font-display text-sm px-[18px] py-2.5 min-h-[42px] rounded-full cursor-pointer transition-colors disabled:cursor-not-allowed disabled:text-edge-5",
               view === v ? "bg-ink text-blanc" : "text-cocoa hover:text-coral-deep",
             )}
           >
@@ -166,7 +177,7 @@ export function PatternCanvas({
 
       {/* the cloth */}
       <div ref={hostRef} className="w-full flex justify-center">
-        <div className="aida [--aida-size:22.5px] [--aida-ink:.09] bg-aida rounded-[20px] p-6 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] shrink-0">
+        <div className="aida [--aida-size:22.5px] [--aida-ink:.09] bg-aida rounded-[20px] p-6 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] max-w-full">
           {showPattern ? (
             <div className="relative" style={{ width: boxW, height: boxH }}>
               <canvas

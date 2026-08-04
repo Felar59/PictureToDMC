@@ -31,7 +31,7 @@ export const en = {
     demoPattern: "your pattern",
     demoTry: "Try this photo — it opens ready to convert",
     demoPhotoAlt: "A photo of a strawberry",
-    demoPatternAlt: "The same strawberry as a cross-stitch pattern, in 8 DMC threads",
+    demoPatternAlt: "The same strawberry as a cross-stitch chart, in 9 DMC threads, with its thread list",
     demoMatched: (n: number) => `matched to ${n} DMC threads`,
 
     stepsKicker: "as easy as one, two, three (and four)",
@@ -390,7 +390,8 @@ export const en = {
       heading: "Your threads",
       count: (n: number) => `${n} colors`,
       empty: "Your DMC threads will be listed here.",
-      hints: "Hover a thread to find it on the pattern · tap the wheel to swap it",
+      hints: "Tap a thread to find it on the pattern · the wheel swaps it",
+      pinAria: (code: string) => `Find DMC ${code} on the pattern`,
       swapAria: (code: string) => `Swap DMC ${code}`,
     },
 
@@ -514,7 +515,7 @@ export const fr: Copy = {
     demoPattern: "votre grille",
     demoTry: "Essayer cette photo — elle s'ouvre prête à convertir",
     demoPhotoAlt: "La photo d'une fraise",
-    demoPatternAlt: "La même fraise en grille de point de croix, en 8 fils DMC",
+    demoPatternAlt: "La même fraise en grille de point de croix, en 9 fils DMC, avec sa liste de fils",
     demoMatched: (n: number) => `associée à ${n} fils DMC`,
 
     stepsKicker: "aussi simple que un, deux, trois (et quatre)",
@@ -857,7 +858,8 @@ export const fr: Copy = {
       heading: "Vos fils",
       count: (n: number) => `${n} couleurs`,
       empty: "Vos fils DMC s'afficheront ici.",
-      hints: "Survolez un fil pour le repérer sur la grille · cliquez sur la roue pour le remplacer",
+      hints: "Touchez un fil pour le repérer sur la grille · la roue le remplace",
+      pinAria: (code: string) => `Repérer le DMC ${code} sur la grille`,
       swapAria: (code: string) => `Remplacer le DMC ${code}`,
     },
 
