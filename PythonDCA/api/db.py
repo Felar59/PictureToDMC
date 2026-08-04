@@ -12,11 +12,12 @@ Schema notes worth keeping:
   * `sessions` is keyed by the *hash* of the cookie token. A leaked database
     backup therefore contains no usable session.
 
-  * `users.role` is never written from anything a request supplies. Two things
-    grant it, both of them server-side: `config.ADMIN_EMAILS`, applied by
-    `apply_configured_admins()` on boot and again when a named account signs in,
-    and `python -m PythonDCA.admin` from a shell on the box. A privilege no
-    payload can ask for cannot be escalated by a crafted body.
+  * `users.role` and `users.banned_at` are never written by this package at all.
+    The only thing that writes them is `sudo ptd-panel` (deploy/admin/), from a
+    shell on the box. So the admin role is not a privilege this process guards
+    carefully — it is one it cannot grant, whatever arrives in a request body, and
+    whatever an environment variable claims. Both columns are read here on every
+    authenticated request and written here never.
 
   * `display_name` is NOT unique. Names come from Google, and real people
     collide; identity is the id.
@@ -180,34 +181,6 @@ def init() -> None:
     if "palette" not in have_posts:
         conn.execute("ALTER TABLE posts ADD COLUMN palette TEXT")
     _backfill_palettes(conn)
-
-    apply_configured_admins()
-
-
-def apply_configured_admins() -> int:
-    """Give the accounts named in PTD_ADMINS the admin role. Returns how many changed.
-
-    Runs on boot, so editing /etc/picturetodmc.env and restarting is all it takes
-    for an existing account. It runs again at sign-in (see routes_auth) because an
-    account named here may not exist yet the first time.
-
-    Promotion only, never demotion. Removing an address from the list does not
-    take the role back, and that is on purpose: a typo in a unit file would
-    otherwise silently unmake every admin on the next restart, at the exact moment
-    nobody could put it back through the site. Demoting is
-    `python -m PythonDCA.admin --revoke`, deliberately a decision someone takes.
-    """
-    if not config.ADMIN_EMAILS:
-        return 0
-
-    emails = sorted(config.ADMIN_EMAILS)
-    placeholders = ",".join("?" * len(emails))
-    cur = connect().execute(
-        f"UPDATE users SET role = 'admin'"
-        f" WHERE role != 'admin' AND lower(email) IN ({placeholders})",
-        emails,
-    )
-    return cur.rowcount or 0
 
 
 def usage_order(cells_b64: str, codes: list[str]) -> list[str]:

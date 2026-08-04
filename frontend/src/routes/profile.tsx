@@ -96,11 +96,11 @@ export default function ProfilePage() {
           className="shadow-soft"
         />
         <div className="flex-1 min-w-[200px]">
-          {/* The flower rides with the name, at the name's own size, so it reads
-              as part of who they are rather than as a label stuck beside it. */}
-          <h1 className="text-[30px] sm:text-[34px] m-0 flex items-center gap-2.5 flex-wrap">
+          {/* Here the badge says the word: this page exists to answer "who is
+              this", and there is room beside a 34px name for the answer. */}
+          <h1 className="text-[30px] sm:text-[34px] m-0 flex items-center gap-3 flex-wrap">
             {profile.user.displayName}
-            {profile.user.isAdmin && <AdminFlower className="text-[24px]" />}
+            {profile.user.isAdmin && <AdminFlower variant="pill" />}
           </h1>
           <p className="text-[14.5px] text-stone m-0 mt-1">{t.profile.joined(joined)}</p>
           {/* Their own words, if they wrote any. whitespace-pre-line so a bio

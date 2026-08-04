@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# Picture to DMC admin panel — four panes (service journal, accounts, the
+# gallery, disk space).
+#
+#   ptd-panel
+#
+# The Python lives in /usr/local/lib/ptd-panel (see deploy/admin/panel/). Root is
+# needed for both halves of the job: writing to the database, reading the journal.
+set -euo pipefail
+
+LIB="${PTD_PANEL_LIB:-/usr/local/lib/ptd-panel}"
+[ -d "$LIB" ] || { echo "panneau absent : $LIB (relance deploy/admin/install.sh)"; exit 1; }
+command -v python3 >/dev/null || { echo "python3 absent (apt install python3)"; exit 1; }
+
+# TERM has to survive sudo, or curses starts up blind.
+if [ "$(id -u)" -ne 0 ]; then
+  exec sudo TERM="${TERM:-xterm-256color}" python3 "$LIB" "$@"
+fi
+exec python3 "$LIB" "$@"

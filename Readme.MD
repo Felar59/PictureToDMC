@@ -99,43 +99,68 @@ gh workflow run Deploy       # redeploy without a commit
 
 ---
 
-## Admins, and the publishing limit
+## Admins, moderation and the publishing limit
 
 An admin may delete **any** piece and **any** comment; everyone else may only
-delete their own. There is no admin screen — the ✕ and the delete link simply
-appear on other people's work, and the confirmation prompt says whose it is. An
-admin's name carries a 🌸 in the gallery, on their page and under their comments,
-so a deletion is never anonymous.
+delete their own. There is no admin page on the site — the ✕ and the delete link
+simply appear on other people's work, and the confirmation prompt says whose it
+is. An admin's name carries a 🌸 (a `🌸 ADMIN` pill on their profile), so a
+deletion is never anonymous. Names like "Admin" or "Modérateur" are refused at
+sign-up and rename, folded past spacing and accents — the badge comes from the
+database, but nobody should have to check it to know a name is not claiming one.
 
-Two ways to grant the role, both server-side. **Nothing a request contains can
-grant it**, which is the whole point: no handler in `PythonDCA/api/` writes
-`users.role` from a request body.
+### The panel
 
-```bash
-# 1. The env file — promoted on every boot, and when the account next signs in.
-sudo nano /etc/picturetodmc.env      # PTD_ADMINS=felix@r2s.fr,catherine@…
-sudo systemctl restart picturetodmc
+`users.role` and `users.banned_at` are written by **one** thing: `sudo ptd-panel`,
+from a shell on the box. Nothing in `PythonDCA/api/` writes either column, and no
+environment variable sets them either — so the admin role is not a privilege the
+app guards, it is one the app cannot grant, whatever arrives in a request body.
+(Same design as emoji-art's `ea-panel` on this box, down to the keys.)
 
-# 2. From a shell, when there is no address to hand or a role must come back.
-cd /var/www/picturetodmc/app
-../venv/bin/python -m PythonDCA.admin --list
-../venv/bin/python -m PythonDCA.admin felix@r2s.fr
-../venv/bin/python -m PythonDCA.admin --revoke "Someone Else"
+```
+┌ JOURNAL ──────────────┬ COMPTES ──────────────┐   Tab   change de volet
+│ le journal du service │ le plus récent en     │   ↑↓    défiler
+│ condensé              │ haut · a admin b ban  │   a     promouvoir / rétrograder
+├ PIÈCES ───────────────┼ ESPACE ───────────────┤   b     bannir / réhabiliter
+│ la galerie, la plus   │ photos, grilles,      │   r     recharger
+│ récente en haut       │ disque restant        │   q     quitter
+└───────────────────────┴───────────────────────┘
 ```
 
-`PTD_ADMINS` promotes and never demotes: a typo in the unit file would otherwise
-unmake every admin on the next restart, at the moment nobody could put it back
-through the site. Removing an address there and running `--revoke` is the pair.
-Promotion at sign-in requires the address to be one Google says it *verified* —
-the only place in the codebase that trusts `email_verified`, because it is the
-only place that acts on the address.
+Installed by hand, because the deploy workflow only rsyncs `PythonDCA/`:
+
+```bash
+scp -P 2007 -r deploy/admin ubuntu@164.132.99.194:/home/ubuntu/
+ssh -p 2007 ubuntu@164.132.99.194 'sudo bash /home/ubuntu/admin/install.sh'
+ssh -t -p 2007 ubuntu@164.132.99.194 'sudo ptd-panel'      # -t: it's a TUI
+```
+
+Two guard rails, both learned from emoji-art: the **last** admin cannot be
+demoted (one keystroke too many would otherwise lock moderation shut, with raw SQL
+the only way back in), and an admin cannot be banned before being demoted. Banning
+also deletes that account's sessions, so it bites on the next click rather than
+whenever a 180-day cookie expires — `banned_at` had been in the schema since the
+first release with nothing to set it.
+
+The very first admin, before the panel is installed — the documented bootstrap,
+and the only time raw SQL is the answer:
+
+```bash
+sudo sqlite3 /var/lib/picturetodmc/db.sqlite \
+  "UPDATE users SET role='admin' WHERE email='you@example.com';"
+```
+
+### The publishing limit
 
 **Five pieces per account per day** (`DAILY_POST_LIMIT` in `routes_gallery.py`),
 counted over a rolling 24 hours rather than reset at midnight — a calendar day
 hands anyone who waits for 23:59 ten pieces in two minutes. The check runs inside
 the same transaction as the insert, so simultaneous requests cannot both find four
-and both add one. Admins are exempt. A refused publish returns `429` with
-`{code, limit, retryInMinutes}` and the dialog says when there will be room.
+and both add one. **Nobody is exempt, admins included:** an exemption is a second
+code path that only two accounts ever take, which makes it the one nobody notices
+is broken. A refused publish returns `429` with `{code, limit, retryInMinutes}`,
+and the dialog says when there will be room. The panel's account list shows each
+member's count inside that same window, flagged `5!` when it is full.
 
 ---
 

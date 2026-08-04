@@ -184,17 +184,17 @@ def _check_daily_limit(conn: sqlite3.Connection, user: sqlite3.Row) -> None:
     together would each find four and each add one. `idx_posts_author` covers the
     (author, time) lookup, so this is an index range scan and not a table scan.
 
-    Admins are exempt. The limit is here to keep the gallery from being flooded,
-    not to ration the two people who would have to clean up the flood.
+    Nobody is exempt, admins included. An exemption would be a second code path
+    that only two accounts ever take — which makes it the path nobody notices is
+    broken — and the two people who run the gallery are also the two who should be
+    living under its rules. If five a day turns out to be too few, the number to
+    change is above, for everyone.
 
     The 429 carries a body the client can act on rather than a sentence it would
     have to parse: which limit was hit, and how many minutes until the oldest of
     the five falls out of the window. Every message a member reads is written in
     their own language on the other side, and this module has no locale.
     """
-    if user["role"] == "admin":
-        return
-
     row = conn.execute(
         "SELECT COUNT(*) AS n, MIN(created_at) AS oldest FROM posts"
         " WHERE author_id = ? AND created_at > ?",

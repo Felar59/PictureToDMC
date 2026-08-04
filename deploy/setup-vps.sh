@@ -99,9 +99,6 @@ if [ ! -s /etc/$APP.env ]; then
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 PUBLIC_ORIGIN=https://164-132-99-194.sslip.io
-# Comma-separated e-mails that hold the admin role. Applied on every boot and
-# when one of them signs in; never taken back (python -m PythonDCA.admin does that).
-PTD_ADMINS=
 ENVEOF
     chown root:"$DEPLOY_USER" /etc/$APP.env
     chmod 640 /etc/$APP.env

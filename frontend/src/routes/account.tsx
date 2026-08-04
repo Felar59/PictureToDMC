@@ -5,6 +5,7 @@ import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
 import { useI18n } from "@/i18n"
+import { ApiError } from "@/lib/community"
 
 /**
  * The account page: name, bio, and — later — a choice of mark.
@@ -29,7 +30,9 @@ export default function Account() {
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
   const [saving, setSaving] = useState(false)
-  const [failed, setFailed] = useState(false)
+  // The message itself, not a boolean: a reserved name and a dropped connection
+  // are both "it didn't save", and only one of them is worth trying again.
+  const [failed, setFailed] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
   // Filled from the account once it has loaded, and only then: an input seeded
@@ -59,7 +62,7 @@ export default function Account() {
     const trimmed = name.trim()
     if (trimmed.length < 2 || saving) return
     setSaving(true)
-    setFailed(false)
+    setFailed(null)
     setSaved(false)
     try {
       await updateProfile({ displayName: trimmed, bio: bio.trim() })
@@ -67,8 +70,9 @@ export default function Account() {
       // say it worked, because there is nowhere better to be.
       if (welcome) void navigate("/gallery", { replace: true })
       else setSaved(true)
-    } catch {
-      setFailed(true)
+    } catch (err) {
+      const reserved = err instanceof ApiError && err.code === "reserved-name"
+      setFailed(reserved ? t.account.nameReserved : t.account.saveFailed)
     } finally {
       setSaving(false)
     }
@@ -138,7 +142,7 @@ export default function Account() {
 
         {failed && (
           <p role="alert" className="text-[14.5px] text-coral-deeper m-0">
-            {t.account.saveFailed}
+            {failed}
           </p>
         )}
 

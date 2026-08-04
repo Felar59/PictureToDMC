@@ -1,6 +1,7 @@
 """Sign-in routes."""
 
 import secrets
+import unicodedata
 import urllib.error
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -88,17 +89,6 @@ def google_callback(request: Request, code: str | None = None, state: str | None
             (identity.sub, user_id),
         )
 
-    # An account named in PTD_ADMINS gets the role here as well as on boot: the
-    # boot pass can only reach accounts that already exist, and the first admin
-    # signs in before there is a row to promote.
-    #
-    # Only on an address Google says it verified. Nothing else in this package
-    # trusts `email_verified`, because nothing else acts on the address — this
-    # does, so it checks. The alternative is granting the site's keys to whoever
-    # can put the right string in an unverified claim.
-    if identity.email and identity.email_verified and identity.email in config.ADMIN_EMAILS:
-        conn.execute("UPDATE users SET role = 'admin' WHERE id = ? AND role != 'admin'", (user_id,))
-
     banned = conn.execute("SELECT banned_at FROM users WHERE id = ?", (user_id,)).fetchone()
     if banned and banned["banned_at"] is not None:
         return fail("banned")
@@ -130,6 +120,49 @@ def logout(request: Request) -> Response:
 MAX_NAME = 40
 MAX_BIO = 300
 
+# Names nobody may take, because an admin now wears a visible badge and a member
+# called "Admin" would be borrowing it.
+#
+# This is not a security boundary — the flower is drawn from `users.role`, which no
+# request can touch, so a member named "Modérateur" gains exactly nothing. It just
+# closes the cheapest impersonation: someone reading a stern comment should not have
+# to check the badge to know whether the name is claiming something.
+#
+# `display_name` is not unique and is not going to be (people collide), so this is
+# a small list of exact matches rather than an attempt at policing names.
+RESERVED_NAMES = frozenset(
+    {
+        "admin",
+        "admins",
+        "administrateur",
+        "administratrice",
+        "administrator",
+        "moderateur",
+        "moderatrice",
+        "moderator",
+        "mod",
+        "staff",
+        "equipe",
+        "support",
+        "picturetodmc",
+    }
+)
+
+
+def _fold(name: str) -> str:
+    """Lowercase, accents dropped, everything but letters and digits removed.
+
+    So "A d m i n", "ADMIN.", "Admín" and "-admin-" all fold to the same string.
+    Without the folding, the list would be a speed bump measured in keystrokes.
+
+    Homoglyphs still get through — "admın" with a dotless ı, or a Cyrillic а — and
+    that is accepted rather than overlooked. Chasing them means a confusables table
+    and a stream of false positives for people whose names are not in this
+    alphabet, to defend a badge that grants nothing.
+    """
+    decomposed = unicodedata.normalize("NFKD", name.casefold())
+    return "".join(c for c in decomposed if c.isalnum())
+
 
 @router.patch("/me")
 async def update_me(request: Request) -> JSONResponse:
@@ -158,6 +191,11 @@ async def update_me(request: Request) -> JSONResponse:
         name = str(body.get("displayName") or "").strip()
         if not 2 <= len(name) <= MAX_NAME:
             raise HTTPException(422, f"A name is between 2 and {MAX_NAME} characters")
+        if _fold(name) in RESERVED_NAMES:
+            # A code, not a sentence: the client writes this one in the member's
+            # own language, and "try again" would be the wrong advice — retrying
+            # the same name will fail the same way.
+            raise HTTPException(422, {"code": "reserved-name"})
         sets.append("display_name = ?")
         values.append(name)
 

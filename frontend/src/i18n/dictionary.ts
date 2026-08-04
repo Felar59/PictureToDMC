@@ -122,10 +122,14 @@ export const en = {
     failedState: "That sign-in link had expired. Try again.",
     failedBanned: "This account has been suspended.",
     whySignIn: "Signing in is only needed to share a piece — converting is free and anonymous.",
-    /** The flower's tooltip. Cute first, unmistakable second — it has to be clear
-     *  that this person can delete things — and with no pronoun in it, because the
+    /** The badge's tooltip, and the pill's accessible name. No pronoun in it: the
      *  same badge is worn by whoever holds the role. */
-    adminBadge: "Gallery gardener · admin",
+    adminBadge: "Looks after the gallery",
+    /** The word in the pill. Uppercased by the style. */
+    adminLabel: "Admin",
+    /** A name off the reserved list. "Try again" would be the wrong advice — the
+     *  same name fails the same way — so it says what to do instead. */
+    nameReserved: "That name is kept for the people who run the site. Pick another one!",
   },
 
   publish: {
@@ -527,7 +531,9 @@ export const fr: Copy = {
     failedState: "Ce lien de connexion avait expiré. Réessayez.",
     failedBanned: "Ce compte a été suspendu.",
     whySignIn: "La connexion sert uniquement à partager un ouvrage — convertir reste libre et anonyme.",
-    adminBadge: "Jardinier·ère de la galerie · admin",
+    adminBadge: "Veille sur la galerie",
+    adminLabel: "Admin",
+    nameReserved: "Ce nom est réservé à l'équipe du site. Choisissez-en un autre !",
   },
 
   publish: {
