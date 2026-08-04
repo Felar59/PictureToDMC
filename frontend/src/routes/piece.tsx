@@ -196,7 +196,9 @@ export default function Piece() {
    * three lines below it.
    */
   useHead({
-    title: post ? t.head.piece.title(post.title, post.author.displayName) : t.head.home.title,
+    title: post
+      ? t.head.piece.title(post.title, post.author.displayName)
+      : t.notFound.title,
     description: post
       ? t.head.piece.description(
           post.author.displayName,
@@ -204,10 +206,17 @@ export default function Piece() {
           post.height,
           post.threadCodes.length,
         )
-      : t.head.home.description,
+      : t.notFound.body,
     canonicalPath: `/piece/${postId}`,
     image: post ? `/api/posts/${postId}/share.png` : undefined,
     type: "article",
+    // A piece that is gone must not be indexed under a canonical pointing at itself.
+    // People delete their work, and the URL stays in the wild — without this the page
+    // answered with the home page's title and description while still claiming to be
+    // the canonical version of a piece that no longer exists, which is the definition
+    // of a soft 404. `state` is "failed" only once the fetch has actually come back,
+    // so a slow connection is not mistaken for a missing piece.
+    noindex: state === "failed",
   })
 
   // How wide to draw the grid: as wide as the column allows, unless that would
