@@ -190,6 +190,24 @@ export function PatternCanvas({
                   className="absolute inset-0 rounded-[6px] pointer-events-none animate-veil"
                 />
               )}
+              {/* Rebuilding, with a grid already on screen.
+                  The placeholder below is right for the first conversion, when there
+                  is nothing to keep — but adjusting a setting now rebuilds
+                  automatically, and swapping the grid for a shimmer every time would
+                  make the thing you are adjusting disappear as you adjust it. So the
+                  sheen passes over the pattern instead and the pattern stays put.
+                  A sweep and nothing else: no dimming, because dimming a preview
+                  while someone is choosing a colour makes the colour look like the
+                  wrong choice. */}
+              {busy && (
+                <div
+                  className="absolute inset-0 overflow-hidden rounded-[6px] pointer-events-none"
+                  role="status"
+                  aria-label={t.converter.canvas.building}
+                >
+                  <div className="absolute inset-0 scale-150 bg-gradient-to-r from-transparent via-white/45 to-transparent animate-shine" />
+                </div>
+              )}
             </div>
           ) : showOriginal ? (
             <img

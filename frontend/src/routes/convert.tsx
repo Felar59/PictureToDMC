@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 
+import strawberryPhoto from "@/assets/demo/strawberry.avif"
 import { ChartDownloadGlyph, ShareHoopGlyph } from "@/components/brand/icons"
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
 import { ChartDialog } from "@/community/chart-dialog"
@@ -21,8 +23,14 @@ import { useI18n } from "@/i18n"
 
 type ErrorKey = keyof ReturnType<typeof useI18n>["t"]["converter"]["errors"]
 
+/** "Vif" — the middle step of the three the panel offers. Kept in step with
+ *  VIVIDNESS_STEPS in settings-panel.tsx, which owns the scale. */
+const SAMPLE_VIVIDNESS = 55
+
 export default function Convert() {
   const { t } = useI18n()
+  const [params] = useSearchParams()
+  const sample = params.get("exemple")
 
   // inputs
   const [photo, setPhoto] = useState<LoadedPhoto | null>(null)
@@ -52,6 +60,8 @@ export default function Convert() {
   const runIdRef = useRef(0)
   /** Whether a grid has ever been built — adjustments only auto-rebuild after. */
   const hasBuiltRef = useRef(false)
+  /** Set once the sample photograph is in state and waiting to be converted. */
+  const samplePendingRef = useRef(false)
   const { stitchWidth } = settings
   const [useCustom, setUseCustom] = useState(false)
   const [customThreads, setCustomThreads] = useState<Thread[]>([])
@@ -121,9 +131,70 @@ export default function Convert() {
     )
   }, [t, stitchWidth, patternHeight, pattern, photo])
 
+  /**
+   * The sample the home page offers, arriving as `/convert?exemple=fraise`.
+   *
+   * The hero shows a strawberry and the chart it produced; this is the link between
+   * the two. It loads that photograph with the settings that made that chart — 74
+   * wide, 9 threads, vivid — and converts on arrival, so someone who has no
+   * photograph to hand can still see the thing the front page promised.
+   *
+   * A query parameter rather than router state so the link survives being shared,
+   * bookmarked, or opened in a new tab.
+   */
+  useEffect(() => {
+    if (sample !== "fraise") return
+    let cancelled = false
+    void (async () => {
+      try {
+        const blob = await (await fetch(strawberryPhoto)).blob()
+        const url = URL.createObjectURL(blob)
+        const probe = new Image()
+        await new Promise<void>((resolve) => {
+          probe.onload = () => resolve()
+          probe.onerror = () => resolve()
+          probe.src = url
+        })
+        if (cancelled) return
+        setSettings((prev) => ({
+          ...prev,
+          stitchWidth: 74,
+          colorCount: 9,
+          vividness: SAMPLE_VIVIDNESS,
+          rotation: 0,
+          removeBackground: false,
+        }))
+        setPhoto({
+          dataUrl: url,
+          blob,
+          width: probe.naturalWidth,
+          height: probe.naturalHeight,
+          ...measureAlpha(probe, probe.naturalWidth, probe.naturalHeight),
+        })
+        // Convert as soon as the photo is in state, which the effect below does —
+        // calling create() here would read a `photo` that has not landed yet.
+        samplePendingRef.current = true
+      } finally {
+        if (!cancelled) setRestored(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [sample])
+
+  useEffect(() => {
+    if (!samplePendingRef.current || !photo) return
+    samplePendingRef.current = false
+    void createRef.current()
+  }, [photo])
+
   /** Bring back whatever was open last time. The pattern itself isn't stored —
    *  rebuilding it takes about as long as reading it would have. */
   useEffect(() => {
+    // The sample wins: someone who followed that link wants the strawberry, not
+    // whatever they were working on a week ago.
+    if (sample === "fraise") return
     let cancelled = false
     loadSession().then(async (session) => {
       if (cancelled || !session) return setRestored(true)
@@ -315,6 +386,7 @@ export default function Convert() {
             settings={settings}
             onChange={patch}
             onCommit={commit}
+            photoUrl={photo?.dataUrl}
             summary={summary}
           />
 

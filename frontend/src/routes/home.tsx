@@ -96,14 +96,18 @@ export default function Home() {
                     photograph sitting on a chart of itself needs no caption. Size
                     carries it instead. */}
                 <div className="absolute left-2 top-2">
-                  <Link to="/convert" aria-label={t.home.ctaUpload}>
+                  {/* Clicking it opens the converter with this very photograph
+                      already loaded and set to the settings that produced the chart
+                      behind it — vivid, 9 threads, 74 wide. The panel is a promise,
+                      and this is the shortest possible way to let someone check it
+                      without having to find a photograph of their own first. */}
+                  <Link to="/convert?exemple=fraise" aria-label={t.home.demoTry}>
                     {/* A share of the chart's width, not a fixed size: at 86px it
                         was a fifth of the panel on desktop and a third of it at
-                        375px, where it started covering a leaf. A third of the width
-                        is as big as it goes before it reaches the leaves. */}
+                        375px, where it started covering a leaf. */}
                     <PhotoSlot
                       radius={14}
-                      className="w-[33cqw] aspect-square p-2 bg-blanc shadow-card transition-colors hover:border-coral"
+                      className="w-[27cqw] aspect-square p-2 bg-blanc shadow-card transition-colors hover:border-coral"
                     >
                       <img
                         src={strawberryPhoto}
