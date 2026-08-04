@@ -66,44 +66,59 @@ export default function Home() {
             {/* 160 + 42 + 16x9 grid + gaps ~= 406px, so the row fits from a
                 26rem container up. The design's own 196px slot needed 473px,
                 which never fitted this column at any viewport. */}
-            <div className="flex flex-col @min-[26rem]:flex-row items-center justify-center gap-4">
-              {/* A real photograph and the chart the converter actually returned
-                  for it, rather than a hand-drawn berry that claimed six threads
-                  it had never matched. The promise on this panel is the product's
-                  only substantive claim, so it is now made with its own output —
-                  same fruit, 8 threads, 90 x 90, and the bobbins below are the ones
-                  off that chart. */}
-              <div className="text-center">
-                <Link to="/convert" aria-label={t.home.ctaUpload}>
-                  <PhotoSlot
-                    radius={16}
-                    className="size-[160px] p-3 transition-colors hover:border-coral"
-                  >
-                    <img
-                      src={strawberryPhoto}
-                      alt={t.home.demoPhotoAlt}
-                      width={360}
-                      height={360}
-                      className="block size-full object-contain"
-                    />
-                  </PhotoSlot>
-                </Link>
-                <div className="text-[12.5px] font-bold text-sand mt-2">{t.home.demoPhoto}</div>
+            {/* A real photograph and the chart the converter actually returned for
+                it — same fruit, 8 threads, 90 x 90 — rather than a hand-drawn berry
+                claiming six threads it had never matched. The promise on this panel
+                is the product's only substantive claim, so it is made with the
+                product's own output.
+
+                The chart takes the full width and the photograph sits in its
+                corner, because the legend is half of what is being promised: a
+                chart you cannot buy thread from is not a chart. Measured at display
+                size, that legend is an illegible smear at 160px and only reads as a
+                thread list from about 220 — which it cannot have while sharing the
+                row. The corner it occupies is empty grid, so nothing of the motif is
+                hidden. */}
+            <div>
+              <div className="relative">
+                <img
+                  src={strawberryChart}
+                  alt={t.home.demoPatternAlt}
+                  width={780}
+                  height={859}
+                  className="block w-full h-auto rounded-[14px] shadow-[inset_0_0_0_1.5px_var(--color-edge-4)]"
+                />
+
+                {/* The "before", and the way in: it is the only clickable thing on
+                    the panel, so the photograph is what invites the upload. */}
+                <div className="absolute left-2 top-2 flex items-center gap-1.5">
+                  <Link to="/convert" aria-label={t.home.ctaUpload}>
+                    {/* A share of the chart's width, not a fixed size: at 86px it
+                        was a fifth of the panel on desktop and a third of it at
+                        375px, where it started covering a leaf. */}
+                    <PhotoSlot
+                      radius={12}
+                      className="w-[20cqw] aspect-square p-1.5 bg-blanc shadow-card transition-colors hover:border-coral"
+                    >
+                      <img
+                        src={strawberryPhoto}
+                        alt={t.home.demoPhotoAlt}
+                        width={360}
+                        height={360}
+                        className="block size-full object-contain"
+                      />
+                    </PhotoSlot>
+                  </Link>
+                  {/* Full size — shrunk, it disappeared into the grid behind it, and
+                      this arrow is the only thing saying the two pictures are the
+                      same fruit. Dropped entirely on a narrow panel, where it would
+                      reach across the motif instead of the empty corner. */}
+                  <ThreadArrow className="hidden @min-[23rem]:inline-flex" />
+                </div>
               </div>
 
-              <ThreadArrow className="rotate-90 @min-[26rem]:rotate-0" />
-
-              <div className="text-center">
-                <div className="bg-aida rounded-[16px] size-[160px] p-3 shadow-[inset_0_0_0_1.5px_var(--color-edge-4)]">
-                  <img
-                    src={strawberryChart}
-                    alt={t.home.demoPatternAlt}
-                    width={360}
-                    height={360}
-                    className="block size-full rounded-[6px]"
-                  />
-                </div>
-                <div className="text-[12.5px] font-bold text-sand mt-2">{t.home.demoPattern}</div>
+              <div className="text-[12.5px] font-bold text-sand mt-2 text-center">
+                {t.home.demoPattern}
               </div>
             </div>
 
