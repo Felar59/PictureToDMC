@@ -1,7 +1,41 @@
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react-swc"
-import { defineConfig } from "vite"
+import { defineConfig, type Plugin } from "vite"
+
+import { llmsFullTxt, llmsTxt, robotsTxt, sitemapXml } from "./src/lib/crawler-files"
+
+/**
+ * robots.txt, sitemap.xml, llms.txt and llms-full.txt, generated at build time.
+ *
+ * They are not in public/ because they all repeat the same facts — the origin, the
+ * list of routes, what each page is for — and four hand-kept copies of that drift the
+ * first time a route is added, silently: nothing breaks when a sitemap lists a URL
+ * that no longer exists. Generated, a new page reaches all four by being added to
+ * `indexable` in src/lib/routes.ts, and moving to a real domain is one line in
+ * src/lib/site.ts.
+ *
+ * `apply: "build"` because the dev server does not need them, and `emitFile` rather
+ * than writing to disk so they land in whatever outDir the build is using.
+ */
+function crawlerFiles(): Plugin {
+  return {
+    name: "ptd-crawler-files",
+    apply: "build",
+    generateBundle() {
+      const today = new Date().toISOString().slice(0, 10)
+      const files: Array<[string, string]> = [
+        ["robots.txt", robotsTxt()],
+        ["sitemap.xml", sitemapXml(today)],
+        ["llms.txt", llmsTxt()],
+        ["llms-full.txt", llmsFullTxt()],
+      ]
+      for (const [fileName, source] of files) {
+        this.emitFile({ type: "asset", fileName, source })
+      }
+    },
+  }
+}
 
 // Le backend FastAPI (PythonDCA/main.py) ne sert plus qu'un seul prefixe : la
 // conversion tourne dans le navigateur, il ne reste que les comptes et la
@@ -15,7 +49,7 @@ export default defineConfig({
   // Absolute, not "./": the app is client-side routed now, so /gallery must
   // resolve /assets/... from the site root rather than from the current path.
   base: "/",
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), crawlerFiles()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

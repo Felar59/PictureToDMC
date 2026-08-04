@@ -61,7 +61,49 @@ class SinglePageFiles(StaticFiles):
             # "assets\app.js" on a Windows dev machine.
             if path.replace("\\", "/").split("/", 1)[0] in {"assets", "models"}:
                 raise
-            return await super().get_response("index.html", scope)
+
+            # The shell, with the right status code on it.
+            #
+            # Falling back to index.html with a 200 for *every* unknown path makes
+            # every typo a soft 404: the crawler is told the page exists, indexes a
+            # copy of the shell, and the site accumulates duplicate entries for URLs
+            # nobody meant. So a path the router knows about answers 200 and anything
+            # else answers 404 — both with the same HTML, so the React NotFound page
+            # still renders and a visitor sees something friendly either way.
+            shell = await super().get_response("index.html", scope)
+            if not _is_client_route(path):
+                shell.status_code = 404
+            return shell
+
+
+#: Paths the React router actually has a page for.
+#:
+#: Kept in step with frontend/src/lib/routes.ts by hand, which is a duplication worth
+#: naming: the alternative is the server importing a TypeScript module, and the cost
+#: of this list being wrong is one page answering 404 while still rendering — visible
+#: the first time anyone opens it, and caught by the deploy's smoke test.
+_CLIENT_ROUTES = {
+    "",
+    "convertir-photo-point-de-croix",
+    "galerie",
+    "qui-sommes-nous",
+    "faq",
+    "comment-faire-une-grille-de-point-de-croix",
+    "compte",
+    "atelier",
+    # The English paths that shipped first; the router redirects them.
+    "convert",
+    "gallery",
+    "about",
+}
+
+#: Prefixes with an id after them.
+_CLIENT_PREFIXES = ("piece/", "brodeur/")
+
+
+def _is_client_route(path: str) -> bool:
+    clean = path.replace("\\", "/").strip("/")
+    return clean in _CLIENT_ROUTES or clean.startswith(_CLIENT_PREFIXES)
 
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)

@@ -8,9 +8,34 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#F6F0E4" />
+
+  <!--
+    The defaults, for the readers that never run the JavaScript.
+
+    Each route overwrites all of this on mount (src/lib/head.ts), and Google executes
+    JS so it sees the per-page version. A plain `curl`, and several social scrapers,
+    do not — so what is here has to be a sensible answer for the site as a whole
+    rather than a placeholder waiting to be replaced.
+  -->
+  <title>Photo en grille de point de croix — gratuit, vrais fils DMC</title>
   <meta name="description"
-    content="Transformez une photo en grille de point de croix, avec les vraies couleurs de fils DMC. Gratuit, sans compte." />
-  <title>Picture to DMC — vos photos en grilles de point de croix</title>
+    content="Transformez une photo en grille de point de croix imprimable, avec les vraies références de fils DMC et le nombre de points de chacun. Gratuit, sans compte, et votre photo ne quitte jamais votre navigateur." />
+  <link rel="canonical" href="https://164-132-99-194.sslip.io/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Picture to DMC" />
+  <meta property="og:title" content="Photo en grille de point de croix — gratuit, vrais fils DMC" />
+  <meta property="og:description"
+    content="Transformez une photo en grille de point de croix imprimable, avec les vraies références de fils DMC et le nombre de points de chacun." />
+  <meta property="og:url" content="https://164-132-99-194.sslip.io/" />
+  <!-- A real chart, because a link preview showing actual cross-stitch says what
+       this is faster than any words next to it. -->
+  <meta property="og:image" content="https://164-132-99-194.sslip.io/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://164-132-99-194.sslip.io/og.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
