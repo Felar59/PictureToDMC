@@ -149,7 +149,12 @@ export const en = {
     backToGallery: "Back to the gallery",
     notFound: "That piece isn't here any more.",
     patternNote: "redrawn from the maker's own grid",
-    threadsToBuy: "Threads to buy",
+    threads: {
+      // Not "threads to buy": that frame belongs in the download dialog. This
+      // section answers what the piece is made of.
+      heading: "The threads in this piece",
+      order: "most-used thread first",
+    },
     photoAlt: (title: string) => `${title}, stitched`,
     patternAlt: (title: string) => `The grid for ${title}`,
     getChart: "Get the chart",
@@ -158,7 +163,9 @@ export const en = {
     removeConfirm: "Delete this piece for good? The chart and the comments go with it.",
     removing: "Deleting…",
     removeFailed: "It wasn't deleted. Try again.",
-    stitches: (n: number) => `${n} st`,
+    // Grouped: a four-figure count is common, and the rest of the app writes
+    // "1,240" rather than "1240".
+    stitches: (n: number) => `${n.toLocaleString("en")} st`,
   },
 
   profile: {
@@ -219,6 +226,18 @@ export const en = {
       `DMC · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
     countSuffix: "st",
     threads: (n: number) => (n === 1 ? "1 thread to buy" : `${n} threads to buy`),
+    isolate: {
+      hint: "click a thread to see it on its own",
+      row: (num: string) => `Show only DMC ${num} on the grid`,
+      planche: (num: string) => `DMC ${num} on its own`,
+      canvas: (num: string) => `The grid with only DMC ${num} in colour`,
+      // Says what the veil *is*. A first-timer cannot infer that the pale
+      // stitches are the other colours rather than a fault.
+      caption: "only this thread is in colour — the rest is faded back",
+      close: "Show every colour",
+      failed: "This thread's grid couldn't be drawn.",
+      retry: "Try again",
+    },
   },
 
   gallery: {
@@ -537,7 +556,10 @@ export const fr: Copy = {
     backToGallery: "Retour à la galerie",
     notFound: "Cet ouvrage n'est plus là.",
     patternNote: "redessiné depuis la grille de son auteur",
-    threadsToBuy: "Fils à acheter",
+    threads: {
+      heading: "Les fils de cet ouvrage",
+      order: "du fil le plus utilisé au moins utilisé",
+    },
     photoAlt: (title: string) => `${title}, brodé`,
     patternAlt: (title: string) => `La grille de ${title}`,
     getChart: "Avoir la grille",
@@ -547,7 +569,7 @@ export const fr: Copy = {
       "Supprimer cet ouvrage définitivement ? La grille et les commentaires partent avec.",
     removing: "Suppression…",
     removeFailed: "Il n'a pas été supprimé. Réessayez.",
-    stitches: (n: number) => `${n} pts`,
+    stitches: (n: number) => `${n.toLocaleString("fr")} pts`,
   },
 
   profile: {
@@ -610,6 +632,16 @@ export const fr: Copy = {
       `DMC · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
     countSuffix: "pts",
     threads: (n: number) => (n === 1 ? "1 fil à acheter" : `${n} fils à acheter`),
+    isolate: {
+      hint: "cliquez sur un fil pour le voir seul sur la grille",
+      row: (num: string) => `Voir seulement le DMC ${num} sur la grille`,
+      planche: (num: string) => `Le DMC ${num} seul`,
+      canvas: (num: string) => `Grille avec seulement le DMC ${num} en couleur`,
+      caption: "seul ce fil est en couleur — le reste est estompé",
+      close: "Voir toutes les couleurs",
+      failed: "La grille de ce fil n'a pas pu être dessinée.",
+      retry: "Réessayer",
+    },
   },
 
   gallery: {

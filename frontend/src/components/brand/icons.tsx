@@ -85,6 +85,40 @@ export function ThreadArrow({ className }: { className?: string }) {
   )
 }
 
+/**
+ * Four stitches with one singled out — "this thread on its own".
+ *
+ * Not a magnifier, an eye, or a filter funnel: none of those mean *one of
+ * several colours, alone*, and this audience gets one guess. Four squares where
+ * exactly one is inked says it without a caption, and it is the same pixel-square
+ * grammar as the rest of the family.
+ */
+export function SoloStitch({ active = false }: { active?: boolean }) {
+  return (
+    <span
+      className="grid grid-cols-2 gap-[2px] shrink-0"
+      style={{ width: 16, height: 16 }}
+      aria-hidden="true"
+    >
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={cn(
+            "block size-[7px] rounded-[2px] transition-colors",
+            i === 0
+              ? active
+                ? "bg-golden-deep"
+                : "bg-cocoa group-hover:bg-bark"
+              : active
+                ? "bg-golden-edge"
+                : "bg-edge-5 group-hover:bg-taupe",
+          )}
+        />
+      ))}
+    </span>
+  )
+}
+
 /** The colour wheel on a thread row — "swap this for any DMC shade". */
 export function ColorWheel({ size = 12 }: { size?: number }) {
   return (

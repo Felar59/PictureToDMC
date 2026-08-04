@@ -1,7 +1,12 @@
+import { useEffect, useMemo, useRef, useState } from "react"
+
 import { Bobbin } from "@/components/brand/bobbin"
+import { ThreadRow } from "@/components/brand/thread-row"
 import { ChartPanel } from "@/components/converter/chart-panel"
+import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import type { Pattern } from "@/engine/convert"
+import { isolateImageData, patternImageData } from "@/engine/render"
 import { useI18n } from "@/i18n"
 
 /**
@@ -29,6 +34,12 @@ export function ChartDialog({
   onError: (key: string) => void
 }) {
   const { t } = useI18n()
+  /** Index into pattern.threads of the thread being shown alone, or null. */
+  const [solo, setSolo] = useState<number | null>(null)
+
+  // A pattern this dialog was opened for is a different pattern's palette: an
+  // index into the old one would isolate an unrelated colour, or none.
+  useEffect(() => setSolo(null), [pattern])
 
   return (
     <Dialog
@@ -44,32 +55,195 @@ export function ChartDialog({
             the other half of "what do I need to stitch this". Full width under
             both columns so long thread names have room to sit on one line. */}
         <div className="border-t-2 border-dashed border-edge-2 pt-5">
-          <h3 className="font-display font-medium text-[17px] m-0 mb-3">
+          <h3 className="font-display font-medium text-[17px] m-0">
             {t.chart.threads(pattern.threads.length)}
           </h3>
-          <ul className="grid gap-2 list-none p-0 m-0 @min-[34rem]:grid-cols-2 @min-[56rem]:grid-cols-3">
+          {/* Taught, not guessed at. An icon-only control with no hint is a coin
+              toss for someone who has never seen this, and the converter already
+              teaches its hover behaviour the same way. Only when there is more
+              than one thread, because isolating the only colour changes nothing. */}
+          {solo !== null || pattern.threads.length > 1 ? (
+            <p className="font-hand text-[13px] text-sand m-0 mt-1">{t.chart.isolate.hint}</p>
+          ) : null}
+
+          {solo !== null && (
+            <SoloPlanche pattern={pattern} index={solo} onClose={() => setSolo(null)} />
+          )}
+
+          <ul className="grid gap-2.5 list-none p-0 m-0 mt-4 @min-[34rem]:grid-cols-2 @min-[56rem]:grid-cols-3">
             {pattern.threads.map((thread, i) => (
-              <li
+              <ThreadRow
                 key={thread.num}
-                className="flex items-center gap-3 bg-linen rounded-chip px-3 py-2"
-              >
-                <Bobbin hex={thread.hex} width={22} height={30} radius={6} />
-                <span className="flex-1 min-w-0">
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="text-[13.5px] font-extrabold">DMC {thread.num}</span>
-                    <span className="font-mono text-[11.5px] text-cocoa shrink-0">
-                      {t.piece.stitches(pattern.counts[i])}
-                    </span>
-                  </span>
-                  <span className="block text-xs text-stone leading-snug break-words">
-                    {thread.name}
-                  </span>
-                </span>
-              </li>
+                thread={thread}
+                count={pattern.counts[i]}
+                surface="chip"
+                isolate={
+                  pattern.threads.length > 1
+                    ? { active: solo === i, onToggle: () => setSolo(solo === i ? null : i) }
+                    : undefined
+                }
+              />
             ))}
           </ul>
         </div>
       </div>
     </Dialog>
+  )
+}
+
+/**
+ * The pattern with one thread left in colour and the rest veiled.
+ *
+ * Deliberately *not* a re-render of the printable chart: the preview above
+ * carries a caption promising it is the file you are about to download, and
+ * repainting it with a single colour would make that caption a lie. This is a
+ * separate view of the same grid, in the veil-and-keyline language the converter
+ * already uses when you hover a thread.
+ *
+ * It also stays open below the heading with the list still on screen, rather than
+ * opening a layer. Dialog registers its own document-level Escape handler, so a
+ * nested one would close both at once — and for a forty-thread list, keeping your
+ * place matters more than a bigger picture.
+ */
+function SoloPlanche({
+  pattern,
+  index,
+  onClose,
+}: {
+  pattern: Pattern
+  index: number
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const thread = pattern.threads[index]
+  const hostRef = useRef<HTMLDivElement | null>(null)
+  const [attempt, setAttempt] = useState(0)
+
+  // isolateImageData allocates three sub-pixels per stitch per side, so a tall
+  // pattern at the slider's maximum is a multi-megabyte buffer the browser is
+  // allowed to refuse. Both are built behind the same guard so a refusal shows a
+  // message instead of tearing down the dialog.
+  //
+  // The failure is the null, not a state flag — setting state while rendering is
+  // how you get a second render before the first has painted.
+  const images = useMemo(() => {
+    void attempt // a retry rebuilds even though nothing else changed
+    try {
+      return { base: patternImageData(pattern), veil: isolateImageData(pattern, index) }
+    } catch {
+      return null
+    }
+  }, [pattern, index, attempt])
+
+  useEffect(() => {
+    hostRef.current?.scrollIntoView({ block: "nearest" })
+  }, [index])
+
+  return (
+    <div
+      ref={hostRef}
+      role="group"
+      aria-label={t.chart.isolate.planche(thread.num)}
+      className="mt-4 mb-1 p-4 sm:p-5 bg-linen rounded-card-lg border-2 border-dashed border-golden-edge flex flex-col gap-4"
+    >
+      <div className="flex items-center gap-3">
+        <Bobbin hex={thread.hex} />
+        <div className="min-w-0">
+          <div className="font-display font-medium text-[19px] text-ink">DMC {thread.num}</div>
+          <div className="text-[14px] text-cocoa break-words">{thread.name}</div>
+        </div>
+        <div className="font-mono text-[13px] text-stone ml-auto shrink-0">
+          {t.piece.stitches(pattern.counts[index])}
+        </div>
+      </div>
+
+      {!images ? (
+        <div className="flex flex-col items-center gap-3">
+          <p role="status" className="text-[14px] text-cocoa text-center m-0">
+            {t.chart.isolate.failed}
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+            {t.chart.isolate.retry}
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* w-fit, not a full-width panel: a portrait grid in a stretched box
+              leaves a wide margin of bare cloth either side, which is the same
+              emptiness this dialog was built to get rid of. The cloth wraps the
+              grid and the pair is centred. */}
+          <div className="bg-aida rounded-card p-4 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] w-fit max-w-full mx-auto">
+            {/* Bounded on both axes, and the height cap is the one that matters: a
+                portrait pattern at 420 wide is 540 tall, which pushed the thread
+                list and the way out clean off the dialog — and keeping the list in
+                reach is the whole reason this opens inline instead of as a layer.
+                aspect-ratio rather than a computed height, so it still shrinks to
+                the container at 375px. */}
+            <div
+              className="relative"
+              style={{
+                width: Math.min(420, (MAX_SOLO_HEIGHT * pattern.width) / pattern.height),
+                maxWidth: "100%",
+                aspectRatio: `${pattern.width} / ${pattern.height}`,
+              }}
+            >
+              <Painted
+                image={images.base}
+                role="img"
+                label={t.chart.isolate.canvas(thread.num)}
+              />
+              <Painted image={images.veil} overlay />
+            </div>
+          </div>
+          <p className="font-hand text-[13px] text-sand text-center m-0">
+            {t.chart.isolate.caption}
+          </p>
+        </>
+      )}
+
+      <Button variant="quiet" size="sm" className="self-center" onClick={onClose}>
+        {t.chart.isolate.close}
+      </Button>
+    </div>
+  )
+}
+
+/** Tallest the isolated grid is drawn. Tall enough to count stitches on, short
+ *  enough that the list it came from is still one small scroll away. */
+const MAX_SOLO_HEIGHT = 300
+
+/** A canvas sized to its ImageData, painted through a ref callback so a remount
+ *  repaints it — an effect keyed on the data alone misses that. */
+function Painted({
+  image,
+  overlay,
+  role,
+  label,
+}: {
+  image: ImageData
+  overlay?: boolean
+  role?: string
+  label?: string
+}) {
+  return (
+    <canvas
+      ref={(canvas) => {
+        if (!canvas) return
+        canvas.width = image.width
+        canvas.height = image.height
+        canvas.getContext("2d")?.putImageData(image, 0, 0)
+      }}
+      role={role}
+      aria-label={label}
+      aria-hidden={overlay ? "true" : undefined}
+      // Both fill the same box absolutely, so the veil cannot drift out of
+      // register with the grid under it whatever the two buffers' real sizes are.
+      style={{ imageRendering: "pixelated" }}
+      className={
+        overlay
+          ? "absolute inset-0 w-full h-full rounded-[6px] pointer-events-none animate-veil"
+          : "absolute inset-0 w-full h-full rounded-[6px]"
+      }
+    />
   )
 }

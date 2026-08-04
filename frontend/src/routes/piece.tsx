@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
 import { ChartDialog } from "@/community/chart-dialog"
 import { Comments } from "@/community/comments"
+import { PieceThreads } from "@/community/piece-threads"
 import type { Pattern } from "@/engine/convert"
 import { findThread, type Thread } from "@/engine/dmc"
 import { base64ToCells } from "@/engine/publish"
@@ -332,6 +333,10 @@ export default function Piece() {
           </div>
         )}
       </div>
+
+      {/* Under the picture and above the conversation: the work, then what you can
+          do with it, then what it is made of, then what people said about it. */}
+      {pattern && <PieceThreads pattern={pattern} />}
 
       <Comments postId={postId} />
 

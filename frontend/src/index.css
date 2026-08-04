@@ -119,11 +119,14 @@
     text-wrap: pretty;
   }
 
-  /* Focus ring: coral, never the browser default blue. */
+  /* Focus ring: coral, never the browser default blue.
+     No border-radius here. It looks like it rounds the ring, but it rounds the
+     *element* — so every pill button, chip and card snapped to a 4px radius the
+     moment a keyboard reached it. An outline already follows whatever radius the
+     element has. */
   :focus-visible {
     outline: 3px solid var(--color-coral);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
