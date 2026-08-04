@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom"
 
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
-import { findThread } from "@/engine/dmc"
+import { labDist2 } from "@/engine/color"
+import { findThread, type Thread } from "@/engine/dmc"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { useAuth } from "./auth-context"
@@ -17,6 +18,49 @@ import { useAuth } from "./auth-context"
  * already in the bundle, so the API sends five codes rather than five hex
  * values, and the card still paints the right swatches.
  */
+/**
+ * How far apart two swatches must be to be worth showing both, as a squared Lab
+ * distance.
+ *
+ * 26, from measuring the pairs that actually caused the problem rather than
+ * guessing: DMC 310 Black to 3371 Black Brown is 23.7, 310 to 3799 Pewter is
+ * 24.3, and at fourteen pixels each of those reads as "black, and black again".
+ * Two greens (367 to 3363) are 9.7 apart and two whites (B5200 to Ecru) 9.0, so
+ * they collapse too, which is the point. What survives is 70 and up — green to
+ * blue is 70.9, red to blue 78.2 — so the five swatches are five different
+ * colours rather than five entries from the same list.
+ */
+const APART = 26 * 26
+/** How many swatches the strip shows. */
+const SWATCHES = 5
+
+/**
+ * The colours a piece is actually made of.
+ *
+ * The server sends the references most-stitched first, which on its own is not
+ * enough: a piece whose two commonest threads are both nearly black spends two of
+ * its five swatches saying "black" and never gets to the green. So each candidate
+ * has to be visibly different from the ones already taken. If that leaves fewer
+ * than five, the skipped ones come back to fill the strip rather than leaving it
+ * short — a near-duplicate is better than a gap.
+ */
+function principalThreads(codes: string[]): Thread[] {
+  const resolved = codes.map((code) => findThread(code)).filter((t): t is Thread => Boolean(t))
+
+  const chosen: Thread[] = []
+  const skipped: Thread[] = []
+  for (const thread of resolved) {
+    if (chosen.length === SWATCHES) break
+    if (chosen.every((taken) => labDist2(taken.lab, thread.lab) > APART)) chosen.push(thread)
+    else skipped.push(thread)
+  }
+  for (const thread of skipped) {
+    if (chosen.length === SWATCHES) break
+    chosen.push(thread)
+  }
+  return chosen
+}
+
 /** Near-white threads need a hairline or the swatch disappears into the card. */
 function isPale(rgb?: readonly [number, number, number]): boolean {
   if (!rgb) return false
@@ -35,7 +79,8 @@ export function GalleryCard({
   const { t } = useI18n()
   const { user } = useAuth()
   const mine = user && (user.id === post.author.id || user.isAdmin)
-  const rest = post.threadCount - post.palette.length
+  const shown = principalThreads(post.palette)
+  const rest = post.threadCount - shown.length
 
   return (
     <article className="bg-blanc rounded-[20px] shadow-card-sm p-3.5 flex flex-col gap-3 transition-shadow hover:shadow-lift">
@@ -105,23 +150,18 @@ export function GalleryCard({
         </div>
 
         <div className="flex items-center gap-1 mt-2.5" aria-hidden="true">
-          {post.palette.map((code) => {
-            const thread = findThread(code)
-            return (
-              <span
-                key={code}
-                title={thread ? `DMC ${thread.num} · ${thread.name}` : code}
-                className="size-3.5 rounded"
-                style={{
-                  background: thread?.hex ?? "#C9BBA6",
-                  // A near-white thread needs an edge or it vanishes into the card.
-                  boxShadow: isPale(thread?.rgb)
-                    ? "inset 0 0 0 1px var(--color-edge-4)"
-                    : undefined,
-                }}
-              />
-            )
-          })}
+          {shown.map((thread) => (
+            <span
+              key={thread.num}
+              title={`DMC ${thread.num} · ${thread.name}`}
+              className="size-3.5 rounded"
+              style={{
+                background: thread.hex,
+                // A near-white thread needs an edge or it vanishes into the card.
+                boxShadow: isPale(thread.rgb) ? "inset 0 0 0 1px var(--color-edge-4)" : undefined,
+              }}
+            />
+          ))}
           {rest > 0 && <span className="text-[11px] text-sand ml-0.5">{t.gallery.more(rest)}</span>}
         </div>
       </div>

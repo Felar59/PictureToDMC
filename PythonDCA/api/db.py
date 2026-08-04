@@ -20,6 +20,9 @@ Schema notes worth keeping:
     collide; identity is the id.
 """
 
+import base64
+import binascii
+import json
 import os
 import sqlite3
 import threading
@@ -27,11 +30,13 @@ import time
 
 from . import config
 
+# 5 added posts.palette: the thread references ordered by how much of each the
+#   piece uses, so a gallery card can show what it is actually made of.
 # 4 added app_meta, which holds the post id high-water mark.
 # 3 added users.bio, users.icon and users.setup_at.
 # 2 added `comments`. Every statement in SCHEMA is IF NOT EXISTS and init() runs
 # on boot, so a new table needs no migration step of its own.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 _local = threading.local()
 
@@ -109,7 +114,10 @@ CREATE TABLE IF NOT EXISTS posts (
     photo        BLOB,
     photo_mime   TEXT,
     like_count   INTEGER NOT NULL DEFAULT 0,
-    created_at   INTEGER NOT NULL
+    created_at   INTEGER NOT NULL,
+    -- JSON array of thread references, most-stitched first. Derived from `cells`
+    -- at publish time so the gallery query never has to read the grid.
+    palette      TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_posts_new    ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_top    ON posts(like_count DESC, created_at DESC);
@@ -165,6 +173,50 @@ def init() -> None:
     for column, decl in (("bio", "TEXT"), ("icon", "TEXT"), ("setup_at", "INTEGER")):
         if column not in have:
             conn.execute(f"ALTER TABLE users ADD COLUMN {column} {decl}")
+
+    have_posts = {row["name"] for row in conn.execute("PRAGMA table_info(posts)")}
+    if "palette" not in have_posts:
+        conn.execute("ALTER TABLE posts ADD COLUMN palette TEXT")
+    _backfill_palettes(conn)
+
+
+def usage_order(cells_b64: str, codes: list[str]) -> list[str]:
+    """Thread references, most-stitched first.
+
+    The grid holds one byte per stitch: the index into `codes`, plus one, with
+    zero for bare cloth. Counting is a 256-bucket histogram over that, which is
+    why this is cheap enough to do at publish time and store.
+    """
+    try:
+        raw = base64.b64decode(cells_b64, validate=True)
+    except (binascii.Error, ValueError):
+        return list(codes)
+
+    counts = [0] * (len(codes) + 1)
+    for byte in raw:
+        if byte and byte <= len(codes):
+            counts[byte] += 1
+
+    order = sorted(range(1, len(codes) + 1), key=lambda i: -counts[i])
+    # Threads with no stitches at all keep their place at the end rather than
+    # being dropped: the count beside the strip is the palette's real size.
+    return [codes[i - 1] for i in order]
+
+
+def _backfill_palettes(conn: sqlite3.Connection) -> None:
+    """Fills `palette` for pieces published before the column existed."""
+    rows = conn.execute(
+        "SELECT id, cells, thread_codes FROM posts WHERE palette IS NULL"
+    ).fetchall()
+    for row in rows:
+        try:
+            codes = json.loads(row["thread_codes"])
+        except (ValueError, TypeError):
+            continue
+        conn.execute(
+            "UPDATE posts SET palette = ? WHERE id = ?",
+            (json.dumps(usage_order(row["cells"], codes)), row["id"]),
+        )
 
 
 def purge_expired_sessions() -> int:

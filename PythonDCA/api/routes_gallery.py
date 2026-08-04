@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 from . import auth
-from .db import connect, now_ms
+from .db import connect, now_ms, usage_order
 
 router = APIRouter(prefix="/api")
 
@@ -55,7 +55,9 @@ def _card(row: sqlite3.Row, liked: bool) -> dict:
         "width": row["width"],
         "height": row["height"],
         "threadCount": len(json.loads(row["thread_codes"])),
-        "palette": json.loads(row["thread_codes"])[:5],
+        # Most-stitched first, and more than the card shows: the client keeps the
+        # five that are actually distinguishable, which needs candidates to spare.
+        "palette": json.loads(row["palette"] or row["thread_codes"])[:10],
         "likeCount": row["like_count"],
         "liked": liked,
         "createdAt": row["created_at"],
@@ -90,7 +92,7 @@ def list_posts(request: Request, category: str = "all", sort: str = "new", page:
     rows = connect().execute(
         f"""
         SELECT p.id, p.title, p.category, p.width, p.height, p.thread_codes,
-               p.like_count, p.created_at, p.author_id,
+               p.like_count, p.created_at, p.author_id, p.palette,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
                u.display_name, u.icon,
@@ -232,8 +234,9 @@ async def publish(request: Request) -> JSONResponse:
         conn.execute(
             """
             INSERT INTO posts (id, author_id, title, category, width, height, cells,
-                               thread_codes, thumb_png, photo, photo_mime, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                               thread_codes, palette, thumb_png, photo, photo_mime,
+                               created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 post_id,
@@ -244,6 +247,7 @@ async def publish(request: Request) -> JSONResponse:
                 height,
                 cells,
                 json.dumps(codes),
+                json.dumps(usage_order(cells, codes)),
                 thumb_bytes,
                 photo_bytes,
                 photo_mime,
@@ -426,7 +430,7 @@ def get_profile(user_id: int, request: Request) -> JSONResponse:
     rows = conn.execute(
         """
         SELECT p.id, p.title, p.category, p.width, p.height, p.thread_codes,
-               p.like_count, p.created_at, p.author_id,
+               p.like_count, p.created_at, p.author_id, p.palette,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
                u.display_name, u.icon,
