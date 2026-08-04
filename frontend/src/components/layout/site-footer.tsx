@@ -15,7 +15,14 @@ export function SiteFooter() {
           <span className="font-hand text-sm text-sand">{t.footer.tagline}</span>
         </div>
 
+        {/* The secondary pages live here.
+            The header carries the three things somebody arrives wanting — the gallery,
+            how to do it, and the questions. Everything else is a footer link, which is
+            where people look for it and which a crawler follows just the same. */}
         <nav className="flex flex-wrap gap-6 text-sm font-bold text-cocoa">
+          <Link to={paths.guide} className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
+            {t.footer.guide}
+          </Link>
           <Link to={paths.about} className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
             {t.footer.about}
           </Link>

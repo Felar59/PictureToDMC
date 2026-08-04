@@ -8,7 +8,7 @@ import sqlite3
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
-from . import auth
+from . import auth, sharecard
 from .db import connect, now_ms, usage_order
 
 router = APIRouter(prefix="/api")
@@ -164,6 +164,30 @@ def get_thumb(post_id: int) -> Response:
         row["thumb_png"],
         media_type="image/png",
         # Immutable: a post's thumbnail never changes, only the post is deleted.
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+@router.get("/posts/{post_id}/share.png")
+def get_share_card(post_id: int) -> Response:
+    """The Open Graph image for one piece.
+
+    Drawn here rather than in the browser because the only readers of it are scrapers,
+    and none of them runs JavaScript. See api/sharecard.py for why there is a PNG
+    encoder in this codebase.
+    """
+    row = connect().execute(
+        "SELECT cells, thread_codes, width, height FROM posts WHERE id = ?", (post_id,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(404, "No such piece")
+    card = sharecard.render_card(row["cells"], row["thread_codes"], row["width"], row["height"])
+    return Response(
+        card,
+        media_type="image/png",
+        # Immutable, like the thumbnail: a piece's grid never changes once published.
+        # Which matters more here than elsewhere — scrapers cache aggressively and
+        # some of them never come back.
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
 

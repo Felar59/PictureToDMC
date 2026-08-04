@@ -43,10 +43,8 @@ export function SiteHeader() {
   // a better argument for the product than an explanation of it.
   const items: NavItem[] = [
     { to: paths.gallery, label: t.nav.gallery },
-    { to: "/#how-it-works", label: t.nav.howItWorks },
     { to: paths.guide, label: t.nav.guide },
     { to: paths.faq, label: t.nav.faq },
-    { to: paths.about, label: t.nav.about },
   ]
 
   const isActive = (to: string) =>

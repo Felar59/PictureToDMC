@@ -8,7 +8,6 @@ export const en = {
   lang: { label: "Language", fr: "Français", en: "English", switchTo: "Passer en français" },
 
   nav: {
-    howItWorks: "How it works",
     gallery: "Gallery",
     guide: "How to",
     about: "About us",
@@ -71,6 +70,8 @@ export const en = {
       },
     ],
 
+    stepsMore: "The whole guide, step by step",
+    faqMore: "All the questions and answers",
     faqKicker: "the things people ask first",
     faqTitle: "Good to know",
     faq: [
@@ -436,6 +437,7 @@ export const en = {
 
   footer: {
     tagline: "· made for stitchers",
+    guide: "How to",
     about: "About",
     faq: "FAQ",
     contact: "Contact",
@@ -640,6 +642,13 @@ export const en = {
       title: "My account",
       description: "Your name in the gallery, your bio and your mark.",
     },
+    /** A piece is the only thing on this site somebody has a reason to send to
+     *  somebody else, so its title leads with the piece and its maker. */
+    piece: {
+      title: (title: string, maker: string) => `${title}, by ${maker} — cross-stitch chart`,
+      description: (maker: string, w: number, h: number, threads: number) =>
+        `A cross-stitch chart shared by ${maker}: ${w} \u00d7 ${h} stitches in ${threads} DMC threads. Take the chart for free, with the thread list and a stitch count for each colour.`,
+    },
   },
 
   notFound: {
@@ -657,7 +666,6 @@ export const fr: Copy = {
   lang: { label: "Langue", fr: "Français", en: "English", switchTo: "Switch to English" },
 
   nav: {
-    howItWorks: "Comment ça marche",
     gallery: "Galerie",
     guide: "Comment faire",
     about: "Qui sommes-nous",
@@ -720,6 +728,8 @@ export const fr: Copy = {
       },
     ],
 
+    stepsMore: "Le guide complet, étape par étape",
+    faqMore: "Toutes les questions et réponses",
     faqKicker: "les questions qui reviennent",
     faqTitle: "Bon à savoir",
     faq: [
@@ -1069,6 +1079,7 @@ export const fr: Copy = {
 
   footer: {
     tagline: "· fait pour les brodeuses et brodeurs",
+    guide: "Comment faire",
     about: "À propos",
     faq: "FAQ",
     contact: "Contact",
@@ -1252,6 +1263,11 @@ export const fr: Copy = {
     account: {
       title: "Mon compte",
       description: "Votre nom dans la galerie, votre bio et votre marque.",
+    },
+    piece: {
+      title: (title: string, maker: string) => `${title}, par ${maker} \u2014 grille de point de croix`,
+      description: (maker: string, w: number, h: number, threads: number) =>
+        `Une grille de point de croix partag\u00e9e par ${maker} : ${w} \u00d7 ${h} points en ${threads} fils DMC. R\u00e9cup\u00e9rez la grille gratuitement, avec la liste des fils et le nombre de points de chaque couleur.`,
     },
   },
 

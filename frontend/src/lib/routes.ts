@@ -58,3 +58,11 @@ export const indexable: ReadonlyArray<{
   { path: paths.faq, changefreq: "monthly", priority: "0.6" },
   { path: paths.about, changefreq: "monthly", priority: "0.4" },
 ]
+
+/**
+ * Note on individual pieces, now that each one carries its own head and its own share
+ * card: they are still deliberately absent above. There are four today and there could
+ * be four thousand, they come and go as people delete them, and a sitemap listing URLs
+ * that 404 next week is worse than one that never mentioned them. The gallery links to
+ * every one of them, which is how a crawler is meant to find them.
+ */

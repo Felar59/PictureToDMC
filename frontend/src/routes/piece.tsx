@@ -16,6 +16,7 @@ import { patternImageData } from "@/engine/render"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
+import { useHead } from "@/lib/head"
 
 /**
  * One published piece: the work, then what you can do with it, then what people
@@ -182,6 +183,32 @@ export default function Piece() {
       setRemoving(false)
     }
   }
+
+  /**
+   * This piece's own head, and its own share image.
+   *
+   * Every published piece used to take the site's default title and the site's default
+   * card, so a link to one said nothing about the piece — which is exactly backwards,
+   * since a piece is the only thing here anybody has a reason to send to somebody else.
+   *
+   * The image is drawn by the server from the stored grid (see api/sharecard.py): a
+   * scraper does not run this JavaScript, so the picture cannot come from the canvas
+   * three lines below it.
+   */
+  useHead({
+    title: post ? t.head.piece.title(post.title, post.author.displayName) : t.head.home.title,
+    description: post
+      ? t.head.piece.description(
+          post.author.displayName,
+          post.width,
+          post.height,
+          post.threadCodes.length,
+        )
+      : t.head.home.description,
+    canonicalPath: `/piece/${postId}`,
+    image: post ? `/api/posts/${postId}/share.png` : undefined,
+    type: "article",
+  })
 
   // How wide to draw the grid: as wide as the column allows, unless that would
   // make a tall pattern taller than the screen wants to hold. The cloth then wraps

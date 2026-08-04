@@ -191,6 +191,16 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* The summary above is four sentences; the guide is the whole thing. */}
+          <p className="text-center mt-8 mb-0">
+            <Link
+              to={paths.guide}
+              className="inline-flex items-center min-h-11 text-[15px] font-bold text-coral-deep hover:text-coral-deeper transition-colors"
+            >
+              {t.home.stepsMore} →
+            </Link>
+          </p>
         </section>
       </SectionShell>
 
@@ -256,6 +266,15 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          <p className="text-center mt-8 mb-0">
+            <Link
+              to={paths.faq}
+              className="inline-flex items-center min-h-11 text-[15px] font-bold text-coral-deep hover:text-coral-deeper transition-colors"
+            >
+              {t.home.faqMore} →
+            </Link>
+          </p>
         </section>
       </SectionShell>
 
