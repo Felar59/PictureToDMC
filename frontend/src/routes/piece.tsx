@@ -32,6 +32,10 @@ import * as api from "@/lib/community"
  * can draw it crisp at any size, list every thread with its real stitch count,
  * and render a full printable chart, from 30 KB of data.
  */
+/** Widest the grid is drawn, and tallest — whichever binds first. */
+const MAX_ART_WIDTH = 620
+const MAX_ART_HEIGHT = 640
+
 export default function Piece() {
   const { t } = useI18n()
   const { user, signIn } = useAuth()
@@ -178,6 +182,13 @@ export default function Piece() {
     }
   }
 
+  // How wide to draw the grid: as wide as the column allows, unless that would
+  // make a tall pattern taller than the screen wants to hold. The cloth then wraps
+  // whatever this comes to, so there is never a margin of unused aida.
+  const artWidth = pattern
+    ? Math.round(Math.min(MAX_ART_WIDTH, (MAX_ART_HEIGHT * pattern.width) / pattern.height))
+    : MAX_ART_WIDTH
+
   if (state === "loading") {
     return <p className="text-center text-cocoa py-24">{t.gallery.loading}</p>
   }
@@ -282,7 +293,7 @@ export default function Piece() {
 
       {/* One column. The photo, then the grid on cloth, and nothing beside them
           to leave a hole when it runs short. */}
-      <div className="mt-8 flex flex-col items-center gap-4">
+      <div className="mt-8 flex flex-col items-center gap-3">
         {post.hasPhoto && (
           <img
             src={api.photoUrl(post)}
@@ -290,11 +301,16 @@ export default function Piece() {
             className="w-full max-w-[720px] rounded-card shadow-card object-cover max-h-[460px]"
           />
         )}
-        {/* The weave is drawn only once its pitch is known — one square per
+        {/* The cloth wraps the grid rather than stretching to the column.
+            A 720px panel holding a 560px canvas framed every pattern in 112px of
+            bare aida, and a portrait one in more — so the piece looked lost in its
+            own mount, and the two buttons ended up a long way from the thing they
+            act on.
+            The weave is drawn only once its pitch is known — one square per
             stitch. Until then it stays plain cloth, which is better than a wrong
             pitch showing through the motif's bare cells. */}
         <div
-          className={`${clothPitch > 0 ? "aida" : ""} [--aida-ink:.09] bg-aida rounded-card p-6 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] flex justify-center w-full max-w-[720px]`}
+          className={`${clothPitch > 0 ? "aida" : ""} [--aida-ink:.09] bg-aida rounded-card p-5 shadow-[inset_0_2px_10px_rgba(83,63,42,.09)] w-fit max-w-full`}
           style={clothPitch > 0 ? { ["--aida-size" as string]: `${clothPitch}px` } : undefined}
         >
           <canvas
@@ -303,7 +319,9 @@ export default function Piece() {
             aria-label={t.piece.patternAlt(post.title)}
             width={pattern.width}
             height={pattern.height}
-            style={{ imageRendering: "pixelated", width: "100%", maxWidth: 560 }}
+            // Sized on both axes so a tall pattern is bounded by its height
+            // instead of by its width, which is what left the wide margins.
+            style={{ imageRendering: "pixelated", width: artWidth, maxWidth: "100%" }}
             className="block h-auto rounded-[6px]"
           />
         </div>
@@ -311,7 +329,7 @@ export default function Piece() {
 
         {/* Two things, and the coral one is the chart: taking the pattern is why
             people come here. Seeing it on a cushion is a nice thought. */}
-        <div className="flex flex-wrap justify-center gap-3 mt-2">
+        <div className="flex flex-wrap justify-center gap-3 mt-1">
           <Button onClick={() => setChartOpen(true)}>{t.piece.getChart}</Button>
           <Button variant="secondary" onClick={() => setProductsOpen(true)}>
             {t.piece.seeStitched}
