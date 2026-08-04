@@ -90,20 +90,20 @@ export default function Home() {
 
                 {/* The "before", and the way in: it is the only clickable thing on
                     the panel, so the photograph is what invites the upload.
-                    Labelled rather than pointed at. An arrow between the two was
-                    either lost against the grid behind it or reaching across the
-                    motif, and one word does the same job in less room. */}
+                    Unlabelled and unpointed-at. An arrow between the two was either
+                    lost against the grid or reaching across the motif, and the word
+                    "avant" was explaining something the pairing already says — a
+                    photograph sitting on a chart of itself needs no caption. Size
+                    carries it instead. */}
                 <div className="absolute left-2 top-2">
-                  <div className="text-[11px] font-extrabold uppercase tracking-[.09em] text-sand mb-1 pl-1">
-                    {t.home.demoBefore}
-                  </div>
                   <Link to="/convert" aria-label={t.home.ctaUpload}>
                     {/* A share of the chart's width, not a fixed size: at 86px it
                         was a fifth of the panel on desktop and a third of it at
-                        375px, where it started covering a leaf. */}
+                        375px, where it started covering a leaf. A third of the width
+                        is as big as it goes before it reaches the leaves. */}
                     <PhotoSlot
-                      radius={12}
-                      className="w-[26cqw] aspect-square p-1.5 bg-blanc shadow-card transition-colors hover:border-coral"
+                      radius={14}
+                      className="w-[33cqw] aspect-square p-2 bg-blanc shadow-card transition-colors hover:border-coral"
                     >
                       <img
                         src={strawberryPhoto}
