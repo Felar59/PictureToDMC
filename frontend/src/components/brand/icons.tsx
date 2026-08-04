@@ -243,6 +243,58 @@ export function ShareHoopGlyph({ size = 18, className }: { size?: number; classN
   )
 }
 
+/**
+ * A disclosure chevron, drawn.
+ *
+ * Replaces a literal `▸` typed into the markup. A glyph in the text renders in
+ * whichever font on the machine happens to have it — on Windows that is usually not
+ * the one the rest of the line is set in, so it arrived a different weight and sat off
+ * the baseline. Two bars at right angles have no such opinion.
+ *
+ * The caller rotates it: `group-open:rotate-90` on the summary still works, because
+ * this is a plain box.
+ */
+export function Chevron({ size = 9, className }: { size?: number; className?: string }) {
+  const bar = "absolute bg-current rounded-[1px]"
+  return (
+    <span
+      className={cn("relative block shrink-0", className)}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <span
+        className={bar}
+        style={{ width: size * 0.78, height: 2.2, top: size * 0.22, left: 0, transform: "rotate(45deg)", transformOrigin: "left center" }}
+      />
+      <span
+        className={bar}
+        style={{ width: size * 0.78, height: 2.2, top: size * 0.78, left: 0, transform: "rotate(-45deg)", transformOrigin: "left center" }}
+      />
+    </span>
+  )
+}
+
+/**
+ * A cross, drawn — for closing and for deleting.
+ *
+ * Same reason as the chevron: `✕` was a literal character. It is also the one glyph in
+ * the app that appears on a destructive control, so having it render at a predictable
+ * weight and size actually matters.
+ */
+export function CrossMark({ size = 12, className }: { size?: number; className?: string }) {
+  const bar = "absolute left-0 top-1/2 bg-current rounded-full"
+  return (
+    <span
+      className={cn("relative block shrink-0", className)}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <span className={bar} style={{ width: size, height: 2.2, transform: "translateY(-50%) rotate(45deg)" }} />
+      <span className={bar} style={{ width: size, height: 2.2, transform: "translateY(-50%) rotate(-45deg)" }} />
+    </span>
+  )
+}
+
 /** The colour wheel on a thread row — "swap this for any DMC shade". */
 export function ColorWheel({ size = 12 }: { size?: number }) {
   return (

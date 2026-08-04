@@ -30,3 +30,13 @@ Thumbs.db
 # Photos sources des maquettes produit : lourdes (7 Mo) et inutiles en prod.
 # Les versions servies sont dans frontend/src/assets/products/*.avif.
 sources/
+
+# The built frontend. CI runs `npm run build` before it rsyncs PythonDCA/, so what is
+# committed here is never what gets deployed — it was 34 tracked files that changed on
+# every local build, dirtied the tree, and had to be checked out again before every
+# commit. Deleting a stale one from the index cannot break the deploy: the build that
+# ships regenerates the whole directory.
+# Everything in it, not just the bundles: the icons and the 4.4 MB segmentation model
+# are copies of frontend/public/, which Vite puts there on every build. Tracking both
+# copies stored the weights twice in the repository.
+PythonDCA/dist/

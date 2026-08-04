@@ -24,8 +24,8 @@ export const en = {
     heroTitleAccent: "cross-stitch",
     heroTitleAfter: " pattern",
     heroLead:
-      "Upload a picture and we'll match every stitch to a real DMC thread color — then hand you a chart that's ready to hoop.",
-    ctaUpload: "Upload a photo",
+      "Choose a picture and every stitch is matched to a real DMC thread colour, right here in your browser — then you leave with a chart that's ready to hoop.",
+    ctaUpload: "Choose a photo",
     ctaSample: "See a sample pattern",
     heroNote: "from photo to chart in about a minute ↷",
     demoPhoto: "your photo",
@@ -39,8 +39,8 @@ export const en = {
     stepsTitle: "How it works",
     steps: [
       {
-        title: "Upload a photo",
-        body: "Any JPG or PNG — pets and portraits work beautifully.",
+        title: "Choose a photo",
+        body: "Any JPG, PNG or WebP — pets and portraits work beautifully. It stays on your machine.",
       },
       {
         title: "Adjust the pattern",
@@ -59,15 +59,15 @@ export const en = {
     features: [
       {
         title: "Swap any thread",
-        body: "Don't like a matched color? Tap it and pick from the 589 official DMC shades.",
+        body: "Don't like a matched color? Tap it and pick from the 483 plain-cotton DMC shades.",
       },
       {
         title: "Use your own threads",
         body: "Already have a thread box? Give us your DMC codes and we'll only use those.",
       },
       {
-        title: "See every color",
-        body: "Hover a thread in the list and every stitch in that color lights up on the pattern.",
+        title: "See every colour",
+        body: "Tap a thread in the list and every stitch in that colour stays lit on the pattern until you tap it again.",
       },
     ],
 
@@ -88,13 +88,13 @@ export const en = {
       },
       {
         q: "Which files can I upload?",
-        a: "JPG and PNG. Transparent PNGs work too — the transparent parts are simply left unstitched.",
+        a: "JPG, PNG, WebP and AVIF. Transparent PNGs work too — the transparent parts are simply left unstitched.",
       },
     ],
 
     ctaKicker: "ready when you are",
     ctaTitle: "Start your first pattern",
-    ctaButton: "Upload a photo — it's free",
+    ctaButton: "Choose a photo — it's free",
   },
 
   account: {
@@ -363,7 +363,7 @@ export const en = {
       title: "Your own threads",
       toggle: "Use my threads",
       toggleOn: "Your threads only",
-      toggleOff: "All 589 DMC shades",
+      toggleOff: "All 483 DMC shades",
       listLabel: "Your DMC codes",
       emptyList: "No thread added yet",
       add: "Add",
@@ -460,7 +460,7 @@ export const en = {
       {
         heading: "Every colour is a thread you can buy",
         body:
-          "The converter matches each stitch to one of the 489 plain-cotton DMC shades, judged the way an eye judges colour rather than the way a computer adds numbers. What you download names real references, with the number of stitches of each, so you can walk into a shop with the list.",
+          "The converter matches each stitch to one of the 483 plain-cotton DMC shades, judged the way an eye judges colour rather than the way a computer adds numbers. What you download names real references, with the number of stitches of each, so you can walk into a shop with the list.",
       },
       {
         heading: "Free, and staying that way",
@@ -673,7 +673,7 @@ export const fr: Copy = {
     heroTitleAccent: "point de croix",
     heroTitleAfter: "",
     heroLead:
-      "Envoyez une image : chaque point est associé à une vraie couleur de fil DMC, et vous repartez avec une grille prête à mettre au tambour.",
+      "Choisissez une image : chaque point est associé à une vraie couleur de fil DMC, directement dans votre navigateur, et vous repartez avec une grille prête à mettre au tambour.",
     ctaUpload: "Choisir une photo",
     ctaSample: "Voir un exemple",
     heroNote: "de la photo à la grille en une minute ↷",
@@ -688,8 +688,8 @@ export const fr: Copy = {
     stepsTitle: "Comment ça marche",
     steps: [
       {
-        title: "Envoyez une photo",
-        body: "Un JPG ou un PNG — les animaux et les portraits rendent très bien.",
+        title: "Choisissez une photo",
+        body: "Un JPG, un PNG ou un WebP — les animaux et les portraits rendent très bien. Elle reste sur votre machine.",
       },
       {
         title: "Réglez la grille",
@@ -708,7 +708,7 @@ export const fr: Copy = {
     features: [
       {
         title: "Changez n'importe quel fil",
-        body: "Une couleur ne vous plaît pas ? Cliquez dessus et choisissez parmi les 589 références DMC.",
+        body: "Une couleur ne vous plaît pas ? Cliquez dessus et choisissez parmi les 483 références DMC en coton mouliné.",
       },
       {
         title: "Utilisez vos propres fils",
@@ -716,7 +716,7 @@ export const fr: Copy = {
       },
       {
         title: "Repérez chaque couleur",
-        body: "Survolez un fil dans la liste : tous les points de cette couleur s'allument sur la grille.",
+        body: "Touchez un fil dans la liste : tous les points de cette couleur restent allumés sur la grille jusqu'à ce que vous le retouchiez.",
       },
     ],
 
@@ -737,7 +737,7 @@ export const fr: Copy = {
       },
       {
         q: "Quels fichiers puis-je envoyer ?",
-        a: "Du JPG et du PNG. Les PNG transparents fonctionnent aussi — les zones transparentes sont simplement laissées vides.",
+        a: "Du JPG, du PNG, du WebP et de l'AVIF. Les PNG transparents fonctionnent aussi — les zones transparentes sont simplement laissées vides.",
       },
     ],
 
@@ -996,7 +996,7 @@ export const fr: Copy = {
       title: "Vos propres fils",
       toggle: "Utiliser mes fils",
       toggleOn: "Vos fils uniquement",
-      toggleOff: "Les 589 références DMC",
+      toggleOff: "Les 483 références DMC",
       listLabel: "Vos références DMC",
       emptyList: "Aucun fil ajouté pour l'instant",
       add: "Ajouter",
@@ -1090,7 +1090,7 @@ export const fr: Copy = {
       {
         heading: "Chaque couleur est un fil qui existe",
         body:
-          "Le convertisseur associe chaque point à l'une des 489 références DMC en coton mouliné, jugées comme l'œil juge une couleur et non comme une machine additionne des nombres. Ce que vous téléchargez donne de vraies références, avec le nombre de points de chacune — de quoi entrer en boutique avec la liste.",
+          "Le convertisseur associe chaque point à l'une des 483 références DMC en coton mouliné, jugées comme l'œil juge une couleur et non comme une machine additionne des nombres. Ce que vous téléchargez donne de vraies références, avec le nombre de points de chacune — de quoi entrer en boutique avec la liste.",
       },
       {
         heading: "Gratuit, et ça ne changera pas",

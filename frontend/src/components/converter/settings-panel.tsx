@@ -1,6 +1,6 @@
 import { useId } from "react"
 
-import { CornerStitch } from "@/components/brand/icons"
+import { Chevron, CornerStitch } from "@/components/brand/icons"
 import { FieldLabel, PanelTitle, Readout, SubPanel } from "@/components/ui/card"
 import { Pill } from "@/components/ui/pill"
 import { Slider } from "@/components/ui/slider"
@@ -117,12 +117,7 @@ export function SettingsPanel({
           one of the few affordances everybody already knows. */}
       <details className="group mt-4 border-t-2 border-dashed border-edge pt-3">
         <summary className="flex items-center gap-2 cursor-pointer list-none text-[13px] font-extrabold tracking-[.05em] uppercase text-cocoa hover:text-coral-deep">
-          <span
-            aria-hidden="true"
-            className="text-coral-deep transition-transform group-open:rotate-90"
-          >
-            ▸
-          </span>
+          <Chevron className="text-coral-deep transition-transform group-open:rotate-90" />
           {t.converter.retouch.heading}
         </summary>
 

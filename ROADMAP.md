@@ -54,67 +54,47 @@ Where: `frontend/src/i18n/dictionary.ts`, `chart.legendTitle` in both languages,
 Follow what emoji-art.com does, because it works there and the two sites have the
 same shape: a browser-side tool with no signup.
 
-### Current state
+### Done
 
-`frontend/index.html` has a title, one description, a theme colour and favicons.
-That is all. No `robots.txt`, no `sitemap.xml`, no `llms.txt`, no Open Graph, no
-canonical, no structured data, no manifest — and, more importantly, **one URL for
-the whole tool**.
+- **A URL per intent.** `/convertir-photo-point-de-croix`, `/galerie`,
+  `/qui-sommes-nous`, `/faq`, `/comment-faire-une-grille-de-point-de-croix`. The old
+  English paths redirect. All of them live in `frontend/src/lib/routes.ts`.
+- **A real head per route** — title, description, canonical, Open Graph, Twitter —
+  written by hand in `frontend/src/lib/head.ts`, no dependency.
+- **`JSON-LD`**: `SoftwareApplication` on the home page, `FAQPage` on the FAQ,
+  `HowTo` on the guide.
+- **`robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt`**, generated at build
+  time by a Vite plugin from `routes.ts` and `site.ts`, so a new page reaches all four
+  by being added to `indexable` and the domain changes in one line.
+- **A 1200x630 share card** built from a real chart, plus a `manifest.webmanifest`.
+- **The soft-404 is fixed.** Every unknown path used to answer 200 with the SPA shell,
+  so a typo was a page as far as a crawler was concerned. `PythonDCA/main.py` now
+  knows the router's paths: those answer 200, anything else 404, both with the same
+  HTML so the not-found page still renders.
+- **The FAQ and the guide exist as pages** rather than as an anchor.
 
-### The structural piece, and the one that matters most
+### Still to do
 
-emoji-art has a dedicated, clean URL per intent: `/image-to-emoji`,
-`/emoji-mosaic`, `/emoji-art-editor`, `/library`, `/gallery`, plus a how-to and an
-FAQ. Each one answers a different thing somebody types into a search box.
+- **Content.** The FAQ is fourteen questions; the guide is one page. What earns links
+  is more of both — how to read a chart, what to do about a photo with a busy
+  background, converting a pet versus a portrait. Each is a page somebody is looking
+  for.
+- **`hreflang`.** The language switch changes the copy but not the URL, so there is
+  one address serving two languages and no way to tell a crawler that. Doing it
+  properly means `/en/...` paths, which is a bigger change than it sounds.
+- **Per-piece heads.** `/piece/:id` still takes the site default. Each published piece
+  could carry its own title, its own description and its own chart as the share image
+  — which is the one thing here that would make a shared link worth clicking.
 
-This site has `/convert`. Everything anyone might search for — "photo en grille de
-point de croix", "convertisseur photo point de croix", "grille point de croix
-gratuite", "trouver les fils DMC d'une image" — lands on the same page, so none of
-them is answered by a page that is *about* it.
+### Why this was the highest-value item, kept for the record
 
-Splitting that is the highest-value SEO work here and it is not a meta tag. A first
-cut:
+emoji-art has a dedicated URL per intent and this site had one for everything. Every
+query — "photo en grille de point de croix", "convertisseur photo point de croix",
+"grille point de croix gratuite" — landed on `/convert`, so not one of them was
+answered by a page that was *about* it. That, and not any meta tag, was the work.
 
-- `/` — what it is, the example, the gallery
-- `/convertir-photo-point-de-croix` — the converter, with real copy above it
-- `/galerie` — already exists as `/gallery`; the French path is the better one
-- `/comment-faire-une-grille-de-point-de-croix` — the guide, the page that earns
-  links
-- `/faq` — currently an anchor on the home page, which cannot rank on its own
-- `/qui-sommes-nous` — exists as `/about`
-- `/confidentialite` — needed anyway for ads, see §4
-
-### The files
-
-- **`robots.txt`** — explicitly allow the AI crawlers rather than leaving it to a
-  default: `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `PerplexityBot`,
-  `Google-Extended`, `Applebot-Extended`, `CCBot`. Plus the `Sitemap:` line.
-- **`llms.txt`** — the emerging convention, and emoji-art's is a good model: an
-  `H1` with the name, a `>` blockquote summary, then `## Tools` with one
-  `[title](url): description` per route, `## About`, `## Optional`. About 4 kB.
-- **`llms-full.txt`** — everything in one file, ~15 kB.
-- **`sitemap.xml`** — every indexable route. Trivial once §1's routes exist, and
-  pointless before.
-- **`manifest.webmanifest`** — name, icons, theme colour.
-
-### Per page
-
-- a distinct `<title>` and `description` — a single-page app serves the same head
-  to every route today, so every route looks identical to a crawler
-- `<link rel="canonical">`
-- Open Graph and Twitter cards with a real image. **A chart is the perfect OG
-  image** — the engine already renders one, and a shared link showing an actual
-  cross-stitch chart is a better advert than any illustration.
-- `JSON-LD`: `SoftwareApplication` for the tool, `FAQPage` for the FAQ, `HowTo` for
-  the guide
-- `<html lang>` follows the language switch, which it does not today
-
-### Content, which is the part that cannot be automated
-
-Search rewards pages that answer something. The FAQ answers four questions; a real
-one answers twenty. How many threads for a portrait, what aida count means, how to
-read a chart, how to convert a photo of a pet, why a photo with a busy background
-comes out badly. Each of those is a page somebody is looking for.
+Still worth adding when there is a reason to: `/confidentialite`, which §4 needs
+anyway.
 
 ---
 
@@ -169,15 +149,16 @@ the page down.
 
 ## 5. Icons
 
-Partly done — the rotate glyph, the chart-download sheet and the share hoop are
-drawn in the house grammar. What remains:
+Mostly done. Drawn in the house grammar: the chart-download sheet, the share hoop,
+`CornerStitch` on the orientation tiles, and now `Chevron` and `CrossMark` — the last
+two replacing literal `▸` and `✕` characters, which rendered in whichever font on the
+machine happened to have them rather than the one the line was set in.
 
-- the vividness pills and the thread rows still lean on text alone
-- the mobile burger is three plain bars
-- `▸` in the "Modifier" disclosure is a literal character, so it renders in
-  whatever the system font decides
-- `✕` on the dialog close button, same problem
+What remains:
+
 - the four category pills in the gallery could carry a mark each
+- the vividness pills lean on text alone, which may be right — they are three words
+  in a row and a glyph per step would be decoration
 
 Rule that has been worth following: composed divs where the shape is boxes and
 lines, SVG only where an arc is unavoidable. See
@@ -194,28 +175,45 @@ Written early, never revisited, and some of it is now wrong. Known:
   the truth about the one thing this site can claim over its competitors. Worth
   recording as the shape of problem to look for: the copy describes an architecture
   the code left behind.
-- `home.heroLead` says "Envoyez une image", and the CTA is "Choisir une photo" —
-  "envoyer" is now the wrong verb everywhere it appears, for the same reason
-- `home.features` and `converter.threads.hints` both tell people to *hover* a
-  thread, for a behaviour that has no keyboard or touch path at all. On a phone the
-  copy describes something impossible.
+- ~~`home.heroLead` says "Envoyez une image"~~ — **fixed**, along with the CTAs, the
+  first step and the file-formats answer. Nothing is sent anywhere, and "envoyer" was
+  the wrong verb in six places.
+- ~~"survolez un fil"~~ — **fixed**. It described a gesture a phone does not have, for
+  a control that is now tappable.
+- ~~"589 références"~~ — **fixed**. Matching is restricted to 483 plain-cotton shades,
+  so 589 had quietly become wrong; and the About page said 489, which was simply an
+  error.
 - "Picture to DMC" appears in body copy in several places and will all have to
-  move when §0 lands
+  move when §0 lands.
 - the thread *names* are English in the French UI ("Pewter Gray - Very Dark"),
-  because they come that way out of the DMC chart. Translating 489 of them is a
-  real job with a real payoff for a French audience.
+  because they come that way out of the DMC chart. Translating 483 of them is a
+  real job with a real payoff for a French audience — and it is the largest remaining
+  content item on this page.
 
 ---
 
 ## Smaller things, kept so they are not lost
 
-- `PythonDCA/dist/` is committed but CI rebuilds it, so it is dead weight that
-  dirties the tree on every local build. It wants a `.gitignore` entry and a
-  `git rm --cached`.
-- `Dialog` has no focus trap, no autofocus and no focus restore; tab order escapes
-  into the page behind the modal.
-- The converter's hover-to-isolate has no keyboard or touch path, while the copy
-  tells people to hover. The chart dialog's per-thread rows solved this properly
-  and the converter should borrow it.
-- Icon presets for member marks — the account page already says they are coming.
+- ~~`PythonDCA/dist/` is committed~~ — **fixed**. 19 MB untracked, including a second
+  copy of the 4.4 MB segmentation model. CI builds it before it rsyncs, so what was
+  committed was never what shipped.
+- ~~`Dialog` has no focus trap~~ — **fixed**. It announced `aria-modal` while Tab
+  walked straight out into the page behind it, which is a promise the markup was not
+  keeping. Focus moves in on open, wraps at both ends, and returns to whatever opened
+  it.
+- ~~The converter's hover-to-isolate has no keyboard or touch path~~ — **fixed**. The
+  row is a button; tapping pins a thread.
+- Icon presets for member marks — the account page already says they are coming, and
+  this one is waiting on the marks themselves.
+- **Stored images.** Measured rather than assumed, and the answer was not the obvious
+  one: a pattern thumbnail is flat blocks with hard edges, so lossy encoding is
+  disqualified outright (WebP at q90 changed 68% of sub-pixels, worst channel error
+  253) and AVIF was *larger* than PNG at lossless. The win was that the thumbnail was
+  stored at nine pixels per stitch while the card displays it with
+  `image-rendering: pixelated` — so it is stored at one pixel per stitch now, PNG,
+  **19% of the bytes**, bit-for-bit identical once scaled back up. The one thing that
+  would beat it is lossless WebP, which `canvas.toDataURL` cannot produce.
+  What is left here: the hoop photographs on existing posts are the only large blobs
+  in the database, and nothing new can add one since the picker was removed. Shrinking
+  those would need an image library on the box for three files, which is not worth it.
 - The Google client secret transited a chat and should be rotated.

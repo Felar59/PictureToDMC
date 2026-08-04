@@ -30,7 +30,11 @@ MAX_COMMENT = 1000
 DAILY_POST_LIMIT = 5
 DAY_MS = 24 * 60 * 60 * 1000
 # A pattern thumbnail is a few kB; the hoop photo is the one that can be big.
-MAX_THUMB_BYTES = 256 * 1024
+# A thumbnail is now one pixel per stitch, so the worst case a 200x200 grid can
+# produce is a 40 000-pixel PNG — a few tens of kilobytes. 256 kB was sized for the
+# old ~360px-wide version and would now wave through something a hundred times
+# larger than anything the client sends.
+MAX_THUMB_BYTES = 64 * 1024
 MAX_PHOTO_BYTES = 6 * 1024 * 1024
 
 

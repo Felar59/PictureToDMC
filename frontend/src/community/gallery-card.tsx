@@ -5,6 +5,7 @@ import { labDist2 } from "@/engine/color"
 import { findThread, type Thread } from "@/engine/dmc"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { CrossMark } from "@/components/brand/icons"
 import { useAuth } from "./auth-context"
 
 /**
@@ -187,9 +188,9 @@ export function GalleryCard({
             type="button"
             onClick={() => onDelete(post.id)}
             aria-label={t.gallery.deleteAria(post.title)}
-            className="ml-auto size-10 -my-2 shrink-0 flex items-center justify-center rounded-full text-[12.5px] font-bold text-stone hover:text-coral-deep hover:bg-coral-wash transition-colors cursor-pointer"
+            className="ml-auto size-10 -my-2 shrink-0 flex items-center justify-center rounded-full text-stone hover:text-coral-deep hover:bg-coral-wash transition-colors cursor-pointer"
           >
-            ✕
+            <CrossMark size={11} />
           </button>
         )}
       </div>
