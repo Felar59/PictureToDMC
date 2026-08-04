@@ -1,0 +1,13 @@
+# Shell scripts keep LF even when checked out on Windows.
+#
+# Without this, git hands a Windows working tree CRLF copies — and a script whose
+# lines end in \r is not a script the box can run. `set -euo pipefail` becomes
+# `set -euo pipefail\r`, and bash reports "pipefail: invalid option name", which
+# is a confusing way to be told about an invisible character. Copying
+# deploy/admin/ up from a Windows checkout hit exactly that.
+#
+# Deliberately narrow: `* text=auto eol=lf` would renormalise every text file in
+# the repository and churn the whole tree. These are the files whose line endings
+# actually decide whether something works.
+*.sh            text eol=lf
+deploy/admin/ptd-panel text eol=lf
