@@ -250,7 +250,16 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     // fit depends on how big that type now is rather than on a fixed 290px.
     const legendCols = Math.max(1, Math.min(3, Math.floor(artW / (legendRowH * 7.5))))
     const legendRows = legend ? Math.ceil(shown.length / legendCols) : 0
-    const legendH = legend ? legendRows * legendRowH + margin * 2 : 0
+    // The band between the picture and the first legend row, holding the title line
+    // and the rule under it.
+    //
+    // Taken from the row height, not from the margin. The margin is a function of
+    // the stitch and the title is a function of the type, and the two came apart
+    // once the legend was resized: at a 20px stitch the title's baseline landed
+    // 13px below the bottom of the picture, close enough to read as though it were
+    // sitting on it.
+    const legendLead = legend ? Math.round(legendRowH * 1.5) : 0
+    const legendH = legend ? legendRows * legendRowH + legendLead + margin : 0
     return {
       cell,
       artW,
@@ -258,6 +267,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
       margin,
       legendCols,
       legendRowH,
+      legendLead,
       legendH,
       canvasW: artW + margin * 2,
       canvasH: artH + margin * 2 + legendH,
@@ -273,7 +283,7 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     const factor = Math.min(MAX_CANVAS_SIDE / box.canvasW, MAX_CANVAS_SIDE / box.canvasH)
     box = layout(Math.max(1, Math.floor(box.cell * factor)))
   }
-  const { cell, artW, artH, margin, legendCols, legendRowH } = box
+  const { cell, artW, artH, margin, legendCols, legendRowH, legendLead } = box
 
   const [canvas, ctx] = surface(box.canvasW, box.canvasH)
 
@@ -435,9 +445,12 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
        them. The names are clipped to the space left rather than allowed to collide
        with the count, which is what happened when every field was laid out from
        the left. */
-    const top = margin * 2 + artH
+    // Where the first row of the legend begins, a clear band below the picture.
+    const top = margin + artH + legendLead
     const bodySize = Math.max(11, Math.round(legendRowH * 0.4))
-    const headSize = Math.max(10, Math.round(legendRowH * 0.34))
+    // Was 0.34 of the row, which on a 1200px chart came to 15px — the line that
+    // says what the whole page is, set smaller than the thread names under it.
+    const headSize = Math.max(13, Math.round(legendRowH * 0.46))
     const swatch = Math.round(legendRowH * 0.58)
     const gap = Math.round(swatch * 0.55)
     const colW = artW / legendCols
@@ -449,17 +462,21 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
     ctx.textAlign = "left"
 
     // A header, so the block says what it is on a printed page with no context.
+    // Positioned within the lead band rather than measured back from the first row:
+    // 45% of the way down it sits clear of the picture above and the rule below,
+    // whatever the type size works out to.
     ctx.font = `800 ${headSize}px "Nunito Sans", system-ui, sans-serif`
-    ctx.fillStyle = faded
-    ctx.fillText(opts.legendTitle ?? "DMC", margin, top - margin * 0.55)
+    ctx.fillStyle = ink
+    ctx.fillText(opts.legendTitle ?? "DMC", margin, margin + artH + legendLead * 0.45)
 
     // The rule under the header, lighter than the grid so it separates without
     // competing with it.
+    const ruleY = Math.round(margin + artH + legendLead * 0.78) + 0.5
     ctx.strokeStyle = "rgba(20,16,12,.3)"
     ctx.lineWidth = 1.5
     ctx.beginPath()
-    ctx.moveTo(margin, top - margin * 0.2)
-    ctx.lineTo(canvas.width - margin, top - margin * 0.2)
+    ctx.moveTo(margin, ruleY)
+    ctx.lineTo(canvas.width - margin, ruleY)
     ctx.stroke()
 
     // Every reference is aligned on the same column, so the names start together

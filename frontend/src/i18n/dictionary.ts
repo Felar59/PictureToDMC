@@ -29,6 +29,7 @@ export const en = {
     heroNote: "from photo to chart in about a minute ↷",
     demoPhoto: "your photo",
     demoPattern: "your pattern",
+    demoTry: "Try this photo — it opens ready to convert",
     demoPhotoAlt: "A photo of a strawberry",
     demoPatternAlt: "The same strawberry as a cross-stitch pattern, in 8 DMC threads",
     demoMatched: (n: number) => `matched to ${n} DMC threads`,
@@ -78,7 +79,7 @@ export const en = {
       },
       {
         q: "What happens to my photo?",
-        a: "It's sent to our server, converted, and held in memory only while you're working on it. It is never written to disk and never shared.",
+        a: "Nothing — it never leaves your computer. The whole conversion runs in your browser, so your picture is never uploaded, never stored and never seen by us. Sharing a finished piece sends the grid, and only that.",
       },
       {
         q: "How many thread colors should I pick?",
@@ -141,18 +142,13 @@ export const en = {
     nameLabel: "Give it a title",
     namePlaceholder: "Milo in the window",
     categoryLabel: "Category",
-    photoLabel: "Photo of the finished piece",
-    photoHint: "Optional, and the nicest part — a snap of it in the hoop.",
-    photoPick: "Choose a photo",
-    photoChange: "Choose another",
-    photoRemove: "Remove",
     patternPreview: "Your pattern",
     submit: "Publish",
     working: "Publishing…",
     needSignIn: "Sign in to share a piece",
     done: "Published — thank you!",
     failed: "It didn't publish. Try again.",
-    tooBig: "That photo is too heavy, even after shrinking. Try a smaller one.",
+    tooBig: "That pattern is too big to send. Try fewer stitches.",
     /** Not an error — there is simply no room until one of today's falls out of
      *  the window, so it says when rather than leaving you to guess. */
     dailyLimit: (limit: number, minutes: number) =>
@@ -337,8 +333,16 @@ export const en = {
       vividness: "Colour brightness",
       vividnessSteps: ["Natural", "Vivid", "Very vivid"],
       rotation: "Turn the picture",
-      rotate90: "Quarter turn",
-      rotationValue: (deg: number) => (deg === 0 ? "upright" : `turned ${deg}°`),
+      // Never an angle. "Pick the one that's the right way up" is the criterion as a
+      // person states it, and it is judged against the picture beside it.
+      rotationHint: "Pick the one that's the right way up.",
+      rotationHintEmpty: "Add a photo to choose which way up.",
+      rotationOptions: {
+        0: "As your photo is",
+        90: "Turned to the right",
+        180: "Upside down",
+        270: "Turned to the left",
+      } as Record<number, string>,
       removeBg: "Remove the background",
       // Two facts, and the second is the one people were not told: cutting the
       // background out runs a model over the photograph, so the grid takes a few
@@ -508,6 +512,7 @@ export const fr: Copy = {
     heroNote: "de la photo à la grille en une minute ↷",
     demoPhoto: "votre photo",
     demoPattern: "votre grille",
+    demoTry: "Essayer cette photo — elle s'ouvre prête à convertir",
     demoPhotoAlt: "La photo d'une fraise",
     demoPatternAlt: "La même fraise en grille de point de croix, en 8 fils DMC",
     demoMatched: (n: number) => `associée à ${n} fils DMC`,
@@ -557,7 +562,7 @@ export const fr: Copy = {
       },
       {
         q: "Que devient ma photo ?",
-        a: "Elle est envoyée à notre serveur, convertie, et gardée en mémoire uniquement pendant que vous travaillez dessus. Elle n'est jamais écrite sur disque ni partagée.",
+        a: "Rien — elle ne quitte jamais votre ordinateur. Toute la conversion se fait dans votre navigateur : votre image n'est jamais envoyée, jamais stockée, jamais vue par nous. Partager un ouvrage envoie la grille, et rien d'autre.",
       },
       {
         q: "Combien de fils choisir ?",
@@ -615,18 +620,13 @@ export const fr: Copy = {
     nameLabel: "Donnez-lui un titre",
     namePlaceholder: "Milo à la fenêtre",
     categoryLabel: "Catégorie",
-    photoLabel: "Photo de l'ouvrage terminé",
-    photoHint: "Facultatif, et c'est le plus beau — une photo dans le tambour.",
-    photoPick: "Choisir une photo",
-    photoChange: "En choisir une autre",
-    photoRemove: "Retirer",
     patternPreview: "Votre grille",
     submit: "Publier",
     working: "Publication…",
     needSignIn: "Connectez-vous pour partager un ouvrage",
     done: "Publié — merci !",
     failed: "La publication a échoué. Réessayez.",
-    tooBig: "Cette photo reste trop lourde même réduite. Essayez-en une plus petite.",
+    tooBig: "Cette grille est trop lourde à envoyer. Essayez avec moins de points.",
     dailyLimit: (limit: number, minutes: number) =>
       minutes < 90
         ? `${limit} ouvrages par jour, c'est le maximum. Il y aura de la place dans ${minutes} min.`
@@ -804,8 +804,14 @@ export const fr: Copy = {
       vividness: "Éclat des couleurs",
       vividnessSteps: ["Naturel", "Vif", "Très vif"],
       rotation: "Tourner l'image",
-      rotate90: "Un quart de tour",
-      rotationValue: (deg: number) => (deg === 0 ? "droite" : `tournée de ${deg}°`),
+      rotationHint: "Choisissez l'image qui est dans le bon sens.",
+      rotationHintEmpty: "Ajoutez une photo pour choisir le sens.",
+      rotationOptions: {
+        0: "Comme votre photo",
+        90: "Tournée vers la droite",
+        180: "À l'envers",
+        270: "Tournée vers la gauche",
+      } as Record<number, string>,
       removeBg: "Retirer le fond",
       removeBgHint:
         "Marche sur fond uni — le temps de mise à jour de la grille est allongé.",

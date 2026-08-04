@@ -1,11 +1,11 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 
 import { ShareHoopGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { Pill } from "@/components/ui/pill"
 import type { Pattern } from "@/engine/convert"
-import { cellsToBase64, patternThumbnail, preparePhoto } from "@/engine/publish"
+import { cellsToBase64, patternThumbnail } from "@/engine/publish"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { useAuth } from "./auth-context"
@@ -47,21 +47,8 @@ export function PublishDialog({
 
   const [title, setTitle] = useState("")
   const [category, setCategory] = useState<string>("other")
-  const [photo, setPhoto] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement | null>(null)
-
-  const pickPhoto = async (file: File) => {
-    setError(null)
-    try {
-      // Shrunk in the browser before it ever leaves: a modern phone photo is
-      // 4-8 MB and the server caps the body at 6 MB.
-      setPhoto(await preparePhoto(file))
-    } catch {
-      setError(t.publish.tooBig)
-    }
-  }
 
   const submit = async () => {
     if (!user) return signIn("/convert")
@@ -76,7 +63,6 @@ export function PublishDialog({
         cells: cellsToBase64(pattern),
         threadCodes: pattern.threads.map((th) => th.num),
         thumbnail: patternThumbnail(pattern),
-        photo: photo ?? undefined,
       })
       onPublished(id)
     } catch (err) {
@@ -121,45 +107,6 @@ export function PublishDialog({
               </Pill>
             ))}
           </div>
-        </div>
-
-        <div>
-          <div className="text-[13px] font-extrabold tracking-[.06em] uppercase text-cocoa mb-1">
-            {t.publish.photoLabel}
-          </div>
-          <p className="text-[13px] text-stone m-0 mb-2">{t.publish.photoHint}</p>
-          {photo ? (
-            <div className="flex items-center gap-3">
-              <img
-                src={photo}
-                alt=""
-                className="w-24 h-24 object-cover rounded-[12px] border-[1.5px] border-edge-3"
-              />
-              <div className="flex flex-col gap-2">
-                <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
-                  {t.publish.photoChange}
-                </Button>
-                <Button variant="quiet" size="sm" onClick={() => setPhoto(null)}>
-                  {t.publish.photoRemove}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
-              {t.publish.photoPick}
-            </Button>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) void pickPhoto(file)
-              e.target.value = ""
-            }}
-          />
         </div>
 
         {error && (
