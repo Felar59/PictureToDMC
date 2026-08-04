@@ -13,6 +13,9 @@ Pixel Embroidery Converter is a web application that transforms any image into a
 - **Colour Highlight**: Hover a thread to light up every stitch in that color.
 - **Pixelization Level**: Adjust the pattern width in stitches to control the level of detail.
 - **Black Outline Option**: Enable or disable a black outline on the cross-stitch points for better visibility.
+- **Backstitch**: Trace the seams between colours that are actually different — the
+  contour line you sew over the finished cross stitches. Threshold is a measured Lab
+  distance, so shading steps inside one shape are left alone.
 - **Bilingual**: Full French / English UI with a language switch (persisted per browser).
 
 ---
@@ -93,6 +96,71 @@ journalctl -u picturetodmc -f
 gh run list --limit 5        # deployment history
 gh workflow run Deploy       # redeploy without a commit
 ```
+
+---
+
+## Admins, moderation and the publishing limit
+
+An admin may delete **any** piece and **any** comment; everyone else may only
+delete their own. There is no admin page on the site — the ✕ and the delete link
+simply appear on other people's work, and the confirmation prompt says whose it
+is. An admin's name carries a 🌸 (a `🌸 ADMIN` pill on their profile), so a
+deletion is never anonymous. Names like "Admin" or "Modérateur" are refused at
+sign-up and rename, folded past spacing and accents — the badge comes from the
+database, but nobody should have to check it to know a name is not claiming one.
+
+### The panel
+
+`users.role` and `users.banned_at` are written by **one** thing: `sudo ptd-panel`,
+from a shell on the box. Nothing in `PythonDCA/api/` writes either column, and no
+environment variable sets them either — so the admin role is not a privilege the
+app guards, it is one the app cannot grant, whatever arrives in a request body.
+(Same design as emoji-art's `ea-panel` on this box, down to the keys.)
+
+```
+┌ JOURNAL ──────────────┬ COMPTES ──────────────┐   Tab   change de volet
+│ le journal du service │ le plus récent en     │   ↑↓    défiler
+│ condensé              │ haut · a admin b ban  │   a     promouvoir / rétrograder
+├ PIÈCES ───────────────┼ ESPACE ───────────────┤   b     bannir / réhabiliter
+│ la galerie, la plus   │ photos, grilles,      │   r     recharger
+│ récente en haut       │ disque restant        │   q     quitter
+└───────────────────────┴───────────────────────┘
+```
+
+Installed by hand, because the deploy workflow only rsyncs `PythonDCA/`:
+
+```bash
+scp -P 2007 -r deploy/admin ubuntu@164.132.99.194:/home/ubuntu/
+ssh -p 2007 ubuntu@164.132.99.194 'sudo bash /home/ubuntu/admin/install.sh'
+ssh -t -p 2007 ubuntu@164.132.99.194 'sudo ptd-panel'      # -t: it's a TUI
+```
+
+Two guard rails, both learned from emoji-art: the **last** admin cannot be
+demoted (one keystroke too many would otherwise lock moderation shut, with raw SQL
+the only way back in), and an admin cannot be banned before being demoted. Banning
+also deletes that account's sessions, so it bites on the next click rather than
+whenever a 180-day cookie expires — `banned_at` had been in the schema since the
+first release with nothing to set it.
+
+The very first admin, before the panel is installed — the documented bootstrap,
+and the only time raw SQL is the answer:
+
+```bash
+sudo sqlite3 /var/lib/picturetodmc/db.sqlite \
+  "UPDATE users SET role='admin' WHERE email='you@example.com';"
+```
+
+### The publishing limit
+
+**Five pieces per account per day** (`DAILY_POST_LIMIT` in `routes_gallery.py`),
+counted over a rolling 24 hours rather than reset at midnight — a calendar day
+hands anyone who waits for 23:59 ten pieces in two minutes. The check runs inside
+the same transaction as the insert, so simultaneous requests cannot both find four
+and both add one. **Nobody is exempt, admins included:** an exemption is a second
+code path that only two accounts ever take, which makes it the one nobody notices
+is broken. A refused publish returns `429` with `{code, limit, retryInMinutes}`,
+and the dialog says when there will be room. The panel's account list shows each
+member's count inside that same window, flagged `5!` when it is full.
 
 ---
 

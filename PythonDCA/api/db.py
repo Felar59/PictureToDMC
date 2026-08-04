@@ -12,9 +12,12 @@ Schema notes worth keeping:
   * `sessions` is keyed by the *hash* of the cookie token. A leaked database
     backup therefore contains no usable session.
 
-  * `users.role` is never written by any HTTP route in this package. Promoting
-    an admin means an UPDATE from a shell on the box. That is deliberate: no
-    request body can escalate a privilege that no handler touches.
+  * `users.role` and `users.banned_at` are never written by this package at all.
+    The only thing that writes them is `sudo ptd-panel` (deploy/admin/), from a
+    shell on the box. So the admin role is not a privilege this process guards
+    carefully — it is one it cannot grant, whatever arrives in a request body, and
+    whatever an environment variable claims. Both columns are read here on every
+    authenticated request and written here never.
 
   * `display_name` is NOT unique. Names come from Google, and real people
     collide; identity is the id.

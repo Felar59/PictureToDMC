@@ -5,6 +5,7 @@ import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { AdminFlower } from "./admin-flower"
 import { useAuth } from "./auth-context"
 
 /**
@@ -52,12 +53,21 @@ export function Comments({ postId }: { postId: number }) {
     }
   }
 
-  const remove = async (id: number) => {
+  /**
+   * Delete a comment — your own, or anyone's if you are an admin.
+   *
+   * Your own goes in one click: it is your sentence, and putting a prompt in front
+   * of it would be treating you as a suspect. Somebody else's asks first, because
+   * an admin sees that ✕ on every comment on the site and the one thing it must
+   * not be is easy to hit by accident.
+   */
+  const remove = async (comment: api.Comment, own: boolean) => {
+    if (!own && !window.confirm(t.comments.confirmDeleteOther(comment.author.displayName))) return
     // Optimistic: put it back if the server disagrees.
     const before = comments
-    setComments((list) => (list ?? []).filter((c) => c.id !== id))
+    setComments((list) => (list ?? []).filter((c) => c.id !== comment.id))
     try {
-      await api.deleteComment(id)
+      await api.deleteComment(comment.id)
     } catch {
       setComments(before)
     }
@@ -126,7 +136,8 @@ export function Comments({ postId }: { postId: number }) {
       ) : (
         <ul className="list-none p-0 m-0 mt-5 flex flex-col gap-3">
           {comments.map((c) => {
-            const mine = user && (user.id === c.author.id || user.isAdmin)
+            const own = user?.id === c.author.id
+            const canDelete = own || Boolean(user?.isAdmin)
             return (
               <li key={c.id} className="bg-blanc rounded-card shadow-soft p-4 flex gap-3.5">
                 <Link to={`/brodeur/${c.author.id}`} className="shrink-0">
@@ -140,6 +151,7 @@ export function Comments({ postId }: { postId: number }) {
                     >
                       {c.author.displayName}
                     </Link>
+                    {c.author.isAdmin && <AdminFlower className="text-[13px]" />}
                     <span className="font-mono text-[11.5px] text-sand">{when(c.createdAt)}</span>
                   </div>
                   {/* whitespace-pre-line, so a note written in paragraphs keeps
@@ -148,11 +160,11 @@ export function Comments({ postId }: { postId: number }) {
                     {c.body}
                   </p>
                 </div>
-                {mine && (
+                {canDelete && (
                   <button
                     type="button"
-                    onClick={() => void remove(c.id)}
-                    aria-label={t.comments.deleteAria}
+                    onClick={() => void remove(c, own)}
+                    aria-label={own ? t.comments.deleteAria : t.comments.deleteOtherAria}
                     className="self-start text-[13px] font-bold text-stone hover:text-coral-deep cursor-pointer shrink-0"
                   >
                     ✕

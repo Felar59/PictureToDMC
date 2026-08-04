@@ -16,6 +16,12 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
 DB_PATH = os.environ.get("PTD_DB", "/var/lib/picturetodmc/db.sqlite")
 
+# Nothing here says who is an admin, on purpose. `users.role` is written by
+# exactly one thing — `sudo ptd-panel`, from a shell on the box — so the privilege
+# has no path through this process at all: not through a request body, and not
+# through an environment variable that a mistyped unit file could set. The panel
+# lives in deploy/admin/.
+
 # Cookies get the Secure flag on https origins only, otherwise local http
 # development can never hold a session.
 COOKIE_SECURE = PUBLIC_ORIGIN.startswith("https://")

@@ -66,15 +66,23 @@ def current_user(request: Request) -> Optional[sqlite3.Row]:
 def public_user(row: sqlite3.Row) -> dict:
     """What the client is allowed to know about an account.
 
-    Deliberately narrow: no e-mail, no role, no timestamps, and no picture. The
-    gallery needs a name; the mark beside it is drawn from the id in the browser.
-    Anything more would be a needless disclosure on every card.
+    Deliberately narrow: no e-mail, no timestamps, and no picture. The gallery
+    needs a name; the mark beside it is drawn from the id in the browser. Anything
+    more would be a needless disclosure on every card.
+
+    `isAdmin` is the one thing that has been let out, and only because it is meant
+    to be seen: it puts the little flower beside the name of whoever runs the
+    place. Someone reading a comment that deletes a thread should be able to tell
+    where it came from, and a badge printed on the page cannot also be a secret.
+    Note it is the derived boolean, not `role` itself — the client has no business
+    knowing what other roles might exist.
     """
     return {
         "id": row["id"],
         "displayName": row["display_name"],
         "bio": row["bio"],
         "icon": row["icon"],
+        "isAdmin": row["role"] == "admin",
     }
 
 
@@ -83,7 +91,6 @@ def me_payload(row: sqlite3.Row) -> dict:
     return {
         **public_user(row),
         "email": row["email"],
-        "isAdmin": row["role"] == "admin",
         # False until they have confirmed a name of their own, so the client can
         # offer the choice once and never again.
         "setUp": row["setup_at"] is not None,

@@ -11,6 +11,25 @@ import { useAuth } from "./auth-context"
 
 const CATEGORIES = ["pets", "flowers", "landscapes", "other"] as const
 
+/**
+ * Why the publish failed, in the member's own words.
+ *
+ * The daily limit is the one refusal that is not an error: nothing went wrong,
+ * there is simply no room until tomorrow, and it says when. The server sends the
+ * numbers because it owns the rule; the sentence is written here because only
+ * this side knows the language.
+ */
+function describeFailure(err: unknown, t: ReturnType<typeof useI18n>["t"]): string {
+  if (!(err instanceof api.ApiError)) return t.publish.failed
+  if (err.status === 413) return t.publish.tooBig
+  if (err.status === 429 && err.code === "daily-limit") {
+    const limit = Number(err.data?.limit) || 5
+    const minutes = Math.max(1, Number(err.data?.retryInMinutes) || 60)
+    return t.publish.dailyLimit(limit, minutes)
+  }
+  return t.publish.failed
+}
+
 export function PublishDialog({
   pattern,
   open,
@@ -60,7 +79,7 @@ export function PublishDialog({
       })
       onPublished(id)
     } catch (err) {
-      setError(err instanceof api.ApiError && err.status === 413 ? t.publish.tooBig : t.publish.failed)
+      setError(describeFailure(err, t))
     } finally {
       setBusy(false)
     }

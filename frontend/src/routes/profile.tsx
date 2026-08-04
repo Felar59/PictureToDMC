@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
+import { AdminFlower } from "@/community/admin-flower"
 import { GalleryCard } from "@/community/gallery-card"
 import { useAuth } from "@/community/auth-context"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
@@ -57,7 +58,11 @@ export default function ProfilePage() {
   }
 
   const remove = async (postId: number) => {
-    if (!window.confirm(t.gallery.confirmDelete)) return
+    // Deleting someone else's is only possible for an admin, and says so: the
+    // prompt on this page would otherwise be the same words whether you were
+    // tidying your own gallery or someone's.
+    const isMine = user?.id === userId
+    if (!window.confirm(isMine ? t.gallery.confirmDelete : t.gallery.confirmDeleteOther)) return
     setProfile((p) => (p ? { ...p, posts: p.posts.filter((x) => x.id !== postId) } : p))
     await api.deletePost(postId).catch(load)
   }
@@ -91,7 +96,12 @@ export default function ProfilePage() {
           className="shadow-soft"
         />
         <div className="flex-1 min-w-[200px]">
-          <h1 className="text-[30px] sm:text-[34px] m-0">{profile.user.displayName}</h1>
+          {/* Here the badge says the word: this page exists to answer "who is
+              this", and there is room beside a 34px name for the answer. */}
+          <h1 className="text-[30px] sm:text-[34px] m-0 flex items-center gap-3 flex-wrap">
+            {profile.user.displayName}
+            {profile.user.isAdmin && <AdminFlower variant="pill" />}
+          </h1>
           <p className="text-[14.5px] text-stone m-0 mt-1">{t.profile.joined(joined)}</p>
           {/* Their own words, if they wrote any. whitespace-pre-line so a bio
               written in two lines stays two lines. */}
