@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
+import { cn } from "@/lib/utils"
 import { useAuth } from "./auth-context"
 
 /**
@@ -14,6 +15,13 @@ import { useAuth } from "./auth-context"
  * pill goes straight there, and signing out lives on the page it belongs to. One
  * click instead of two, nothing to dismiss, and no click-outside or Escape handling
  * to get wrong.
+ *
+ * The pill is an inner element and the caller's className goes on the link around
+ * it. That separation is not decorative: the header asks for `hidden sm:block`, and
+ * putting a caller's display utility on the same element as this component's own
+ * `flex` is a conflict Tailwind settles by stylesheet order rather than by
+ * intention. It settled on `block`, which stacked the mark on top of the name and
+ * squeezed the pill into a 48x65 lump.
  */
 export function UserMenu({ className }: { className?: string }) {
   const { t } = useI18n()
@@ -33,14 +41,12 @@ export function UserMenu({ className }: { className?: string }) {
   }
 
   return (
-    <Link
-      to="/compte"
-      title={t.account.panel}
-      className={`flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 transition-colors hover:border-taupe ${className ?? ""}`}
-    >
-      <StitchAvatar seed={user.icon ?? user.id} size={28} />
-      <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
-        {user.displayName}
+    <Link to="/compte" title={t.account.panel} className={cn("group", className)}>
+      <span className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 transition-colors group-hover:border-taupe">
+        <StitchAvatar seed={user.icon ?? user.id} size={28} />
+        <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
+          {user.displayName}
+        </span>
       </span>
     </Link>
   )
