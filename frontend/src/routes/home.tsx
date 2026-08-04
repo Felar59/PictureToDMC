@@ -56,17 +56,12 @@ export default function Home() {
           </div>
 
           {/* The transformation itself, rather than a description of it.
-              Container query, not a viewport breakpoint: this panel sits in a
-              grid column whose width doesn't track the viewport, so it has to
-              decide its own layout. Side by side when the photo, the arrow and
-              the pattern genuinely fit; stacked with the arrow turned to point
-              down when they don't. */}
+              A container query rather than a viewport breakpoint, because this panel
+              sits in a grid column whose width does not track the viewport — the
+              inset photograph is sized in cqw for the same reason. */}
           <div className="@container bg-blanc rounded-[24px] shadow-panel p-7 flex flex-col gap-[18px]">
-            {/* 160 + 42 + 16x9 grid + gaps ~= 406px, so the row fits from a
-                26rem container up. The design's own 196px slot needed 473px,
-                which never fitted this column at any viewport. */}
             {/* A real photograph and the chart the converter actually returned for
-                it — same fruit, 8 threads, 90 x 90 — rather than a hand-drawn berry
+                it — same fruit, 9 threads, 74 x 75 — rather than a hand-drawn berry
                 claiming six threads it had never matched. The promise on this panel
                 is the product's only substantive claim, so it is made with the
                 product's own output.
@@ -84,7 +79,7 @@ export default function Home() {
                   src={strawberryChart}
                   alt={t.home.demoPatternAlt}
                   width={780}
-                  height={859}
+                  height={936}
                   className="block w-full h-auto rounded-[14px] shadow-[inset_0_0_0_1.5px_var(--color-edge-4)]"
                 />
 

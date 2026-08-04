@@ -47,7 +47,7 @@ export function ThreadRow({
       <Bobbin hex={thread.hex} width={15} height={21} radius={4} />
       <span className="text-[13px] font-extrabold text-ink shrink-0">{thread.num}</span>
       <span className="flex-1 min-w-0 truncate text-[12px] text-stone">{thread.name}</span>
-      <span className="font-mono text-[11.5px] text-cocoa shrink-0">{t.piece.stitches(count)}</span>
+      <span className="font-mono text-[12px] text-cocoa shrink-0">{t.piece.stitches(count)}</span>
     </>
   ) : (
     <>

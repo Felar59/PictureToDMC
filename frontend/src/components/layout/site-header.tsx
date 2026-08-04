@@ -92,7 +92,7 @@ export function SiteHeader() {
 
           <button
             type="button"
-            className="lg:hidden flex flex-col gap-1 p-2 cursor-pointer"
+            className="lg:hidden flex flex-col items-center justify-center gap-1 size-11 -mr-2 cursor-pointer"
             aria-label={t.nav.menu}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}

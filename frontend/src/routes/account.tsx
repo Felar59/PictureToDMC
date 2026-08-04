@@ -83,7 +83,7 @@ export default function Account() {
       {!welcome && (
         <Link
           to={`/brodeur/${user.id}`}
-          className="inline-block text-[14px] font-bold text-stone hover:text-coral-deep transition-colors"
+          className="inline-flex items-center min-h-11 text-[14px] font-bold text-stone hover:text-coral-deep transition-colors"
         >
           {t.account.publicPage} →
         </Link>

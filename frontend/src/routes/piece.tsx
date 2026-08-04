@@ -209,7 +209,7 @@ export default function Piece() {
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20 py-10">
       <Link
         to="/gallery"
-        className="inline-block text-[14px] font-bold text-stone hover:text-coral-deep transition-colors"
+        className="inline-flex items-center min-h-11 text-[14px] font-bold text-stone hover:text-coral-deep transition-colors"
       >
         ← {t.piece.backToGallery}
       </Link>
@@ -224,7 +224,7 @@ export default function Piece() {
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
             <Link
               to={`/brodeur/${post.author.id}`}
-              className="inline-flex items-center gap-2.5 group shrink-0"
+              className="inline-flex items-center gap-2.5 min-h-11 group shrink-0"
             >
               <StitchAvatar seed={post.author.id} size={36} />
               <span className="text-[15.5px] font-bold text-cocoa group-hover:text-coral-deep transition-colors">
@@ -345,7 +345,7 @@ export default function Piece() {
               type="button"
               onClick={() => void remove()}
               disabled={removing}
-              className="text-[13.5px] font-bold text-stone hover:text-coral-deep transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-edge-5"
+              className="inline-flex items-center min-h-11 px-2 text-[13.5px] font-bold text-stone hover:text-coral-deep transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-edge-5"
             >
               {removing ? t.piece.removing : t.piece.remove}
             </button>

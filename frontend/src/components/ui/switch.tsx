@@ -11,7 +11,11 @@ export function Switch({
   return (
     <SwitchPrimitive.Root
       className={cn(
-        "peer inline-flex h-[30px] w-[52px] shrink-0 cursor-pointer items-center rounded-full p-[3px] transition-colors",
+        // The pill stays 52x30 — a fatter one would look like a different control — but a
+        // 30px-tall target is a miss waiting to happen on a phone, so an invisible
+        // pseudo-element extends the hit area to 44 without moving anything.
+        "peer relative inline-flex h-[30px] w-[52px] shrink-0 cursor-pointer items-center rounded-full p-[3px] transition-colors",
+        "after:absolute after:-inset-y-[7px] after:inset-x-0 after:content-['']",
         "data-[state=checked]:bg-nile data-[state=unchecked]:bg-edge-5",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,

@@ -15,17 +15,17 @@ export function SiteFooter() {
         </div>
 
         <nav className="flex flex-wrap gap-6 text-sm font-bold text-cocoa">
-          <Link to="/about" className="hover:text-coral-deep transition-colors">
+          <Link to="/about" className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
             {t.footer.about}
           </Link>
-          <Link to="/#faq" className="hover:text-coral-deep transition-colors">
+          <Link to="/#faq" className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
             {t.footer.faq}
           </Link>
           <a
             href="https://github.com/Felar59"
             target="_blank"
             rel="noreferrer noopener"
-            className="hover:text-coral-deep transition-colors"
+            className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1"
           >
             {t.footer.contact}
           </a>
@@ -35,7 +35,7 @@ export function SiteFooter() {
           href="https://github.com/Felar59"
           target="_blank"
           rel="noreferrer noopener"
-          className="font-hand text-sm text-sand hover:text-coral-deep transition-colors"
+          className="font-hand text-sm text-sand hover:text-coral-deep transition-colors inline-flex items-center min-h-11"
         >
           {t.footer.madeBy} @Felar
         </a>

@@ -115,7 +115,7 @@ export function GalleryCard({
         <div className="flex items-center gap-2.5">
           <Link
             to={`/brodeur/${post.author.id}`}
-            className="shrink-0"
+            className="shrink-0 size-11 -m-1 flex items-center justify-center"
             aria-label={post.author.displayName}
           >
             <StitchAvatar seed={post.author.id} size={36} />
@@ -138,7 +138,7 @@ export function GalleryCard({
             onClick={() => onLike(post.id)}
             aria-label={t.gallery.likeAria(post.title)}
             aria-pressed={post.liked}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 shrink-0 cursor-pointer transition-colors ${
+            className={`flex items-center gap-1.5 rounded-full px-3 min-h-11 shrink-0 cursor-pointer transition-colors ${
               post.liked
                 ? "bg-coral-wash text-coral-deep"
                 : "bg-linen text-cocoa hover:bg-coral-wash"
@@ -162,29 +162,32 @@ export function GalleryCard({
               }}
             />
           ))}
-          {rest > 0 && <span className="text-[11px] text-sand ml-0.5">{t.gallery.more(rest)}</span>}
+          {rest > 0 && <span className="text-[12px] text-sand ml-0.5">{t.gallery.more(rest)}</span>}
         </div>
       </div>
 
       <div className="flex gap-1.5 px-1 pb-1 flex-wrap items-center">
-        <span className="text-[11.5px] font-extrabold bg-linen rounded-full px-2.5 py-1 text-cocoa">
+        <span className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold bg-linen rounded-full px-3 text-cocoa">
           {t.gallery.stitches(post.width, post.height)}
         </span>
-        <span className="text-[11.5px] font-extrabold bg-linen rounded-full px-2.5 py-1 text-cocoa">
+        <span className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold bg-linen rounded-full px-3 text-cocoa">
           {t.gallery.colors(post.threadCount)}
         </span>
         <Link
           to={`/piece/${post.id}`}
-          className="text-[11.5px] font-extrabold text-coral-deep bg-coral-wash rounded-full px-2.5 py-1 hover:bg-coral hover:text-blanc transition-colors"
+          className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold text-coral-deep bg-coral-wash rounded-full px-3 hover:bg-coral hover:text-blanc transition-colors"
         >
           {t.gallery.getPattern}
         </Link>
         {mine && onDelete && (
+          // A 10x20 target for the one irreversible thing on the card. It is now
+          // 36px square with the glyph still small — big enough for a thumb to
+          // find on purpose, and no louder than it was.
           <button
             type="button"
             onClick={() => onDelete(post.id)}
             aria-label={t.gallery.deleteAria(post.title)}
-            className="ml-auto text-[11.5px] font-bold text-stone hover:text-coral-deep cursor-pointer"
+            className="ml-auto size-10 -my-2 shrink-0 flex items-center justify-center rounded-full text-[12.5px] font-bold text-stone hover:text-coral-deep hover:bg-coral-wash transition-colors cursor-pointer"
           >
             ✕
           </button>
