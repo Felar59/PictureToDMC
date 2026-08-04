@@ -21,6 +21,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  worker: {
+    // A module worker, not the default IIFE. The conversion worker now imports the
+    // segmentation runtime on demand, and a dynamic import is code splitting,
+    // which an IIFE bundle cannot express. Module workers are everywhere that
+    // matters (Chrome 80, Safari 15, Firefox 114).
+    format: "es",
+  },
   build: {
     // Le backend sert ce dossier : `npm run build` met a jour ce que voit la prod.
     outDir: path.resolve(__dirname, "../PythonDCA/dist"),

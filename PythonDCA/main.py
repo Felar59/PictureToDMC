@@ -52,10 +52,14 @@ class SinglePageFiles(StaticFiles):
             # A missing asset is a build problem — let it 404 loudly instead of
             # answering with HTML the browser will then fail to parse as JS.
             #
+            # `models` alongside `assets`: the segmentation weights live there, and
+            # falling back to index.html for a missing .onnx hands the runtime a
+            # page of HTML and a parse error rather than a 404 it can report.
+            #
             # Split on both separators: StaticFiles normalises through
             # os.path.join, so this arrives as "assets/app.js" on the server and
             # "assets\app.js" on a Windows dev machine.
-            if path.replace("\\", "/").split("/", 1)[0] == "assets":
+            if path.replace("\\", "/").split("/", 1)[0] in {"assets", "models"}:
                 raise
             return await super().get_response("index.html", scope)
 

@@ -1,4 +1,5 @@
 import { boostChroma, gridToLab, removeFlatBackground, type Adjustments } from "./adjust"
+import { applyCutout, cutoutMask, cutoutSupported } from "./cutout"
 import { assignThreads, findThread, type Thread } from "./dmc"
 import { kmeans } from "./quantize"
 
@@ -58,9 +59,32 @@ export async function convert(source: Blob, opts: ConvertOptions): Promise<Patte
     alpha[i] = data[i * 4 + 3] >= ALPHA_FLOOR ? 255 : 0
   }
 
-  // Background first, boost second: the background is judged on the photo's
-  // own colours, and a lifted chroma would push a soft sky past the tolerance.
-  if (opts.removeBackground) removeFlatBackground(labs, alpha, width, height)
+  // Background first, boost second: the background is judged on the photo's own
+  // colours, and a lifted chroma would push a soft sky past the tolerance.
+  //
+  // The network does the cutting when it can. The flood fill stays as the fallback
+  // for a browser without WebAssembly, or a first use with no connection — a plain
+  // background still comes out, which is better than the checkbox doing nothing.
+  if (opts.removeBackground) {
+    let cut = false
+    if (cutoutSupported()) {
+      try {
+        const mask = await cutoutMask(source)
+        applyCutout(alpha, width, height, mask, {
+          flipH: opts.flipH,
+          flipV: opts.flipV,
+        })
+        cut = true
+      } catch (error) {
+        // Loud, because a silent fall back to the flood fill is indistinguishable
+        // from the model working badly — which is exactly how three photographs
+        // looked when the weights were failing to load.
+        console.warn("cutout unavailable, falling back to the flood fill", error)
+        cut = false
+      }
+    }
+    if (!cut) removeFlatBackground(labs, alpha, width, height)
+  }
   boostChroma(labs, opts.vividness ?? 0)
 
   const visibleIndex = new Int32Array(cellCount)

@@ -1,0 +1,174 @@
+/**
+ * Cutting the subject out of a photograph.
+ *
+ * The previous version flood-filled inward from the borders and walked small
+ * steps in colour. That cannot work in general, and the three photographs that
+ * broke it show why: a dahlia against foliage has a background of many colours,
+ * so the fill stopped at every leaf and left green patches; a dog with a bright
+ * rim light had an edge colour the border never sampled, so it survived and got
+ * quantised into blue thread; a dog lying on grass touched all four borders in
+ * fur the same tone as the grass, so the fill walked straight into the animal.
+ * All three are the same thing — the algorithm knows adjacency of colour and has
+ * no notion of an object. No tuning fixes that.
+ *
+ * So this asks a network that does. u2netp is the small U²-Net, 4.4 MB, the model
+ * `rembg` uses by default and the same family behind remove.bg. It runs here, in
+ * the browser, on the same principle as the rest of the pipeline: the server does
+ * no image work at all.
+ *
+ * Both the model and the runtime are fetched on first use and never otherwise, so
+ * nobody who leaves the box unticked pays for them.
+ */
+
+/** What the network was trained at. Anything else and the mask is nonsense. */
+const SIDE = 320
+const MEAN = [0.485, 0.456, 0.406]
+const STD = [0.229, 0.224, 0.225]
+
+type Session = {
+  run(feeds: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>>
+  inputNames: readonly string[]
+  outputNames: readonly string[]
+}
+
+let sessionPromise: Promise<{ session: Session; Tensor: TensorCtor }> | null = null
+type TensorCtor = new (type: "float32", data: Float32Array, dims: number[]) => unknown
+
+/**
+ * The session, made once and shared.
+ *
+ * Loaded through a dynamic import so the runtime lands in its own chunk: the
+ * converter must not carry it, and nor must any other page.
+ */
+function loadSession() {
+  sessionPromise ??= (async () => {
+    const [ort, wasmUrl, mjsUrl] = await Promise.all([
+      import("onnxruntime-web/wasm"),
+      import("onnxruntime-web/ort-wasm-simd-threaded.wasm?url").then((m) => m.default),
+      import("onnxruntime-web/ort-wasm-simd-threaded.mjs?url").then((m) => m.default),
+    ])
+    // A plain path, not an import: the weights live in public/ and are fetched by
+    // the runtime itself. Importing them would push 4.4 MB through the JS graph for
+    // no reason, and an absolute specifier is not a module Vite can resolve.
+    const modelUrl = `${import.meta.env.BASE_URL}models/u2netp.onnx`
+
+    // One thread: several would need SharedArrayBuffer, which needs the page to be
+    // cross-origin isolated, which would cost every other thing on it. A single
+    // thread runs this model in well under a second on a desktop.
+    ort.env.wasm.numThreads = 1
+    ort.env.wasm.wasmPaths = { wasm: wasmUrl, mjs: mjsUrl }
+
+    const session = (await ort.InferenceSession.create(modelUrl, {
+      executionProviders: ["wasm"],
+      graphOptimizationLevel: "all",
+    })) as unknown as Session
+    return { session, Tensor: ort.Tensor as unknown as TensorCtor }
+  })()
+  return sessionPromise
+}
+
+/** Whether a cut-out can be attempted at all. */
+export function cutoutSupported(): boolean {
+  return typeof WebAssembly === "object" && typeof OffscreenCanvas === "function"
+}
+
+/**
+ * The subject's alpha, as a SIDE x SIDE map of 0..1.
+ *
+ * Returned at the network's own resolution rather than the photo's: the caller
+ * wants it at the stitch grid's resolution, which is smaller than both, so
+ * blowing it up to the photograph first would only be work thrown away.
+ */
+export async function cutoutMask(source: Blob): Promise<Float32Array> {
+  const { session, Tensor } = await loadSession()
+
+  // Squashed to the square, not cropped — rembg does the same, and a crop would
+  // throw away whatever falls outside it.
+  const bitmap = await createImageBitmap(source)
+  const canvas = new OffscreenCanvas(SIDE, SIDE)
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })
+  if (!ctx) {
+    bitmap.close()
+    throw new Error("canvas 2d context unavailable")
+  }
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+  ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, SIDE, SIDE)
+  bitmap.close()
+  const pixels = ctx.getImageData(0, 0, SIDE, SIDE).data
+
+  // NCHW, one plane per channel, normalised the way the training set was.
+  const input = new Float32Array(3 * SIDE * SIDE)
+  const plane = SIDE * SIDE
+  for (let p = 0; p < plane; p++) {
+    input[p] = (pixels[p * 4] / 255 - MEAN[0]) / STD[0]
+    input[plane + p] = (pixels[p * 4 + 1] / 255 - MEAN[1]) / STD[1]
+    input[plane * 2 + p] = (pixels[p * 4 + 2] / 255 - MEAN[2]) / STD[2]
+  }
+
+  const out = await session.run({
+    [session.inputNames[0]]: new Tensor("float32", input, [1, 3, SIDE, SIDE]),
+  })
+  // u2net emits a stack of side outputs at decreasing depth; the first is the
+  // fused one and the only one worth having.
+  const pred = out[session.outputNames[0]].data
+
+  // The raw map is unbounded, so it is stretched to 0..1 over its own range —
+  // which is what rembg does, and what makes a faint subject usable.
+  let lo = Infinity
+  let hi = -Infinity
+  for (let i = 0; i < plane; i++) {
+    if (pred[i] < lo) lo = pred[i]
+    if (pred[i] > hi) hi = pred[i]
+  }
+  const span = Math.max(1e-6, hi - lo)
+
+  const mask = new Float32Array(plane)
+  for (let i = 0; i < plane; i++) mask[i] = (pred[i] - lo) / span
+  return mask
+}
+
+/**
+ * Applies a SIDE x SIDE mask to a stitch grid, in place.
+ *
+ * Each cell takes the average of the mask over its own footprint rather than a
+ * single sample: a cell covers several mask pixels, and averaging is what keeps
+ * the silhouette from going jagged as the grid gets coarse. The flips are applied
+ * here rather than by running the network twice — the mask is symmetric to them
+ * in exactly the way the sampling is.
+ */
+export function applyCutout(
+  alpha: Uint8Array,
+  width: number,
+  height: number,
+  mask: Float32Array,
+  opts: { flipH?: boolean; flipV?: boolean; threshold?: number } = {},
+): void {
+  const threshold = opts.threshold ?? 0.5
+
+  for (let y = 0; y < height; y++) {
+    // The mask rows this row of stitches covers.
+    const y0 = Math.floor((y / height) * SIDE)
+    const y1 = Math.max(y0 + 1, Math.floor(((y + 1) / height) * SIDE))
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      if (alpha[i] === 0) continue
+
+      const x0 = Math.floor((x / width) * SIDE)
+      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) / width) * SIDE))
+
+      let sum = 0
+      let n = 0
+      for (let my = y0; my < y1 && my < SIDE; my++) {
+        // The grid was drawn flipped, so the mask is read flipped.
+        const sy = opts.flipV ? SIDE - 1 - my : my
+        for (let mx = x0; mx < x1 && mx < SIDE; mx++) {
+          const sx = opts.flipH ? SIDE - 1 - mx : mx
+          sum += mask[sy * SIDE + sx]
+          n++
+        }
+      }
+      if (n > 0 && sum / n < threshold) alpha[i] = 0
+    }
+  }
+}
