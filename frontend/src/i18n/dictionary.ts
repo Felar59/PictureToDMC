@@ -228,10 +228,8 @@ export const en = {
     filters: {
       all: "All",
       pets: "Pets",
-      portraits: "Portraits",
       flowers: "Flowers",
       landscapes: "Landscapes",
-      little: "Little ones",
     },
     by: (who: string) => `by ${who}`,
     stitches: (w: number, h: number) => `${w} × ${h} st`,
@@ -621,10 +619,8 @@ export const fr: Copy = {
     filters: {
       all: "Tout",
       pets: "Animaux",
-      portraits: "Portraits",
       flowers: "Fleurs",
       landscapes: "Paysages",
-      little: "Les petits",
     },
     by: (who: string) => `par ${who}`,
     stitches: (w: number, h: number) => `${w} × ${h} pts`,

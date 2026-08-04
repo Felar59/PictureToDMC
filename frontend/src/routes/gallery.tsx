@@ -9,7 +9,7 @@ import { Pill } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 
-const FILTER_KEYS = ["all", "pets", "portraits", "flowers", "landscapes", "little"] as const
+const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
 
 export default function Gallery() {
   const { t } = useI18n()

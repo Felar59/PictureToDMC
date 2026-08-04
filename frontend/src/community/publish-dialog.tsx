@@ -9,7 +9,7 @@ import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { useAuth } from "./auth-context"
 
-const CATEGORIES = ["pets", "portraits", "flowers", "landscapes", "little", "other"] as const
+const CATEGORIES = ["pets", "flowers", "landscapes", "other"] as const
 
 export function PublishDialog({
   pattern,

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+import { DownloadGlyph } from "@/components/brand/icons"
 import { CustomThreadsDialog } from "@/components/converter/custom-threads-dialog"
-import { ChartPanel } from "@/components/converter/chart-panel"
+import { ChartDialog } from "@/community/chart-dialog"
 import { PublishDialog } from "@/community/publish-dialog"
 import { PatternCanvas, type CanvasView } from "@/components/converter/pattern-canvas"
 import { PhotoDropzone, type LoadedPhoto } from "@/components/converter/photo-dropzone"
@@ -51,6 +52,7 @@ export default function Convert() {
   const [hovered, setHovered] = useState<string | null>(null)
   const [selected, setSelected] = useState<Thread | null>(null)
   const [restored, setRestored] = useState(false)
+  const [chartOpen, setChartOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [shared, setShared] = useState(false)
 
@@ -305,17 +307,6 @@ export default function Convert() {
 
           {pattern && pattern.threads.length > 0 && (
             <>
-              {/* The workbench keeps the chart in the open — this is the page
-                  whose whole point is the download, so there is nothing to
-                  reveal. The published-piece page puts the same panel behind a
-                  button instead, because there the chart is one of two things
-                  you might want. */}
-              <div className="bg-blanc rounded-card shadow-soft p-5 flex flex-col gap-4">
-                <h2 className="font-display font-medium text-[21px] text-ink m-0">
-                  {t.chart.heading}
-                </h2>
-                <ChartPanel pattern={pattern} onError={(k) => setErrorKey(k as ErrorKey)} />
-              </div>
               {shared ? (
                 <p className="font-hand text-[15px] text-nile-deep text-center m-0">
                   {t.publish.done}
@@ -329,15 +320,40 @@ export default function Convert() {
           )}
         </div>
 
-        {/* right: the thread drawer */}
-        <div className="lg:col-span-2 xl:col-span-1">
+        {/* right: the thread drawer, and the way out */}
+        <div className="lg:col-span-2 xl:col-span-1 flex flex-col gap-4">
           <ThreadList
             threads={pattern?.threads ?? []}
             onSelect={setSelected}
             onHover={setHovered}
           />
+          {/* The download sits under the threads and opens the same dialog a
+              published piece does — preview on the left, the options that change
+              it on the right. It used to be a panel in the middle column, which
+              made the workbench scroll a long way past the thing being worked on;
+              behind a button it is one click and the page stays short. */}
+          {/* Secondary, not coral. "Mettre à jour la grille" already owns the
+              coral here and is pressed over and over while the sliders move,
+              whereas this is pressed once at the end — and two coral buttons on
+              one screen is the one thing the palette forbids. The icon and the
+              full width keep it unmistakable. */}
+          {pattern && pattern.threads.length > 0 && (
+            <Button variant="secondary" size="block" onClick={() => setChartOpen(true)}>
+              <DownloadGlyph />
+              {t.converter.download.button}
+            </Button>
+          )}
         </div>
       </div>
+
+      {pattern && (
+        <ChartDialog
+          open={chartOpen}
+          onClose={() => setChartOpen(false)}
+          pattern={pattern}
+          onError={(k) => setErrorKey(k as ErrorKey)}
+        />
+      )}
 
       <CustomThreadsDialog
         open={customOpen}

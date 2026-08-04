@@ -13,7 +13,7 @@ from .db import connect, now_ms, usage_order
 
 router = APIRouter(prefix="/api")
 
-CATEGORIES = {"pets", "portraits", "flowers", "landscapes", "little", "other"}
+CATEGORIES = {"pets", "flowers", "landscapes", "other"}
 
 PAGE_SIZE = 12
 MAX_TITLE = 80

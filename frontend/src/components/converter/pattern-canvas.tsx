@@ -228,8 +228,11 @@ export function PatternCanvas({
         </div>
       </div>
 
-      {/* Swapping the source photo belongs next to the source photo. */}
-      {view === "original" && <ReplacePhotoButton onPhoto={onPhoto} />}
+      {/* Under both views. It used to appear only beside the original, on the
+          reasoning that swapping the photo belongs next to the photo — but the
+          grid is where you are when you decide the photo was the wrong one, and
+          having to switch tabs to act on that is a step for nothing. */}
+      {(original || pattern) && <ReplacePhotoButton onPhoto={onPhoto} />}
 
       <p className="font-hand text-sm text-sand text-center m-0">
         {busy ? t.converter.canvas.building : t.converter.canvas.note}
