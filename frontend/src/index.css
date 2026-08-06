@@ -1,6 +1,57 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
+   Les trois polices, servies par ce site.
+
+   Elles venaient de fonts.googleapis.com, ce qui mettait DEUX origines
+   supplementaires sur le chemin critique du premier rendu : une resolution DNS
+   et une poignee de main TLS pour la feuille de style, puis les memes pour
+   fonts.gstatic.com, avant qu'un seul mot ne puisse s'afficher avec la bonne
+   police. Servies ici, elles partent avec le HTML et deux des trois sont
+   preechargees dans index.html.
+
+   L'autre raison est que la page d'accueil affirme qu'une photo « ne quitte
+   jamais votre navigateur ». Une requete de police envoyait tout de meme l'IP de
+   chaque visiteur chez Google a chaque visite. Un argument sur la vie privee
+   coute peu a tenir jusqu'au bout.
+
+   Ce sont les fichiers variables du sous-ensemble latin de Google, avec l'axe de
+   graisse restreint a ce que le site rend reellement (releve dans le navigateur,
+   pas suppose) : Fredoka 400-600, Nunito Sans 400-800, Shantell Sans 400-500.
+   Le <link> demandait aussi Fredoka 700 et Nunito 600, qui n'apparaissent sur
+   aucune page. Le nom porte sa version : changer une police change l'URL, donc
+   aucun cache ne peut rester coince sur l'ancienne.
+------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Fredoka";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/fredoka-v1.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/nunito-sans-v1.woff2") format("woff2");
+}
+
+/* La plus lourde des trois — 70 kB pour l'ecriture manuscrite des apartes — et
+   la seule qui n'est PAS preechargee : rien de ce qu'elle habille n'est le
+   premier mot que quelqu'un vient lire. `swap` la laisse arriver apres coup,
+   sur la cursive du systeme. */
+@font-face {
+  font-family: "Shantell Sans";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("/fonts/shantell-sans-v1.woff2") format("woff2");
+}
+
+/* ------------------------------------------------------------------
    Picture to DMC — design tokens
    Source: "Picture to DMC - Design System" (claude.ai/design).
    No pure white, no pure black: everything sits on warm linen so the

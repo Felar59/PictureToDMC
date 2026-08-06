@@ -80,7 +80,12 @@ export function GalleryCard({
   const { t } = useI18n()
   const { user } = useAuth()
   const mine = user && (user.id === post.author.id || user.isAdmin)
-  const shown = principalThreads(post.palette)
+  // A photo post has no chart behind it: no palette to strip, no size in stitches,
+  // and nothing to "get". Branching on `kind` rather than on the fields being
+  // empty — a card whose palette failed to resolve is a different situation from a
+  // card that never had one.
+  const isPhoto = post.kind === "photo"
+  const shown = isPhoto ? [] : principalThreads(post.palette)
   const rest = post.threadCount - shown.length
 
   return (
@@ -150,7 +155,10 @@ export function GalleryCard({
           </button>
         </div>
 
-        <div className="flex items-center gap-1 mt-2.5" aria-hidden="true">
+        <div
+          className={`flex items-center gap-1 ${isPhoto ? "" : "mt-2.5"}`}
+          aria-hidden="true"
+        >
           {shown.map((thread) => (
             <span
               key={thread.num}
@@ -168,17 +176,24 @@ export function GalleryCard({
       </div>
 
       <div className="flex gap-1.5 px-1 pb-1 flex-wrap items-center">
-        <span className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold bg-linen rounded-full px-3 text-cocoa">
-          {t.gallery.stitches(post.width, post.height)}
-        </span>
-        <span className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold bg-linen rounded-full px-3 text-cocoa">
-          {t.gallery.colors(post.threadCount)}
-        </span>
+        {/* The figures, when there are figures. `width` and `height` are null on a
+            photo post, and printing "null × null st" is worse than printing
+            nothing — so the row simply holds the one link instead. */}
+        {!isPhoto && post.width !== null && post.height !== null && (
+          <span className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold bg-linen rounded-full px-3 text-cocoa">
+            {t.gallery.stitches(post.width, post.height)}
+          </span>
+        )}
+        {!isPhoto && (
+          <span className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold bg-linen rounded-full px-3 text-cocoa">
+            {t.gallery.colors(post.threadCount)}
+          </span>
+        )}
         <Link
           to={`/piece/${post.id}`}
           className="inline-flex items-center min-h-10 text-[12.5px] font-extrabold text-coral-deep bg-coral-wash rounded-full px-3 hover:bg-coral hover:text-blanc transition-colors"
         >
-          {t.gallery.getPattern}
+          {isPhoto ? t.gallery.seePiece : t.gallery.getPattern}
         </Link>
         {mine && onDelete && (
           // A 10x20 target for the one irreversible thing on the card. It is now

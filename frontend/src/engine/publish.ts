@@ -67,7 +67,11 @@ export function patternThumbnail(pattern: Pattern): string {
 
 /** Shrink a chosen hoop photo before it is uploaded. */
 export async function preparePhoto(file: Blob, maxEdge = 1400): Promise<string> {
-  const bitmap = await createImageBitmap(file)
+  // `from-image`, like convert.ts and cutout.ts: a hoop photo comes off a phone,
+  // which records the rotation as an EXIF tag rather than in the pixels, and the
+  // default for that tag has moved with the spec. Without this the picture is
+  // published on its side — and this is now the only path a photo takes.
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" })
   const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height))
   const width = Math.round(bitmap.width * scale)
   const height = Math.round(bitmap.height * scale)

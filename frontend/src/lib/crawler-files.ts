@@ -33,6 +33,11 @@ const DESCRIPTIONS: Record<string, { title: string; blurb: string }> = {
     blurb:
       "Finished pieces shared by the community. Every one shows the threads it used and can be taken as a chart for free; an optional account is what lets you add your own.",
   },
+  [paths.galleryStitches]: {
+    title: "Cross-stitch pieces stitched by the community",
+    blurb:
+      "Photographs of finished cross-stitch, posted by the people who stitched it. A piece here needs no chart from this site — plenty were stitched from patterns found elsewhere — so it is a record of real work rather than a catalogue of what the converter can make.",
+  },
   [paths.guide]: {
     title: "How to make a cross-stitch chart from a photo",
     blurb:
@@ -103,6 +108,7 @@ export function llmsTxt(): string {
     entry(paths.guide),
     entry(paths.faq),
     entry(paths.gallery),
+    entry(paths.galleryStitches),
     entry(paths.about),
     "",
     "## About",

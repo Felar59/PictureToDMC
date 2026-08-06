@@ -33,13 +33,16 @@ import time
 
 from . import config
 
+# 6 added posts.kind and made the pattern columns nullable, so a member can show
+#   a finished piece they stitched from someone else's chart. Also added
+#   `reports`: photos arriving without a pattern are photos nobody vetted.
 # 5 added posts.palette: the thread references ordered by how much of each the
 #   piece uses, so a gallery card can show what it is actually made of.
 # 4 added app_meta, which holds the post id high-water mark.
 # 3 added users.bio, users.icon and users.setup_at.
 # 2 added `comments`. Every statement in SCHEMA is IF NOT EXISTS and init() runs
 # on boot, so a new table needs no migration step of its own.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 _local = threading.local()
 
@@ -104,12 +107,20 @@ CREATE TABLE IF NOT EXISTS posts (
     author_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title        TEXT    NOT NULL,
     category     TEXT    NOT NULL DEFAULT 'other',
-    width        INTEGER NOT NULL,
-    height       INTEGER NOT NULL,
+    -- What was published. 'pattern' is a chart this site produced, with a photo
+    -- of the finished piece if the member had one. 'photo' is the finished piece
+    -- alone: someone who stitched a chart bought elsewhere still has work worth
+    -- showing, and refusing it would have made the second gallery a subset of
+    -- the first rather than its own thing.
+    kind         TEXT    NOT NULL DEFAULT 'pattern',
+    -- Nullable since kind='photo': there is no chart behind that post. Every
+    -- reader has to cope with their absence rather than assume a grid.
+    width        INTEGER,
+    height       INTEGER,
     -- base64 of one byte per stitch (thread index + 1, 0 = empty).
-    cells        TEXT    NOT NULL,
+    cells        TEXT,
     -- JSON array of DMC references, indexed by the byte values above.
-    thread_codes TEXT    NOT NULL,
+    thread_codes TEXT,
     -- Small PNG of the pattern, for gallery cards. Full cells are only sent
     -- when a single post is opened.
     thumb_png    BLOB,
@@ -126,6 +137,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_new    ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_top    ON posts(like_count DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_author ON posts(author_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_cat    ON posts(category, created_at DESC);
+-- Every gallery query now filters on kind, and idx_posts_cat cannot serve it.
+CREATE INDEX IF NOT EXISTS idx_posts_kind   ON posts(kind, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS post_likes (
     post_id    INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -155,11 +168,31 @@ CREATE TABLE IF NOT EXISTS comments (
 -- Oldest first is how a conversation reads, and it is the only order this is
 -- ever queried in.
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at);
+
+-- What somebody flagged, and why.
+--
+-- This exists because of kind='photo'. A pattern post is bounded by what the
+-- converter can make; a free photo is whatever was uploaded, so there has to be
+-- a way to say "look at this" that is not a message to the owner. One row per
+-- member per post: reporting twice is the same report, not a louder one.
+CREATE TABLE IF NOT EXISTS reports (
+    post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reason      TEXT    NOT NULL,
+    created_at  INTEGER NOT NULL,
+    PRIMARY KEY (post_id, reporter_id)
+);
+-- Newest first: the queue is read as "what came in since I last looked".
+CREATE INDEX IF NOT EXISTS idx_reports_new ON reports(created_at DESC);
 """
 
 
 def init() -> None:
     conn = connect()
+    # Before SCHEMA, not after: SCHEMA now creates an index on posts.kind, and on a
+    # table written before that column existed the CREATE INDEX fails — taking the
+    # whole boot with it. Anything that reshapes a table has to run first.
+    _migrate_posts_shape(conn)
     conn.executescript(SCHEMA)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     # Nothing reads `avatar_url` any more: members are shown a stitched mark
@@ -181,6 +214,87 @@ def init() -> None:
     if "palette" not in have_posts:
         conn.execute("ALTER TABLE posts ADD COLUMN palette TEXT")
     _backfill_palettes(conn)
+
+
+def _migrate_posts_shape(conn: sqlite3.Connection) -> None:
+    """Give `posts` a kind, and let the pattern columns be empty.
+
+    Runs once, on a table created before kind='photo' existed — and does nothing
+    at all on a fresh database, where SCHEMA is about to create the right shape.
+    It has to rebuild the table rather than ALTER it: SQLite can add a column but
+    cannot drop a NOT NULL, and `width`, `height`, `cells` and `thread_codes` all
+    carry one — they were written when every post was a chart.
+
+    The rebuild is the documented SQLite recipe, inside one transaction so an
+    interrupted boot leaves either the old table or the new one, never half a
+    table. Foreign keys are suspended for the duration: `comments`, `post_likes`
+    and `reports` all reference posts(id), and dropping the parent with them
+    enforced would take their rows with it.
+
+    Existing rows become kind='pattern', which is what they are.
+    """
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'posts'"
+    ).fetchone()
+    if not exists:
+        return
+    if "kind" in {row["name"] for row in conn.execute("PRAGMA table_info(posts)")}:
+        return
+
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        conn.execute(
+            """
+            CREATE TABLE posts_new (
+                id           INTEGER PRIMARY KEY,
+                author_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                title        TEXT    NOT NULL,
+                category     TEXT    NOT NULL DEFAULT 'other',
+                kind         TEXT    NOT NULL DEFAULT 'pattern',
+                width        INTEGER,
+                height       INTEGER,
+                cells        TEXT,
+                thread_codes TEXT,
+                thumb_png    BLOB,
+                photo        BLOB,
+                photo_mime   TEXT,
+                like_count   INTEGER NOT NULL DEFAULT 0,
+                created_at   INTEGER NOT NULL,
+                palette      TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO posts_new (id, author_id, title, category, kind, width, height,
+                                   cells, thread_codes, thumb_png, photo, photo_mime,
+                                   like_count, created_at, palette)
+            SELECT id, author_id, title, category, 'pattern', width, height,
+                   cells, thread_codes, thumb_png, photo, photo_mime,
+                   like_count, created_at, palette
+            FROM posts
+            """
+        )
+        moved = conn.execute("SELECT COUNT(*) AS n FROM posts_new").fetchone()["n"]
+        kept = conn.execute("SELECT COUNT(*) AS n FROM posts").fetchone()["n"]
+        # A silent short copy would lose members' work. Better to refuse to boot.
+        if moved != kept:
+            raise RuntimeError(f"posts rebuild copied {moved} of {kept} rows")
+        conn.execute("DROP TABLE posts")
+        conn.execute("ALTER TABLE posts_new RENAME TO posts")
+        # Indexes belong to the dropped table, so they go with it.
+        conn.execute("CREATE INDEX idx_posts_new    ON posts(created_at DESC)")
+        conn.execute("CREATE INDEX idx_posts_top    ON posts(like_count DESC, created_at DESC)")
+        conn.execute("CREATE INDEX idx_posts_author ON posts(author_id, created_at DESC)")
+        conn.execute("CREATE INDEX idx_posts_cat    ON posts(category, created_at DESC)")
+        conn.execute("CREATE INDEX idx_posts_kind   ON posts(kind, created_at DESC)")
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+    finally:
+        conn.execute("PRAGMA foreign_keys = ON")
 
 
 def usage_order(cells_b64: str, codes: list[str]) -> list[str]:

@@ -23,6 +23,8 @@ const Convert = lazy(() => import("@/routes/convert"))
 const Gallery = lazy(() => import("@/routes/gallery"))
 const NotFound = lazy(() => import("@/routes/not-found"))
 const Piece = lazy(() => import("@/routes/piece"))
+// Linked from the account page, and only for an admin.
+const Reports = lazy(() => import("@/routes/reports"))
 const Profile = lazy(() => import("@/routes/profile"))
 
 /**
@@ -88,11 +90,15 @@ export default function App() {
                 <Route path={paths.home} element={<Home />} />
                 <Route path={paths.convert} element={<Convert />} />
                 <Route path={paths.gallery} element={<Gallery />} />
+                {/* The same page. Which tab opens is read from the path, so both
+                    URLs can be shared, reloaded and gone back from. */}
+                <Route path={paths.galleryStitches} element={<Gallery />} />
                 <Route path={paths.about} element={<About />} />
                 <Route path={paths.faq} element={<Faq />} />
                 <Route path={paths.guide} element={<Guide />} />
                 <Route path={paths.atelier} element={<Atelier />} />
                 <Route path={paths.account} element={<Account />} />
+                <Route path={paths.reports} element={<Reports />} />
                 <Route path="/piece/:id" element={<Piece />} />
                 <Route path="/brodeur/:id" element={<Profile />} />
 

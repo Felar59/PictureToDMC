@@ -162,6 +162,17 @@ export default function Account() {
         </div>
       </div>
 
+      {/* The moderation queue, for whoever runs the place. The only link to it
+          anywhere — the page itself is noindex, and the API refuses everyone
+          else, so this is a shortcut rather than the lock. */}
+      {user.isAdmin && (
+        <div className="mt-6 pt-5 border-t-2 border-dashed border-edge-2">
+          <Button asChild variant="secondary" size="sm">
+            <Link to={paths.reports}>{t.reports.link}</Link>
+          </Button>
+        </div>
+      )}
+
       {/* Signing out lives here now, not in a header dropdown — the pill in the
           header links straight to this page. Set apart from the form and quiet: it
           is the one thing on the page that throws work away, and it should not sit

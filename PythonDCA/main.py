@@ -10,6 +10,7 @@ module-level global, so two people converting at once shared one pattern.
 Nothing stateful about a conversion reaches this process any more.
 """
 
+import mimetypes
 import os
 
 import uvicorn
@@ -22,6 +23,25 @@ from starlette.types import Scope
 from .api import config, db
 from .api.routes_auth import router as auth_router
 from .api.routes_gallery import router as gallery_router
+from .api.routes_reports import router as reports_router
+
+# The content types this site serves, declared rather than looked up.
+#
+# `mimetypes` asks the host: the Windows registry on a dev machine, /etc/mime.types
+# on the server. Neither knew `.woff2` or `.onnx`, so both went out as
+# `text/plain` — and text/plain is in nginx's `gzip_types`, so the box was
+# recompressing a woff2 that is already brotli inside, and gzipping the 4.4 MB
+# segmentation model on every request that asked for it. A font served as text also
+# means the browser may refuse to reuse the `<link rel=preload>` in index.html and
+# fetch it a second time.
+#
+# Declared here so the answer is the same on every machine, whatever the host
+# happens to have in its table.
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("font/woff", ".woff")
+# No registered type exists for ONNX. Octet-stream is the honest answer, and it
+# keeps nginx from trying to compress four megabytes of weights.
+mimetypes.add_type("application/octet-stream", ".onnx")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DIST_DIR = os.path.join(BASE_DIR, "dist")
@@ -43,9 +63,37 @@ class SinglePageFiles(StaticFiles):
     and served the source.
     """
 
+    #: Prefixes whose file names already carry a version, so their contents can
+    #: never change under a URL that has been handed out.
+    #:
+    #: `assets/` is content-hashed by Vite — a byte changes and the name changes.
+    #: `fonts/` and `models/` are hand-versioned (`fredoka-v1.woff2`), the same
+    #: convention and the same guarantee.
+    IMMUTABLE = ("assets/", "fonts/", "models/")
+
     async def get_response(self, path: str, scope: Scope) -> Response:
+        # Normalised once, and before the request is even tried: both branches below
+        # ask the same question about the path, and only one of them should have to
+        # remember that Windows spells it with backslashes.
+        clean = path.replace("\\", "/").lstrip("/")
         try:
-            return await super().get_response(path, scope)
+            response = await super().get_response(path, scope)
+
+            # Cache what cannot change; revalidate what can.
+            #
+            # nginx proxies everything here and sets no caching rules of its own, so
+            # each of these came back carrying nothing but an etag — which means a
+            # repeat visitor spent a round trip per file being told "not modified",
+            # a dozen of them before the page could paint, on connections where the
+            # round trip is the expensive part. The file name is what makes a year
+            # safe: a new build writes new names, so no browser can be left holding
+            # an old one.
+            #
+            # index.html is deliberately NOT in here. It is the one file whose name
+            # never changes, and it is what points at all the others.
+            if clean.startswith(self.IMMUTABLE):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            return response
         except HTTPException as exc:
             if exc.status_code != 404:
                 raise
@@ -54,12 +102,16 @@ class SinglePageFiles(StaticFiles):
             #
             # `models` alongside `assets`: the segmentation weights live there, and
             # falling back to index.html for a missing .onnx hands the runtime a
-            # page of HTML and a parse error rather than a 404 it can report.
+            # page of HTML and a parse error rather than a 404 it can report. Fonts
+            # are the same case, which is why this reads IMMUTABLE rather than its
+            # own list — every directory whose files are named by version is a
+            # directory where a miss means the build is wrong, and two lists of the
+            # same directories would eventually disagree.
             #
-            # Split on both separators: StaticFiles normalises through
-            # os.path.join, so this arrives as "assets/app.js" on the server and
-            # "assets\app.js" on a Windows dev machine.
-            if path.replace("\\", "/").split("/", 1)[0] in {"assets", "models"}:
+            # `clean` was split on both separators above: StaticFiles normalises
+            # through os.path.join, so this arrives as "assets/app.js" on the server
+            # and "assets\app.js" on a Windows dev machine.
+            if clean.startswith(self.IMMUTABLE):
                 raise
 
             # The shell, with the right status code on it.
@@ -86,10 +138,12 @@ _CLIENT_ROUTES = {
     "",
     "convertir-photo-point-de-croix",
     "galerie",
+    "galerie/broderies",
     "qui-sommes-nous",
     "faq",
     "comment-faire-une-grille-de-point-de-croix",
     "compte",
+    "signalements",
     "atelier",
     # The English paths that shipped first; the router redirects them.
     "convert",
@@ -123,6 +177,7 @@ def boot() -> None:
 # Routers before the static mount: a mount at "/" swallows everything after it.
 app.include_router(auth_router)
 app.include_router(gallery_router)
+app.include_router(reports_router)
 app.mount("/", SinglePageFiles(directory=DIST_DIR, html=True), name="site")
 
 

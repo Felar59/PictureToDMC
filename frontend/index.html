@@ -36,11 +36,23 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://164-132-99-194.sslip.io/og.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito+Sans:wght@400;600;700;800&family=Shantell+Sans:wght@400;500&display=swap"
-    rel="stylesheet" />
+
+  <!--
+    Les deux polices qui peignent le premier ecran, prechargees.
+
+    Elles etaient chez Google : la feuille de style etait sur une origine, les
+    fichiers sur une autre, et il fallait resoudre et negocier les deux avant
+    qu'un titre puisse s'afficher autrement qu'en police systeme. Servies d'ici,
+    elles peuvent commencer a arriver pendant que le HTML est encore en train
+    d'etre lu. Voir src/index.css pour les @font-face et pour la raison, liee a
+    la vie privee, de ne plus rien demander a Google.
+
+    Shantell Sans n'est pas la : c'est l'ecriture manuscrite des apartes, elle
+    pese a elle seule plus que les deux autres, et rien de ce qu'elle habille
+    n'est ce que quelqu'un vient lire en premier.
+  -->
+  <link rel="preload" href="/fonts/fredoka-v1.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/nunito-sans-v1.woff2" as="font" type="font/woff2" crossorigin />
 </head>
 
 <body>

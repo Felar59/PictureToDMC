@@ -116,6 +116,11 @@ export default function Atelier() {
       .fetchPost(Number(pieceId))
       .then((post) => {
         if (cancelled) return
+        // A photo post carries no grid — nothing here has anything to shade.
+        if (!post.cells || !post.threadCodes || !post.width || !post.height) {
+          setNote("cette pièce est une photo, pas une grille — échantillon affiché")
+          return
+        }
         const threads: Thread[] = []
         const remap = post.threadCodes.map((code) => {
           const thread = findThread(code)

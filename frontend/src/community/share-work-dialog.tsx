@@ -4,8 +4,6 @@ import { ShareHoopGlyph } from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { Pill } from "@/components/ui/pill"
-import type { Pattern } from "@/engine/convert"
-import { cellsToBase64, patternThumbnail } from "@/engine/publish"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
@@ -15,13 +13,23 @@ import { PhotoField } from "./photo-field"
 
 const CATEGORIES = ["pets", "flowers", "landscapes", "other"] as const
 
-export function PublishDialog({
-  pattern,
+/**
+ * Publishing a photograph of finished work, with no chart behind it.
+ *
+ * The second way into the gallery, and the reason the pattern columns in the
+ * database became nullable: somebody who stitched a chart bought elsewhere has
+ * work worth showing, and a gallery that refused them would only ever have been a
+ * subset of the chart gallery next to it.
+ *
+ * So the photo is not an attachment here — it is the post. The title and the
+ * category are the same two questions the chart path asks, and nothing else is
+ * required.
+ */
+export function ShareWorkDialog({
   open,
   onClose,
   onPublished,
 }: {
-  pattern: Pattern
   open: boolean
   onClose: () => void
   onPublished: (id: number) => void
@@ -29,29 +37,23 @@ export function PublishDialog({
   const { t } = useI18n()
   const { user, signIn } = useAuth()
 
+  const [photo, setPhoto] = useState<string | null>(null)
   const [title, setTitle] = useState("")
   const [category, setCategory] = useState<string>("other")
-  // Optional, and the one field that puts this piece in both galleries: the chart
-  // in one, the finished work in the other.
-  const [photo, setPhoto] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
-    if (!user) return signIn(paths.convert)
+    if (!user) return signIn(paths.galleryStitches)
+    if (!photo) return setError(t.shareWork.needPhoto)
     setBusy(true)
     setError(null)
     try {
-      const { id } = await api.publishPost({
-        title: title.trim(),
-        category,
-        width: pattern.width,
-        height: pattern.height,
-        cells: cellsToBase64(pattern),
-        threadCodes: pattern.threads.map((th) => th.num),
-        thumbnail: patternThumbnail(pattern),
-        photo: photo ?? undefined,
-      })
+      const { id } = await api.publishPhoto({ title: title.trim(), category, photo })
+      // Cleared on the way out: the dialog can be opened again in the same visit,
+      // and it should not still be holding the last piece.
+      setPhoto(null)
+      setTitle("")
       onPublished(id)
     } catch (err) {
       setError(describeFailure(err, t))
@@ -60,38 +62,30 @@ export function PublishDialog({
     }
   }
 
-  const canSubmit = title.trim().length >= 2 && !busy
+  const canSubmit = Boolean(photo) && title.trim().length >= 2 && !busy
 
   return (
-    <Dialog open={open} onClose={onClose} title={t.publish.title}>
+    <Dialog open={open} onClose={onClose} title={t.shareWork.title}>
       <div className="flex flex-col gap-5">
-        <p className="text-[15px] text-clay m-0">{t.publish.lead}</p>
+        <p className="text-[15px] text-clay m-0">{t.shareWork.lead}</p>
+
+        <PhotoField label={t.shareWork.photoLabel} value={photo} onChange={setPhoto} />
 
         <div>
           <label
-            htmlFor="post-title"
+            htmlFor="work-title"
             className="block text-[13px] font-extrabold tracking-[.06em] uppercase text-cocoa mb-2"
           >
             {t.publish.nameLabel}
           </label>
           <input
-            id="post-title"
+            id="work-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t.publish.namePlaceholder}
             maxLength={80}
             className="w-full text-base bg-linen border-[1.5px] border-edge-3 rounded-[14px] px-4 py-3 outline-none transition-colors focus:border-coral focus:bg-blanc"
           />
-        </div>
-
-        <div>
-          <PhotoField
-            label={t.publish.photoLabel}
-            optional
-            value={photo}
-            onChange={setPhoto}
-          />
-          <p className="font-hand text-[14px] text-quill mt-2 m-0">{t.publish.photoNote}</p>
         </div>
 
         <div>
@@ -118,8 +112,6 @@ export function PublishDialog({
 
         <div className="flex gap-3 flex-wrap pt-1">
           <Button className="flex-1 min-w-[160px]" onClick={() => void submit()} disabled={!canSubmit}>
-            {/* Only once there is something to publish — beside "Sign in first" the
-                hoop would be promising an action that is still one step away. */}
             {user && !busy && <ShareHoopGlyph />}
             {busy ? t.publish.working : user ? t.publish.submit : t.publish.needSignIn}
           </Button>

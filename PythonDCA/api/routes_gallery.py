@@ -15,6 +15,14 @@ router = APIRouter(prefix="/api")
 
 CATEGORIES = {"pets", "flowers", "landscapes", "other"}
 
+# What a post *is*, which is a different question from what it shows.
+#
+# 'pattern' is a chart this site generated, optionally with a photo of the finished
+# piece. 'photo' is the finished piece alone — somebody who stitched a chart from
+# elsewhere still has work worth showing, and the second gallery would be a subset
+# of the first if it refused them. `category` stays the subject either way.
+KINDS = {"pattern", "photo"}
+
 PAGE_SIZE = 12
 MAX_TITLE = 80
 MAX_THREADS = 64
@@ -61,16 +69,26 @@ def _decode_data_url(value: str, limit: int) -> tuple[bytes, str]:
 
 
 def _card(row: sqlite3.Row, liked: bool) -> dict:
+    # A photo post has no chart behind it, so every pattern field here can be
+    # empty. Read through helpers rather than indexing the row directly: the old
+    # version passed `row["thread_codes"]` straight to json.loads, which raises
+    # TypeError on None — one photo in the gallery would have taken down the whole
+    # listing, not just its own card.
+    codes = json.loads(row["thread_codes"]) if row["thread_codes"] else []
+    palette = json.loads(row["palette"]) if row["palette"] else codes
     return {
         "id": row["id"],
         "title": row["title"],
         "category": row["category"],
+        "kind": row["kind"],
+        # None for a photo post, and the client branches on `kind` rather than on
+        # these being absent: "no size" and "size not sent yet" would look alike.
         "width": row["width"],
         "height": row["height"],
-        "threadCount": len(json.loads(row["thread_codes"])),
+        "threadCount": len(codes),
         # Most-stitched first, and more than the card shows: the client keeps the
         # five that are actually distinguishable, which needs candidates to spare.
-        "palette": json.loads(row["palette"] or row["thread_codes"])[:10],
+        "palette": palette[:10],
         "likeCount": row["like_count"],
         "liked": liked,
         "createdAt": row["created_at"],
@@ -93,22 +111,36 @@ def _card(row: sqlite3.Row, liked: bool) -> dict:
 
 
 @router.get("/posts")
-def list_posts(request: Request, category: str = "all", sort: str = "new", page: int = 0) -> JSONResponse:
+def list_posts(
+    request: Request,
+    category: str = "all",
+    sort: str = "new",
+    page: int = 0,
+    kind: str = "all",
+) -> JSONResponse:
     user = auth.current_user(request)
-    where = ""
+    clauses: list[str] = []
     params: list = []
+    # `kind` defaults to "all" so an older client — or a bookmarked API call —
+    # keeps seeing everything rather than silently losing half the gallery.
+    if kind != "all":
+        if kind not in KINDS:
+            raise HTTPException(422, "Unknown kind")
+        clauses.append("p.kind = ?")
+        params.append(kind)
     if category != "all":
         if category not in CATEGORIES:
             raise HTTPException(422, "Unknown category")
-        where = "WHERE p.category = ?"
+        clauses.append("p.category = ?")
         params.append(category)
+    where = "WHERE " + " AND ".join(clauses) if clauses else ""
 
     order = "p.like_count DESC, p.created_at DESC" if sort == "top" else "p.created_at DESC"
     page = max(0, min(page, 500))
 
     rows = connect().execute(
         f"""
-        SELECT p.id, p.title, p.category, p.width, p.height, p.thread_codes,
+        SELECT p.id, p.title, p.category, p.kind, p.width, p.height, p.thread_codes,
                p.like_count, p.created_at, p.author_id, p.palette,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
@@ -149,9 +181,10 @@ def get_post(post_id: int, request: Request) -> JSONResponse:
 
     card = _card(row, bool(row["liked"]))
     # Only a single post ships the full grid — 30 000 cells on every gallery
-    # card would be megabytes per page.
+    # card would be megabytes per page. Null for a photo post, which the client
+    # already handles: it builds `pattern` from `cells` and gets null.
     card["cells"] = row["cells"]
-    card["threadCodes"] = json.loads(row["thread_codes"])
+    card["threadCodes"] = json.loads(row["thread_codes"]) if row["thread_codes"] else None
     return JSONResponse(card)
 
 
@@ -177,10 +210,26 @@ def get_share_card(post_id: int) -> Response:
     encoder in this codebase.
     """
     row = connect().execute(
-        "SELECT cells, thread_codes, width, height FROM posts WHERE id = ?", (post_id,)
+        "SELECT kind, cells, thread_codes, width, height, photo, photo_mime"
+        " FROM posts WHERE id = ?",
+        (post_id,),
     ).fetchone()
     if not row:
         raise HTTPException(404, "No such piece")
+
+    # A photo post has no grid to draw, and this box has no image library to crop
+    # its photo to 1.91:1 with — that is why sharecard.py encodes a PNG by hand.
+    # So the photo *is* the card, at whatever shape it was taken in, and the
+    # scrapers apply their own crop as they already do to any oversized image.
+    if row["kind"] == "photo" or row["cells"] is None:
+        if row["photo"] is None:
+            raise HTTPException(404, "No share image")
+        return Response(
+            row["photo"],
+            media_type=row["photo_mime"] or "image/jpeg",
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
     card = sharecard.render_card(row["cells"], row["thread_codes"], row["width"], row["height"])
     return Response(
         card,
@@ -243,22 +292,13 @@ def _check_daily_limit(conn: sqlite3.Connection, user: sqlite3.Row) -> None:
     )
 
 
-@router.post("/posts")
-async def publish(request: Request) -> JSONResponse:
-    user = auth.current_user(request)
-    if not user:
-        raise HTTPException(401, "Sign in to share a piece")
+def _read_pattern(body: dict) -> dict:
+    """The chart fields of a pattern post, validated together.
 
-    body = await request.json()
-
-    title = str(body.get("title", "")).strip()
-    if not 2 <= len(title) <= MAX_TITLE:
-        raise HTTPException(422, f"A title is between 2 and {MAX_TITLE} characters")
-
-    category = str(body.get("category", "other"))
-    if category not in CATEGORIES:
-        raise HTTPException(422, "Unknown category")
-
+    Split out of publish() when photo posts arrived: publish() now decides which of
+    two shapes it is looking at, and this is one of them. Returns the columns ready
+    for the insert, or raises — never a half-checked grid.
+    """
     try:
         width = int(body["width"])
         height = int(body["height"])
@@ -285,20 +325,39 @@ async def publish(request: Request) -> JSONResponse:
         raise HTTPException(422, "Pattern references a thread that isn't listed")
 
     thumb = body.get("thumbnail")
-    thumb_bytes = _decode_data_url(thumb, MAX_THUMB_BYTES)[0] if thumb else None
+    return {
+        "width": width,
+        "height": height,
+        "cells": cells,
+        "thread_codes": json.dumps(codes),
+        "palette": json.dumps(usage_order(cells, codes)),
+        "thumb_png": _decode_data_url(thumb, MAX_THUMB_BYTES)[0] if thumb else None,
+    }
 
-    photo = body.get("photo")
-    photo_bytes, photo_mime = _decode_data_url(photo, MAX_PHOTO_BYTES) if photo else (None, None)
 
-    # One id, and never a recycled one.
-    #
-    # SQLite's INTEGER PRIMARY KEY hands the next insert the id of the highest
-    # deleted row. That made a link someone shared quietly point at a different
-    # piece later, and — because the thumbnail is served immutable on a URL keyed
-    # by the id — let a browser show the deleted post's picture under the new
-    # post's id. `app_meta` remembers the highest id ever used, so it cannot
-    # happen again. Read and written inside the same immediate transaction as the
-    # insert, so two publishes cannot settle on the same number.
+#: What a photo post leaves empty. Spelled out rather than left to the schema's
+#: defaults, so the insert below stays one statement for both kinds of post.
+_NO_PATTERN = {
+    "width": None,
+    "height": None,
+    "cells": None,
+    "thread_codes": None,
+    "palette": None,
+    "thumb_png": None,
+}
+
+
+def _insert_post(user: sqlite3.Row, title: str, category: str, fields: dict) -> int:
+    """One id, and never a recycled one.
+
+    SQLite's INTEGER PRIMARY KEY hands the next insert the id of the highest
+    deleted row. That made a link someone shared quietly point at a different
+    piece later, and — because the thumbnail is served immutable on a URL keyed
+    by the id — let a browser show the deleted post's picture under the new
+    post's id. `app_meta` remembers the highest id ever used, so it cannot
+    happen again. Read and written inside the same immediate transaction as the
+    insert, so two publishes cannot settle on the same number.
+    """
     conn = connect()
     conn.execute("BEGIN IMMEDIATE")
     try:
@@ -315,24 +374,25 @@ async def publish(request: Request) -> JSONResponse:
 
         conn.execute(
             """
-            INSERT INTO posts (id, author_id, title, category, width, height, cells,
-                               thread_codes, palette, thumb_png, photo, photo_mime,
-                               created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO posts (id, author_id, title, category, kind, width, height,
+                               cells, thread_codes, palette, thumb_png, photo,
+                               photo_mime, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 post_id,
                 user["id"],
                 title,
                 category,
-                width,
-                height,
-                cells,
-                json.dumps(codes),
-                json.dumps(usage_order(cells, codes)),
-                thumb_bytes,
-                photo_bytes,
-                photo_mime,
+                fields["kind"],
+                fields["width"],
+                fields["height"],
+                fields["cells"],
+                fields["thread_codes"],
+                fields["palette"],
+                fields["thumb_png"],
+                fields["photo"],
+                fields["photo_mime"],
                 now_ms(),
             ),
         )
@@ -345,8 +405,51 @@ async def publish(request: Request) -> JSONResponse:
     except Exception:
         conn.execute("ROLLBACK")
         raise
+    return post_id
 
-    return JSONResponse({"id": post_id}, status_code=201)
+
+@router.post("/posts")
+async def publish(request: Request) -> JSONResponse:
+    """Publish a chart, or a photo of a finished piece.
+
+    Two shapes down one route rather than two routes: the title, the category, the
+    daily limit, the id allocation and the row are identical, and only the payload
+    differs. `kind` says which, and defaults to 'pattern' — the shape every client
+    sent before photo posts existed.
+    """
+    user = auth.current_user(request)
+    if not user:
+        raise HTTPException(401, "Sign in to share a piece")
+
+    body = await request.json()
+
+    title = str(body.get("title", "")).strip()
+    if not 2 <= len(title) <= MAX_TITLE:
+        raise HTTPException(422, f"A title is between 2 and {MAX_TITLE} characters")
+
+    category = str(body.get("category", "other"))
+    if category not in CATEGORIES:
+        raise HTTPException(422, "Unknown category")
+
+    kind = str(body.get("kind", "pattern"))
+    if kind not in KINDS:
+        raise HTTPException(422, "Unknown kind")
+
+    photo = body.get("photo")
+    photo_bytes, photo_mime = _decode_data_url(photo, MAX_PHOTO_BYTES) if photo else (None, None)
+
+    if kind == "photo":
+        # The photo is the entire post, so its absence is not a missing extra —
+        # there would be nothing left to look at. Any chart fields in the body are
+        # ignored rather than rejected: a photo post is defined by what it has.
+        if photo_bytes is None:
+            raise HTTPException(422, "A photo of your work is the post")
+        fields = dict(_NO_PATTERN)
+    else:
+        fields = _read_pattern(body)
+
+    fields.update(kind=kind, photo=photo_bytes, photo_mime=photo_mime)
+    return JSONResponse({"id": _insert_post(user, title, category, fields)}, status_code=201)
 
 
 @router.post("/posts/{post_id}/like")

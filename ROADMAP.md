@@ -192,6 +192,85 @@ Written early, never revisited, and some of it is now wrong. Known:
 
 ---
 
+## 7. The two galleries — done
+
+Charts and finished work are two different things, and the gallery held only the
+first. Both now live in one page under one entry in the navigation bar, at two URLs:
+`/galerie` keeps the charts (it is the indexed one, and on the day this shipped the
+photo gallery was empty) and `/galerie/broderies` holds the photographs.
+
+The decision that shaped the work: **a photo can be published on its own**, with no
+chart from this site. Somebody who stitched a pattern bought elsewhere has work worth
+showing, and refusing them would have made the second gallery a subset of the first.
+That is what made this more than a filter:
+
+- `posts.kind` (`pattern` | `photo`), and `width`, `height`, `cells`, `thread_codes`
+  all became nullable. SQLite cannot drop a `NOT NULL`, so `init()` rebuilds the
+  table — and that migration has to run **before** `SCHEMA`, since `SCHEMA` now
+  creates an index on `kind`. Verified on a copy of the production database: rows
+  kept, five indexes recreated, `integrity_check` clean, and idempotent.
+- Sentinels were considered and rejected. `cells = ''` would have made every reader
+  guess whether a post has a chart; `kind` says so.
+- A photo post has no chart, so the piece page had to stop treating a missing grid as
+  a missing post — it answered "this piece isn't here any more" for every one of
+  them.
+- `reports` and a moderation queue at `/signalements`, because a free photograph is
+  not bounded by what the converter can produce. Without it the only remedy would
+  have been SQL on the server.
+
+### Still to do here
+
+- Invert the default when the photographs outnumber the charts — one line in
+  `routes.ts`, and worth revisiting once there is anything to look at.
+- Nothing sends an e-mail when something is reported. The queue has to be visited.
+  Fine for two people; not fine for twenty.
+- Photo posts are not in the sitemap individually, like every other piece — see the
+  note at the end of `routes.ts` for why.
+
+---
+
+## 8. Le premier chargement — mesuré, puis réduit
+
+Rien ici n'a été deviné : le poids par module vient des source maps du bundle livré,
+et les graisses de police ont été relevées dans le navigateur, page par page.
+
+Le paquet initial est passé de **119,2 à 102,3 kB gzip**, et deux origines externes
+ont quitté le chemin critique.
+
+| Ce qui a bougé | Pourquoi |
+| --- | --- |
+| Les trois polices sont servies par le site | La feuille de style venait de `fonts.googleapis.com` et les fichiers de `fonts.gstatic.com` : deux résolutions DNS et deux poignées de main TLS avant qu'un mot ne puisse s'afficher dans la bonne police. Deux des trois sont préchargées ; Shantell Sans, 70 kB à elle seule pour l'écriture manuscrite des apartés, ne l'est pas. |
+| L'axe de graisse est restreint | Relevé dans le navigateur : Fredoka 700 et Nunito 600 n'apparaissent sur **aucune** page. 10,4 kB. |
+| La charte DMC a quitté le paquet initial | `StitchAvatar` est dans l'en-tête, donc jamais paresseux, et il résolvait douze couleurs à travers les 589 fils. Elles sont maintenant générées par `scripts/export-dmc.py`, depuis le même tableur, dans la même passe. −9,2 kB gzip, et la charte se charge avec les pages qui s'en servent. |
+| L'anglais est chargé à la demande | Les deux dictionnaires pesaient 52 kB dans ce que tout le monde télécharge, dont la moitié qu'un lecteur donné ne verra jamais. Le site est francophone d'abord : le français est statique. −7,8 kB gzip. |
+| Cache d'un an sur les chemins versionnés | nginx proxie tout vers uvicorn sans aucune règle de cache, donc chaque visite revalidait onze fichiers — un aller-retour chacun pour s'entendre dire « non modifié ». Seconde visite mesurée : 10 réponses sur 11 servies par le cache, zéro revalidation. `index.html` reste volontairement dehors. |
+| `.woff2` et `.onnx` déclarés | `mimetypes` ne les connaissait ni sous Windows ni forcément sur le serveur, donc ils partaient en `text/plain` — qui est dans les `gzip_types` de nginx. La machine recompressait donc des octets déjà compressés, dont les 4,4 Mo du modèle de segmentation à chaque requête. |
+
+### Ce qui a été mesuré puis laissé tel quel
+
+- **`tailwind-merge`, 24,6 kB (7 % du paquet).** Il gagne sa place : plusieurs
+  appelants surchargent réellement les classes des composants — l'en-tête passe
+  `text-[15px] px-[22px]` à un `Button` qui a déjà les siennes. Le retirer casserait
+  ces surcharges en silence.
+- **`react-dom`, 174,7 kB (52 %).** C'est le plancher du choix de React.
+- **Shantell Sans, 70 kB pour de la décoration.** Elle ne coûte plus rien au premier
+  rendu (ni préchargée, ni bloquante). La question « 70 kB pour l'écriture
+  manuscrite, est-ce que ça vaut le coup ? » est une décision de design, pas une
+  optimisation, et elle n'a pas été prise à ta place.
+
+### Encore à faire
+
+- **Une langue par URL.** `detect()` lit `navigator.language`, donc un robot dont
+  l'`Accept-Language` est anglais rend les pages françaises en anglais. C'était déjà
+  le cas avant ce lot — le français s'affiche désormais immédiatement en attendant
+  l'anglais, ce qui est plutôt mieux pour un robot — mais le vrai correctif est
+  `/en/...` avec des `hreflang`, et il touche au point 1.
+- Le dictionnaire reste découpé **par langue**, pas par page : la copie du
+  convertisseur et les quatorze réponses de la FAQ partent avec la page d'accueil.
+  Un découpage par page rapporterait encore, au prix d'un passage sur chaque `t.*`.
+
+---
+
 ## Smaller things, kept so they are not lost
 
 - ~~`PythonDCA/dist/` is committed~~ — **fixed**. 19 MB untracked, including a second
@@ -213,7 +292,10 @@ Written early, never revisited, and some of it is now wrong. Known:
   `image-rendering: pixelated` — so it is stored at one pixel per stitch now, PNG,
   **19% of the bytes**, bit-for-bit identical once scaled back up. The one thing that
   would beat it is lossless WebP, which `canvas.toDataURL` cannot produce.
-  What is left here: the hoop photographs on existing posts are the only large blobs
-  in the database, and nothing new can add one since the picker was removed. Shrinking
-  those would need an image library on the box for three files, which is not worth it.
+  What is left here: the hoop photographs are the only large blobs in the database,
+  and photo posts mean new ones arrive again — so they are shrunk on the way in
+  instead. `preparePhoto` caps the long edge at 1400px and encodes JPEG at 0.82 in
+  the browser, which puts a phone photo a long way under the 6 MB the server accepts.
+  Shrinking the ones already stored would need an image library on the box for a
+  handful of files, which is still not worth it.
 - The Google client secret transited a chat and should be rotated.

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { BrandMark } from "@/components/brand/logo"
 import { GalleryCard } from "@/community/gallery-card"
+import { ShareWorkDialog } from "@/community/share-work-dialog"
 import { useAuth } from "@/community/auth-context"
 import { Button } from "@/components/ui/button"
 import { Pill } from "@/components/ui/pill"
@@ -13,10 +14,34 @@ import { useHead } from "@/lib/head"
 
 const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
 
+/**
+ * The two galleries, in one page and under one entry in the navigation bar.
+ *
+ * They hold different things — charts this site generated, and photographs of
+ * finished work that may have been stitched from anywhere — but they are the same
+ * question asked twice ("what have people made?"), so splitting them into two
+ * places in the header would have made a visitor choose before they knew what they
+ * were choosing between.
+ *
+ * Each tab is a real URL, not a piece of component state: they are both shareable,
+ * both reloadable, both in the back button, and both indexable under their own
+ * title. That is also why the tabs are links rather than buttons.
+ */
 export default function Gallery() {
   const { t } = useI18n()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
 
-  useHead({ title: t.head.gallery.title, description: t.head.gallery.description })
+  // The path decides, so a cold load of either URL opens the right tab.
+  const kind: api.PostKind = pathname === paths.galleryStitches ? "photo" : "pattern"
+  const photos = kind === "photo"
+  const copy = photos ? t.gallery.finished : t.gallery.patterns
+
+  useHead(
+    photos
+      ? { title: t.head.galleryStitches.title, description: t.head.galleryStitches.description }
+      : { title: t.head.gallery.title, description: t.head.gallery.description },
+  )
   const { user, signIn } = useAuth()
 
   const [filter, setFilter] = useState<string>("all")
@@ -25,6 +50,7 @@ export default function Gallery() {
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
+  const [sharing, setSharing] = useState(false)
 
   // The sign-in redirect lands back here with a reason when Google refused.
   const [notice, setNotice] = useState<string | null>(null)
@@ -47,7 +73,7 @@ export default function Gallery() {
     async (nextPage: number, replace: boolean) => {
       setState((s) => (replace ? "loading" : s))
       try {
-        const res = await api.fetchPosts({ category: filter, sort, page: nextPage })
+        const res = await api.fetchPosts({ category: filter, sort, page: nextPage, kind })
         setPosts((prev) => (replace ? res.posts : [...prev, ...res.posts]))
         setHasMore(res.hasMore)
         setPage(nextPage)
@@ -56,15 +82,18 @@ export default function Gallery() {
         setState("failed")
       }
     },
-    [filter, sort],
+    [filter, sort, kind],
   )
 
+  // `kind` is in `load`'s dependencies, so switching tab refetches from page 0 —
+  // without which the charts would sit under the photo gallery's heading for as
+  // long as the request took.
   useEffect(() => {
     void load(0, true)
   }, [load])
 
   const like = async (id: number) => {
-    if (!user) return signIn(paths.gallery)
+    if (!user) return signIn(pathname)
     // Optimistic: the heart has to answer the click immediately.
     setPosts((prev) =>
       prev.map((p) =>
@@ -93,19 +122,53 @@ export default function Gallery() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20">
       <header className="text-center pt-12 lg:pt-13 pb-2.5">
-        <div className="font-hand text-[17px] text-quill">{t.gallery.kicker}</div>
+        <div className="font-hand text-[17px] text-quill">{copy.kicker}</div>
         <h1 className="text-[34px] sm:text-[40px] lg:text-[44px] mt-1.5 mb-3 tracking-[-.5px]">
-          {t.gallery.title}
+          {copy.title}
         </h1>
-        <p className="text-[17px] leading-[1.6] text-clay mx-auto max-w-[560px] m-0">
-          {t.gallery.lead}
-        </p>
+        <p className="text-[17px] leading-[1.6] text-clay mx-auto max-w-[560px] m-0">{copy.lead}</p>
       </header>
+
+      {/* Navigation, not a tablist: these are two pages. Marked up as links so a
+          middle-click opens one in a tab and a screen reader announces where it
+          goes, with the running-stitch dashes the rest of the site uses to say
+          "this lands on cloth" carried by the selected one. */}
+      <nav aria-label={t.nav.gallery} className="flex justify-center pt-5">
+        {/* `bg-aida`, not `bg-linen`: linen is the page, so a linen well on a linen
+            page was a border around nothing and the unselected tab looked like
+            plain text that happened to be there. Aida is the next shade down —
+            the cloth — so the well reads as a groove and the selected tab as a
+            chip resting in it. */}
+        <div className="inline-flex gap-1 bg-aida border-[1.5px] border-edge-4 rounded-full p-1">
+          {(
+            [
+              [paths.gallery, t.gallery.tabs.patterns, !photos],
+              [paths.galleryStitches, t.gallery.tabs.finished, photos],
+            ] as const
+          ).map(([to, label, active]) => (
+            <Link
+              key={to}
+              to={to}
+              aria-current={active ? "page" : undefined}
+              // The unselected tab is `cocoa`, not `stone`: measured on the cloth
+              // the well is made of, stone came to 3.4:1 and this is 15px text
+              // somebody has to read to know where the other gallery is. Cocoa is
+              // 5.19:1 there. What separates the two tabs is the chip and its
+              // shadow, which is a stronger signal than a paler grey anyway.
+              className={`font-display text-[15px] px-5 min-h-11 inline-flex items-center rounded-full transition-colors ${
+                active ? "bg-blanc text-cocoa shadow-card-sm" : "text-cocoa hover:text-coral-deep"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       {notice && (
         <p
           role="alert"
-          className="mx-auto max-w-[560px] bg-coral-wash border-2 border-dashed border-coral-edge text-coral-deeper rounded-[16px] px-5 py-3 text-[15px] text-center"
+          className="mt-5 mx-auto max-w-[560px] bg-coral-wash border-2 border-dashed border-coral-edge text-coral-deeper rounded-[16px] px-5 py-3 text-[15px] text-center"
         >
           {notice}
         </p>
@@ -145,24 +208,30 @@ export default function Gallery() {
         )}
         {state === "ready" && posts.length === 0 && (
           <p className="sm:col-span-2 lg:col-span-3 text-center text-cocoa py-10 m-0">
-            {t.gallery.empty}
+            {filter === "all" ? copy.emptyAll : t.gallery.empty}
           </p>
         )}
 
-        {/* The invitation sits inside the grid — an offer, not a demand. */}
+        {/* The invitation sits inside the grid — an offer, not a demand. What it
+            offers depends on which gallery you are in: a chart is made from a
+            photo on the converter, a finished piece needs only its photograph. */}
         <div className="aida [--aida-size:14px] [--aida-ink:.06] bg-[#F7F1E5] border-[2.5px] border-dashed border-coral-dash rounded-[20px] flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[300px]">
           <BrandMark size={72} />
-          <h2 className="text-[21px] m-0">{t.gallery.shareTitle}</h2>
+          <h2 className="text-[21px] m-0">{copy.inviteTitle}</h2>
           <p className="text-[14.5px] leading-[1.55] text-cocoa max-w-[240px] m-0">
-            {t.gallery.shareBody}
+            {copy.inviteBody}
           </p>
-          {user ? (
-            <Button asChild size="sm">
-              <Link to={paths.convert}>{t.gallery.shareCta}</Link>
+          {!user ? (
+            <Button size="sm" onClick={() => signIn(pathname)}>
+              {t.account.signIn}
+            </Button>
+          ) : photos ? (
+            <Button size="sm" onClick={() => setSharing(true)}>
+              {copy.inviteCta}
             </Button>
           ) : (
-            <Button size="sm" onClick={() => signIn(paths.gallery)}>
-              {t.account.signIn}
+            <Button asChild size="sm">
+              <Link to={paths.convert}>{copy.inviteCta}</Link>
             </Button>
           )}
           <div className="font-hand text-[13.5px] text-sand">{t.account.whySignIn}</div>
@@ -176,6 +245,12 @@ export default function Gallery() {
           </Button>
         )}
       </div>
+
+      <ShareWorkDialog
+        open={sharing}
+        onClose={() => setSharing(false)}
+        onPublished={(id) => void navigate(paths.piece(id))}
+      />
     </div>
   )
 }

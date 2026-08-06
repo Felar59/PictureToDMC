@@ -20,6 +20,14 @@ export function SiteFooter() {
             how to do it, and the questions. Everything else is a footer link, which is
             where people look for it and which a crawler follows just the same. */}
         <nav className="flex flex-wrap gap-6 text-sm font-bold text-cocoa">
+          {/* The photo gallery belongs here by the rule just above: the header
+              carries "Galerie", which opens the charts, and this is the other one.
+              Until this link existed the page had a single inbound link in the
+              entire site — the tab on the gallery page — which is thin for a URL
+              that is in the sitemap. */}
+          <Link to={paths.galleryStitches} className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
+            {t.footer.stitches}
+          </Link>
           <Link to={paths.guide} className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
             {t.footer.guide}
           </Link>

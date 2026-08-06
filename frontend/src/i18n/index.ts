@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-import type { Copy, Lang } from "./dictionary"
+import type { Copy, Lang } from "./copy"
 
 export type I18nValue = {
   lang: Lang

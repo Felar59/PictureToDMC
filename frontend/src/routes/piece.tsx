@@ -9,6 +9,7 @@ import { useAuth } from "@/community/auth-context"
 import { ChartDialog } from "@/community/chart-dialog"
 import { Comments } from "@/community/comments"
 import { PieceThreads } from "@/community/piece-threads"
+import { ReportDialog } from "@/community/report-dialog"
 import type { Pattern } from "@/engine/convert"
 import { findThread, type Thread } from "@/engine/dmc"
 import { base64ToCells } from "@/engine/publish"
@@ -52,6 +53,7 @@ export default function Piece() {
   const [productsOpen, setProductsOpen] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [removeFailed, setRemoveFailed] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
@@ -76,6 +78,17 @@ export default function Piece() {
   // four mockups on every heart click. None of those four fields ever change.
   const { cells: storedCells, width, height, threadCodes } = post ?? {}
 
+  // What kind of post this is, read once. Declared up here because both the delete
+  // handler and the head below need it — and `homeGallery` was being used forty
+  // lines above its own declaration, which works and reads like a mistake.
+  const isPhoto = post?.kind === "photo"
+  // Back to the gallery this piece actually lives in. A photo post used to send
+  // people to the charts, the one gallery it is not in — and likewise after
+  // deleting it, where landing among strangers' charts reads as "did that work?".
+  // The not-found branch keeps pointing at the charts: there is no post there, so
+  // there is nothing to ask.
+  const homeGallery = isPhoto ? paths.galleryStitches : paths.gallery
+
   /**
    * The stored grid, back into the shape the renderers already understand.
    *
@@ -90,7 +103,11 @@ export default function Piece() {
    * wrong everywhere and silent.
    */
   const pattern = useMemo<Pattern | null>(() => {
-    if (storedCells === undefined || !width || !height || !threadCodes) return null
+    // Null on a photo post, where there is no chart to rebuild — `cells` and
+    // `threadCodes` arrive as null together. Every use of `pattern` below is
+    // guarded on that, and the page renders without a grid rather than refusing
+    // to render at all.
+    if (!storedCells || !width || !height || !threadCodes) return null
 
     const threads: Thread[] = []
     // Stored index -> index in `threads`, or -1 if our chart has no such thread.
@@ -177,7 +194,7 @@ export default function Piece() {
     setRemoveFailed(false)
     try {
       await api.deletePost(post.id)
-      void navigate(paths.gallery, { replace: true })
+      void navigate(homeGallery, { replace: true })
     } catch {
       setRemoveFailed(true)
       setRemoving(false)
@@ -195,17 +212,25 @@ export default function Piece() {
    * scraper does not run this JavaScript, so the picture cannot come from the canvas
    * three lines below it.
    */
+  //
+  // A photo post has no measurements to quote, and quoting them anyway is how you
+  // get "null × null stitches in 0 DMC threads" in a link preview. It gets a head
+  // about what it is: somebody's finished work.
   useHead({
     title: post
-      ? t.head.piece.title(post.title, post.author.displayName)
+      ? isPhoto
+        ? t.head.pieceStitch.title(post.title, post.author.displayName)
+        : t.head.piece.title(post.title, post.author.displayName)
       : t.notFound.title,
     description: post
-      ? t.head.piece.description(
-          post.author.displayName,
-          post.width,
-          post.height,
-          post.threadCodes.length,
-        )
+      ? isPhoto || post.width === null || post.height === null || !post.threadCodes
+        ? t.head.pieceStitch.description(post.author.displayName)
+        : t.head.piece.description(
+            post.author.displayName,
+            post.width,
+            post.height,
+            post.threadCodes.length,
+          )
       : t.notFound.body,
     canonicalPath: `/piece/${postId}`,
     image: post ? `/api/posts/${postId}/share.png` : undefined,
@@ -231,7 +256,11 @@ export default function Piece() {
   }
   const mine = Boolean(post && user && (user.id === post.author.id || user.isAdmin))
 
-  if (state === "failed" || !post || !pattern) {
+  // A photo post is a whole post with no chart in it, so the absence of `pattern`
+  // is not a missing piece any more — it is what that kind of post looks like. But
+  // a *chart* post whose grid could not be rebuilt is genuinely broken, and still
+  // says so rather than showing a page with a hole where the chart goes.
+  if (state === "failed" || !post || (post.kind === "pattern" && !pattern)) {
     return (
       <div className="text-center py-24 flex flex-col items-center gap-4">
         <p className="text-coral-deeper m-0">{t.piece.notFound}</p>
@@ -245,7 +274,7 @@ export default function Piece() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20 py-10">
       <Link
-        to={paths.gallery}
+        to={homeGallery}
         className="inline-flex items-center min-h-11 text-[14px] font-bold text-stone hover:text-coral-deep transition-colors"
       >
         ← {t.piece.backToGallery}
@@ -280,10 +309,12 @@ export default function Piece() {
                 "1 963 points à broder". The colour count comes from the threads
                 we could actually resolve, so it can never disagree with the list
                 below it. */}
-            <span className="font-mono text-[12.5px] text-stone">
-              {pattern.width} × {pattern.height} · {t.gallery.colors(pattern.threads.length)} ·{" "}
-              {t.converter.size.total(pattern.stitched)}
-            </span>
+            {pattern && (
+              <span className="font-mono text-[12.5px] text-stone">
+                {pattern.width} × {pattern.height} · {t.gallery.colors(pattern.threads.length)}{" "}
+                · {t.converter.size.total(pattern.stitched)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -331,13 +362,22 @@ export default function Piece() {
       {/* One column. The photo, then the grid on cloth, and nothing beside them
           to leave a hole when it runs short. */}
       <div className="mt-8 flex flex-col items-center gap-3">
+        {/* On a chart post the photo is evidence beside the grid, so it is cropped
+            to a band. On a photo post it IS the piece: cropping the only thing on
+            the page would cut off the work somebody is showing. */}
         {post.hasPhoto && (
           <img
             src={api.photoUrl(post)}
             alt={t.piece.photoAlt(post.title)}
-            className="w-full max-w-[720px] rounded-card shadow-card object-cover max-h-[460px]"
+            className={
+              isPhoto
+                ? "w-full max-w-[720px] rounded-card shadow-card object-contain max-h-[70vh]"
+                : "w-full max-w-[720px] rounded-card shadow-card object-cover max-h-[460px]"
+            }
           />
         )}
+        {pattern ? (
+          <>
         {/* The cloth wraps the grid rather than stretching to the column.
             A 720px panel holding a 560px canvas framed every pattern in 112px of
             bare aida, and a portrait one in more — so the piece looked lost in its
@@ -372,10 +412,35 @@ export default function Piece() {
             {t.piece.seeStitched}
           </Button>
         </div>
+          </>
+        ) : (
+          /* No chart, and it says so. A page that simply lacked the button every
+             other piece has would read as a fault rather than as a fact about
+             this one. */
+          <>
+            <p className="font-hand text-sm text-sand text-center m-0">{t.piece.stitchNote}</p>
+            <p className="text-[14.5px] text-clay text-center max-w-[420px] m-0">
+              {t.piece.noChart}
+            </p>
+          </>
+        )}
 
         {/* The way out — the author's, or an admin's. Set apart from the two
             things a visitor came for, and quiet: a delete button that looks like
             an action invites the click it must not get. */}
+        {/* Reporting, for anyone signed in who is not looking at their own work.
+            Quiet, and beside the other administrative way out rather than among
+            the things a visitor came here to do. */}
+        {user && !mine && (
+          <button
+            type="button"
+            onClick={() => setReportOpen(true)}
+            className="inline-flex items-center min-h-11 px-2 text-[13.5px] font-bold text-stone hover:text-coral-deep transition-colors cursor-pointer mt-1"
+          >
+            {t.report.open}
+          </button>
+        )}
+
         {mine && (
           <div className="flex flex-col items-center gap-2 mt-1">
             <button
@@ -401,17 +466,23 @@ export default function Piece() {
 
       <Comments postId={postId} />
 
-      <ChartDialog
-        open={chartOpen}
-        onClose={() => setChartOpen(false)}
-        pattern={pattern}
-        onError={() => setDownloadFailed(true)}
-      />
-      <ProductDialog
-        open={productsOpen}
-        onClose={() => setProductsOpen(false)}
-        pattern={pattern}
-      />
+      {/* Both take a Pattern, and neither has anything to show without one. */}
+      {pattern && (
+        <>
+          <ChartDialog
+            open={chartOpen}
+            onClose={() => setChartOpen(false)}
+            pattern={pattern}
+            onError={() => setDownloadFailed(true)}
+          />
+          <ProductDialog
+            open={productsOpen}
+            onClose={() => setProductsOpen(false)}
+            pattern={pattern}
+          />
+        </>
+      )}
+      <ReportDialog postId={postId} open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   )
 }

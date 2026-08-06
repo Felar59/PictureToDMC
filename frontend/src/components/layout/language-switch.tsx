@@ -1,6 +1,6 @@
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
-import type { Lang } from "@/i18n/dictionary"
+import type { Lang } from "@/i18n/copy"
 
 const OPTIONS: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },

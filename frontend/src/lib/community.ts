@@ -22,12 +22,24 @@ export type Me = PublicUser & {
   setUp: boolean
 }
 
+/**
+ * What a post is, which is a different question from what it shows.
+ *
+ * "pattern" is a chart made here, with an optional photo of it stitched. "photo"
+ * is the finished piece on its own. Every reader branches on this rather than on
+ * whether the pattern fields happen to be null: "there is no chart" and "the chart
+ * has not arrived yet" would otherwise look identical.
+ */
+export type PostKind = "pattern" | "photo"
+
 export type PostCard = {
   id: number
   title: string
   category: string
-  width: number
-  height: number
+  kind: PostKind
+  /** Null on a photo post. */
+  width: number | null
+  height: number | null
   threadCount: number
   palette: string[]
   likeCount: number
@@ -38,7 +50,8 @@ export type PostCard = {
   author: PublicUser
 }
 
-export type PostDetail = PostCard & { cells: string; threadCodes: string[] }
+/** `cells` and `threadCodes` are null together, on a photo post. */
+export type PostDetail = PostCard & { cells: string | null; threadCodes: string[] | null }
 
 export class ApiError extends Error {
   readonly status: number
@@ -114,11 +127,14 @@ export function updateMe(edit: ProfileEdit) {
 
 /* -------------------------------------------------------------- gallery */
 
-export function fetchPosts(options: { category?: string; sort?: "new" | "top"; page?: number } = {}) {
+export function fetchPosts(
+  options: { category?: string; sort?: "new" | "top"; page?: number; kind?: PostKind | "all" } = {},
+) {
   const params = new URLSearchParams({
     category: options.category ?? "all",
     sort: options.sort ?? "new",
     page: String(options.page ?? 0),
+    kind: options.kind ?? "all",
   })
   return call<{ posts: PostCard[]; hasMore: boolean }>(`/api/posts?${params}`)
 }
@@ -135,11 +151,48 @@ export type NewPost = {
   cells: string
   threadCodes: string[]
   thumbnail?: string
+  /** A data URL. Optional here: the chart is the post, this is the extra. */
   photo?: string
 }
 
 export function publishPost(post: NewPost) {
   return call<{ id: number }>("/api/posts", { method: "POST", body: JSON.stringify(post) })
+}
+
+/** A photo on its own, with no chart behind it. `photo` is a data URL. */
+export function publishPhoto(post: { title: string; category: string; photo: string }) {
+  return call<{ id: number }>("/api/posts", {
+    method: "POST",
+    body: JSON.stringify({ ...post, kind: "photo" }),
+  })
+}
+
+/** Flag a piece. Reporting the same one twice replaces the reason. */
+export function reportPost(id: number, reason: string) {
+  return call<{ ok: true }>(`/api/posts/${id}/report`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  })
+}
+
+export type ReportEntry = {
+  postId: number
+  reason: string
+  createdAt: number
+  title: string
+  kind: PostKind
+  authorId: number
+  authorName: string
+  reporterName: string
+}
+
+/** Admins only — anyone else gets a 404 from the server. */
+export function fetchReports() {
+  return call<{ reports: ReportEntry[] }>("/api/reports")
+}
+
+export function dismissReports(postId: number) {
+  return call<{ cleared: number }>(`/api/reports/${postId}`, { method: "DELETE" })
 }
 
 export function toggleLike(id: number) {

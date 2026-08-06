@@ -16,6 +16,9 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
     <Link
       to={item.to}
       onClick={onClick}
+      // The coral bar says "you are here" to anyone who can see it. This says it
+      // to everyone else — the state existed but was carried by colour alone.
+      aria-current={active ? "page" : undefined}
       className={cn(
         "text-[15.5px] font-bold transition-colors",
         // A short rounded bar under the label, not a wavy underline. Wavy is what
@@ -47,8 +50,15 @@ export function SiteHeader() {
     { to: paths.faq, label: t.nav.faq },
   ]
 
+  // The gallery entry stays lit on both of its tabs: /galerie/broderies is the
+  // same page with the other one selected, and a nav item that goes dark when you
+  // switch tab reads as having navigated away from it.
   const isActive = (to: string) =>
-    to.startsWith("/#") ? pathname === "/" && hash === to.slice(1) : pathname === to
+    to.startsWith("/#")
+      ? pathname === "/" && hash === to.slice(1)
+      : to === paths.gallery
+        ? pathname === paths.gallery || pathname === paths.galleryStitches
+        : pathname === to
 
   /**
    * Where the page itself owns a coral action, this one steps back.

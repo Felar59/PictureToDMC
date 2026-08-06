@@ -21,11 +21,24 @@ export const paths = {
   home: "/",
   convert: "/convertir-photo-point-de-croix",
   gallery: "/galerie",
+  /**
+   * The second gallery: photos of finished work, chart or no chart.
+   *
+   * A sub-path of /galerie rather than a sibling, because it is the same page with
+   * the other tab selected — and because /galerie keeps the charts. That URL is the
+   * one already indexed and already linked, and on the day this shipped the photo
+   * gallery was empty: handing the indexed URL to an empty page would have been a
+   * choice made for the tidiness of the code rather than for anyone reading it.
+   * When the photos outnumber the charts, swapping the default is one line.
+   */
+  galleryStitches: "/galerie/broderies",
   about: "/qui-sommes-nous",
   faq: "/faq",
   guide: "/comment-faire-une-grille-de-point-de-croix",
   account: "/compte",
   atelier: "/atelier",
+  /** Not linked for anyone but an admin, and noindex — the moderation queue. */
+  reports: "/signalements",
   piece: (id: number | string) => `/piece/${id}`,
   maker: (id: number | string) => `/brodeur/${id}`,
 } as const
@@ -54,6 +67,9 @@ export const indexable: ReadonlyArray<{
   { path: paths.home, changefreq: "weekly", priority: "1.0" },
   { path: paths.convert, changefreq: "monthly", priority: "0.9" },
   { path: paths.gallery, changefreq: "daily", priority: "0.8" },
+  // Lower than the charts, and honestly so: it answers a different search
+  // ("broderie point de croix terminée") and it starts out nearly empty.
+  { path: paths.galleryStitches, changefreq: "daily", priority: "0.5" },
   { path: paths.guide, changefreq: "monthly", priority: "0.7" },
   { path: paths.faq, changefreq: "monthly", priority: "0.6" },
   { path: paths.about, changefreq: "monthly", priority: "0.4" },
