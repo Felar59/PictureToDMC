@@ -25,7 +25,7 @@ function SectionShell({ children, className }: { children: React.ReactNode; clas
 }
 
 export default function Home() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   useHead({
     title: t.head.home.title,
@@ -156,7 +156,7 @@ export default function Home() {
                         ? "inset 0 0 0 1px var(--color-edge-4)"
                         : undefined,
                   }}
-                  title={`DMC ${th.code} · ${th.name}`}
+                  title={`DMC ${th.code} · ${lang === "fr" ? th.nameFr : th.name}`}
                 />
               ))}
               <span className="font-hand text-sm text-sand ml-1.5">

@@ -1,4 +1,5 @@
 import type { Thread } from "@/engine/dmc"
+import { threadName } from "@/engine/dmc-names-fr"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 import { Bobbin } from "./bobbin"
@@ -35,7 +36,8 @@ export function ThreadRow({
   /** How the row sizes itself — the two callers lay their rows out differently. */
   className?: string
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  const name = threadName(thread.name, lang)
 
   // Dense puts the row on one line and drops the second baseline. It exists
   // because the same list is read for two different reasons: in the dialog you
@@ -46,7 +48,7 @@ export function ThreadRow({
     <>
       <Bobbin hex={thread.hex} width={15} height={21} radius={4} />
       <span className="text-[13px] font-extrabold text-ink shrink-0">{thread.num}</span>
-      <span className="flex-1 min-w-0 truncate text-[12px] text-stone">{thread.name}</span>
+      <span className="flex-1 min-w-0 truncate text-[12px] text-stone">{name}</span>
       <span className="font-mono text-[12px] text-cocoa shrink-0">{t.piece.stitches(count)}</span>
     </>
   ) : (
@@ -59,9 +61,7 @@ export function ThreadRow({
             {t.piece.stitches(count)}
           </span>
         </span>
-        <span className="block text-[13px] text-stone leading-snug break-words">
-          {thread.name}
-        </span>
+        <span className="block text-[13px] text-stone leading-snug break-words">{name}</span>
       </span>
       {isolate && <SoloStitch active={isolate.active} />}
     </>

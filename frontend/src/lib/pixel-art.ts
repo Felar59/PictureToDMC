@@ -43,15 +43,22 @@ export const berry = mk(
  * matched to this many DMC threads, and it is the first claim the site makes.
  * These are the nine it really used, with their real chart colours — 606 Bright
  * Orange-red at 985 stitches down to 722 Light Orange Spice at 84.
+ *
+ * The French names are written out beside them rather than looked up through
+ * `engine/dmc-names-fr`, which everything else uses. This module is in the first
+ * bundle every visitor downloads, the names appear in exactly one place — the
+ * `title` on a 22px swatch — and importing the table would put four kilobytes there
+ * for nine tooltips. `scripts/check-thread-names.mjs` checks these nine against the
+ * table, so they cannot drift away from what the rest of the site says.
  */
 export const demoThreads = [
-  { code: "606", name: "Orange-red - Bright", hex: "#F70F00" },
-  { code: "891", name: "Carnation - Dark", hex: "#EE3246" },
-  { code: "666", name: "Red - Bright", hex: "#CE1B33" },
-  { code: "3832", name: "Raspberry - Medium", hex: "#E36370" },
-  { code: "581", name: "Moss Green", hex: "#838A29" },
-  { code: "347", name: "Salmon - Very Dark", hex: "#AB1B33" },
-  { code: "3326", name: "Rose - Light", hex: "#F9979C" },
-  { code: "166", name: "Lime Green", hex: "#ADC238" },
-  { code: "722", name: "Orange Spice - Light", hex: "#F98756" },
+  { code: "606", name: "Orange-red - Bright", nameFr: "Rouge orangé vif", hex: "#F70F00" },
+  { code: "891", name: "Carnation - Dark", nameFr: "Œillet foncé", hex: "#EE3246" },
+  { code: "666", name: "Red - Bright", nameFr: "Rouge vif", hex: "#CE1B33" },
+  { code: "3832", name: "Raspberry - Medium", nameFr: "Framboise moyen", hex: "#E36370" },
+  { code: "581", name: "Moss Green", nameFr: "Vert mousse", hex: "#838A29" },
+  { code: "347", name: "Salmon - Very Dark", nameFr: "Saumon très foncé", hex: "#AB1B33" },
+  { code: "3326", name: "Rose - Light", nameFr: "Rose clair", hex: "#F9979C" },
+  { code: "166", name: "Lime Green", nameFr: "Vert lime", hex: "#ADC238" },
+  { code: "722", name: "Orange Spice - Light", nameFr: "Orange épicé clair", hex: "#F98756" },
 ]

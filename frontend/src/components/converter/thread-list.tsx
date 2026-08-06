@@ -1,5 +1,6 @@
 import { Bobbin } from "@/components/brand/bobbin"
 import { ColorWheel } from "@/components/brand/icons"
+import { threadName } from "@/engine/dmc-names-fr"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 import type { Thread } from "@/engine/dmc"
@@ -30,7 +31,7 @@ export function ThreadList({
   pinned?: string | null
   onPin?: (num: string) => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   return (
     <div className="flex flex-col gap-3">
@@ -77,7 +78,9 @@ export function ThreadList({
                     <Bobbin hex={thread.hex} />
                     <span className="flex-1 min-w-0">
                       <span className="block text-[13.5px] font-extrabold">DMC {thread.num}</span>
-                      <span className="block text-[12.5px] text-stone truncate">{thread.name}</span>
+                      <span className="block text-[12.5px] text-stone truncate">
+                        {threadName(thread.name, lang)}
+                      </span>
                     </span>
                   </button>
 

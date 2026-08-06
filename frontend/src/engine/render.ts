@@ -174,6 +174,10 @@ export type ChartOptions = {
   legendTitle?: string
   /** What a stitch count is called — "pts", "st". Same reason. */
   countSuffix?: string
+  /** How to write a thread's name. Same reason again: the chart carries 483 of
+   *  them and they come out of the DMC spreadsheet in English. Defaults to the
+   *  stored name, so a caller that does not care gets what it always got. */
+  threadName?: (name: string) => string
   /**
    * Draw one thread only: the sheet you work from with a single skein in hand.
    *
@@ -537,7 +541,8 @@ export function renderChart(pattern: Pattern, opts: ChartOptions = {}): HTMLCanv
         // Ellipsis rather than a hard clip. Clipping cut "Pewter Gray - Very Dark"
         // to "Pewter Gray - Very Da", which does not read as a shortened name — it
         // reads as a chart with a mistake in it.
-        ctx.fillText(ellipsise(ctx, thread.name, nameRoom), nameX, y)
+        const label = opts.threadName ? opts.threadName(thread.name) : thread.name
+        ctx.fillText(ellipsise(ctx, label, nameRoom), nameX, y)
       }
     })
   }

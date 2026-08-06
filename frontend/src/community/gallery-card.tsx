@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { labDist2 } from "@/engine/color"
 import { findThread, type Thread } from "@/engine/dmc"
+import { threadName } from "@/engine/dmc-names-fr"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { CrossMark } from "@/components/brand/icons"
@@ -77,7 +78,7 @@ export function GalleryCard({
   onLike: (id: number) => void
   onDelete?: (id: number) => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const { user } = useAuth()
   const mine = user && (user.id === post.author.id || user.isAdmin)
   // A photo post has no chart behind it: no palette to strip, no size in stitches,
@@ -162,7 +163,7 @@ export function GalleryCard({
           {shown.map((thread) => (
             <span
               key={thread.num}
-              title={`DMC ${thread.num} · ${thread.name}`}
+              title={`DMC ${thread.num} · ${threadName(thread.name, lang)}`}
               className="size-3.5 rounded"
               style={{
                 background: thread.hex,

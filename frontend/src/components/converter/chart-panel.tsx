@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import type { Pattern } from "@/engine/convert"
 import { canvasToBlob, renderChart } from "@/engine/render"
+import { threadName } from "@/engine/dmc-names-fr"
 import { useI18n } from "@/i18n"
 
 /**
@@ -122,7 +123,7 @@ export function ChartPanel({
   pattern: Pattern
   onError: (key: string) => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const captionId = useId()
   const [grid, setGrid] = useState(true)
   const [legend, setLegend] = useState(true)
@@ -146,8 +147,12 @@ export function ChartPanel({
         pattern.height,
       ),
       countSuffix: t.chart.countSuffix,
+      // Les noms de fils aussi : ils sortent du tableur DMC en anglais, et une
+      // grille francaise avec « Pewter Gray - Very Dark » dans sa legende etait la
+      // derniere chose non traduite du site.
+      threadName: (n: string) => threadName(n, lang),
     }),
-    [t, pattern],
+    [t, lang, pattern],
   )
 
   const settledColor = useSettled(backcolor, SETTLE_MS)

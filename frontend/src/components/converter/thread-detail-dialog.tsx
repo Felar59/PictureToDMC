@@ -4,6 +4,7 @@ import { Bobbin } from "@/components/brand/bobbin"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { findThread, nearestThreads, type Thread } from "@/engine/dmc"
+import { threadName } from "@/engine/dmc-names-fr"
 import { useI18n } from "@/i18n"
 
 export function ThreadDetailDialog({
@@ -17,7 +18,7 @@ export function ThreadDetailDialog({
   onClose: () => void
   onReplace: (from: Thread, to: Thread) => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [alternatives, setAlternatives] = useState<Thread[]>([])
   const [showInput, setShowInput] = useState(false)
   const [code, setCode] = useState("")
@@ -65,7 +66,13 @@ export function ThreadDetailDialog({
             <span className="inline-block text-sm font-extrabold bg-linen rounded-full px-3 py-1 mb-2">
               DMC {thread.num}
             </span>
-            <p className="text-[18px] font-medium text-ink m-0">{thread.name}</p>
+            <p className="text-[18px] font-medium text-ink m-0">{threadName(thread.name, lang)}</p>
+            {/* Le nom d'origine, sous le nom francais et seulement ici. DMC imprime
+                l'anglais sur ses cartes de nuances, et c'est cette fiche qu'on ouvre
+                quand on cherche a identifier un fil precis. */}
+            {lang !== "en" && (
+              <p className="text-[13px] text-sand m-0">{thread.name}</p>
+            )}
             <p className="text-sm text-stone font-mono m-0">{thread.hex}</p>
           </div>
         </div>
@@ -86,7 +93,7 @@ export function ThreadDetailDialog({
                     <span className="inline-block text-xs font-extrabold bg-blanc border-[1.5px] border-edge-3 rounded-full px-2 py-0.5 mb-1">
                       DMC {alt.num}
                     </span>
-                    <p className="text-sm font-medium truncate m-0">{alt.name}</p>
+                    <p className="text-sm font-medium truncate m-0">{threadName(alt.name, lang)}</p>
                     <p className="text-xs text-stone font-mono m-0">{alt.hex}</p>
                   </div>
                   <Button size="sm" className="w-full" onClick={() => onReplace(thread, alt)}>

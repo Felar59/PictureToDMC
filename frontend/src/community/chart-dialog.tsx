@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import type { Pattern } from "@/engine/convert"
 import { canvasToBlob, isolateImageData, patternImageData, renderChart } from "@/engine/render"
+import { threadName } from "@/engine/dmc-names-fr"
 import { useI18n } from "@/i18n"
 
 /**
@@ -121,7 +122,7 @@ function SoloPlanche({
   onClose: () => void
   onError: (key: string) => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const thread = pattern.threads[index]
   const hostRef = useRef<HTMLDivElement | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -152,6 +153,10 @@ function SoloPlanche({
           pattern.height,
         ),
         countSuffix: t.chart.countSuffix,
+        // La grille imprimee suit la langue de l'interface, comme son titre de
+        // legende juste au-dessus. Le numero reste imprime en premier et en gras :
+        // c'est lui qu'on achete.
+        threadName: (n) => threadName(n, lang),
       })
       const blob = await canvasToBlob(canvas)
       const url = URL.createObjectURL(blob)
@@ -200,7 +205,7 @@ function SoloPlanche({
         <Bobbin hex={thread.hex} />
         <div className="min-w-0">
           <div className="font-display font-medium text-[19px] text-ink">DMC {thread.num}</div>
-          <div className="text-[14px] text-cocoa break-words">{thread.name}</div>
+          <div className="text-[14px] text-cocoa break-words">{threadName(thread.name, lang)}</div>
         </div>
         <div className="font-mono text-[13px] text-stone ml-auto shrink-0">
           {t.piece.stitches(pattern.counts[index])}

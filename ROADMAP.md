@@ -44,8 +44,9 @@ the literal `DMC`. Once the site has a name that line becomes
 people print, keep, and put in a hoop for a fortnight. It is free advertising on a
 physical object and it is currently spent on a thread manufacturer.
 
-Where: `frontend/src/i18n/dictionary.ts`, `chart.legendTitle` in both languages, and
-`chart.isolate.legendTitle` for the per-thread sheets.
+Where: `frontend/src/i18n/fr.ts` et `en.ts`, cle `chart.legendTitle`, et
+`chart.isolate.legendTitle` pour les planches d'un seul fil. (Le dictionnaire unique a
+ete scinde par langue — voir §8.)
 
 ---
 
@@ -82,9 +83,11 @@ same shape: a browser-side tool with no signup.
 - **`hreflang`.** The language switch changes the copy but not the URL, so there is
   one address serving two languages and no way to tell a crawler that. Doing it
   properly means `/en/...` paths, which is a bigger change than it sounds.
-- **Per-piece heads.** `/piece/:id` still takes the site default. Each published piece
-  could carry its own title, its own description and its own chart as the share image
-  — which is the one thing here that would make a shared link worth clicking.
+- ~~**Per-piece heads.**~~ — **fait** (commit `0130e02`). Chaque pièce porte son
+  titre, sa description, son canonique et sa propre carte de partage dessinée par le
+  serveur. Un post photo a depuis son propre gabarit de head : il n'a ni dimensions
+  ni nombre de fils à citer, et les citer quand même écrivait « null × null points »
+  dans un aperçu de lien.
 
 ### Why this was the highest-value item, kept for the record
 
@@ -185,10 +188,38 @@ Written early, never revisited, and some of it is now wrong. Known:
   error.
 - "Picture to DMC" appears in body copy in several places and will all have to
   move when §0 lands.
-- the thread *names* are English in the French UI ("Pewter Gray - Very Dark"),
-  because they come that way out of the DMC chart. Translating 483 of them is a
-  real job with a real payoff for a French audience — and it is the largest remaining
-  content item on this page.
+- ~~the thread *names* are English in the French UI~~ — **fait.** C'était le dernier
+  anglais visible du site, et il était partout : liste des fils, fiche d'un fil,
+  inventaire sous une pièce publiée, et légende de la grille qu'on imprime.
+
+  Traduire 483 chaînes à la main n'était pas la bonne forme du problème. 589 fils ne
+  contiennent que **143 expressions et 15 degrés de clarté** — « Peacock Blue - Very
+  Dark » est une base et une nuance. `engine/dmc-names-fr.ts` traduit les deux
+  séparément et recompose, ce qui tient dans 4 kB au lieu de 589 chaînes et garantit
+  que « très foncé » s'écrit pareil dans les 49 fils qui le portent. Le relevé a aussi
+  montré que les nuances restent invariables en français : un adjectif de couleur
+  qualifié par un autre adjectif ne s'accorde pas (« des yeux bleu clair »), donc
+  « Rose clair » est correct et il n'y a pas d'accord à gérer.
+
+  Là où le français a un usage établi en mercerie, il a été suivi : « bleu layette »,
+  « vieux rose », « bleu bleuet », « gris étain », « terre cuite », « bois flotté ».
+  Les noms qui voyagent ne sont pas traduits — Wedgwood, Delft, Kelly — et
+  « Winnie The Pooh » prend sa forme française sous licence.
+
+  **Le numéro reste l'identifiant**, et c'est ce qui rend la traduction sans risque :
+  la légende imprime toujours le numéro en premier et en gras, c'est lui qu'on achète.
+  La fiche d'un fil est le seul endroit qui montre aussi le nom anglais, parce que
+  c'est celui des cartes de nuances DMC et des catalogues de boutique.
+
+  Deux contrôles gardent l'ensemble : `check-thread-names.mjs` échoue si un seul des
+  487 fils coton n'a pas de nom français, signale les entrées devenues inutiles, et
+  refuse deux bases traduites pareil — sauf `Pink`/`Rose`, où le français n'a
+  qu'un mot. `check-thread-names-ui.cjs` le vérifie dans le navigateur, dans les deux
+  langues.
+
+  Ce ne sont **pas** les noms du catalogue français officiel de DMC, qui n'est pas
+  dans ce dépôt : ce sont des traductions idiomatiques. Si le catalogue arrive un
+  jour, il remplace une table de 143 lignes.
 
 ---
 
