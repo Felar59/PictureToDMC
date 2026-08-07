@@ -90,10 +90,30 @@ same shape: a browser-side tool with no signup.
 
 ### Still to do
 
-- **Rendre le head côté serveur — le plus gros point, et il annule en partie tout ce
-  qui précède.**
+- ~~**Rendre le head côté serveur.**~~ — **fait** (commit `e65aeb0`), étape 1 sur 2.
 
-  Mesuré le 7 août 2026, sur la production :
+  Le serveur écrit maintenant le head lui-même, pour toutes les routes. Les mots
+  viennent de `dist/head-manifest.json`, produit au build en appelant les *mêmes*
+  fonctions que l'application (`frontend/src/lib/head-manifest.ts`) : Python ne
+  détient aucune copie des textes. Les routes fixes arrivent avec leur JSON-LD déjà
+  sérialisé ; les deux routes dynamiques stockent un gabarit et le serveur remplit
+  les trous. Voir `PythonDCA/api/prerender.py`.
+
+  Vérifié sur la production, sans navigateur :
+
+  ```
+  curl -A ClaudeBot/1.0 https://…/piece/4
+    <title>fleureux, par Felar — grille de point de croix</title>
+    <meta name="description" content="… 40 × 30 points en 8 fils DMC …">
+    ld+json : CreativeWork, ImageObject, Person, BreadcrumbList
+  ```
+
+  **Reste l'étape 2 : le corps.** Le `<body>` est toujours un `div` vide avant que le
+  JS tourne. Une IA sait désormais *de quoi parle* chaque page ; elle n'a toujours
+  rien à **citer**. C'est ce qui manque pour l'accueil, le guide et la FAQ — les trois
+  pages qui répondraient à « comment faire une grille de point de croix ».
+
+  Le contexte, gardé parce qu'il explique pourquoi. Mesuré le 7 août 2026 :
 
   ```
   curl https://…/piece/4
@@ -114,18 +134,12 @@ same shape: a browser-side tool with no signup.
   corps vide. Le travail de structure est correct ; il est simplement invisible pour
   exactement les moteurs qui motivaient ce chantier.
 
-  Le serveur sert déjà `index.html` à chaque route (`SinglePageFiles.get_response`) et
-  sait déjà lire la base — c'est comme ça que `share.png` est dessinée. Injecter le head
-  au passage est le même mouvement. Trois niveaux possibles, du moins cher au plus
-  complet :
-
-  1. **Le head seulement**, pour `/piece/{id}` et `/brodeur/{id}` : les données sont
-     déjà dans SQLite, rien à générer.
-  2. **Le head de toutes les routes** : demande d'exporter les chaînes de `i18n/fr.ts`
-     vers un JSON lu par Python, comme `scripts/export-dmc.py` le fait déjà pour les
-     couleurs.
-  3. **Un corps rendu** — au minimum un `<h1>` et le texte principal — pour qu'il y ait
-     quelque chose à *citer* et pas seulement à classer.
+  Deux garde-fous valent d'être notés, parce que la duplication est réelle :
+  le graphe d'une pièce et celui d'un membre sont bel et bien construits deux fois,
+  en TypeScript et en Python. Un test récupère les deux et les compare champ par
+  champ ; ils sont identiques aujourd'hui. Et les balises portent `data-head`, donc
+  React les adopte au lieu d'en ajouter une seconde série — sans quoi c'était le
+  bug des canoniques en double, en pire.
 
 - **Content.** The FAQ is fourteen questions; the guide is one page. What earns links
   is more of both — how to read a chart, what to do about a photo with a busy
