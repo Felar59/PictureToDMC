@@ -217,8 +217,29 @@ different promise. Decide what the ceiling is before the first one goes in.
 Prerequisites, in order:
 
 1. a real domain (§0)
-2. a privacy policy and a cookie notice — required by AdSense, and by the GDPR for
-   a French audience regardless of AdSense
+2. ~~a privacy policy~~ — **faite** (commit `4289176`), à `/confidentialite`, dans le
+   pied de page et dans le sitemap. Écrite depuis le code : `db.py` pour ce qui est
+   stocké, `auth.py` pour le cookie et ses 180 jours, `google.py` pour les
+   autorisations réellement demandées (`openid email profile`, rien d'autre).
+
+   **Deux choses restent à faire, et elles sont pour Felix :**
+
+   - Remplir `[ADRESSE À COMPLÉTER]` et `[IDENTITÉ À COMPLÉTER]` dans
+     `privacyPage.contactBody`, dans `fr.ts` et `en.ts`. Une adresse à laquelle on
+     peut exercer un droit — un lien GitHub n'en est pas une. La page dit elle-même,
+     en toutes lettres et de façon visible, qu'il reste des crochets : c'est
+     volontaire, un texte à trous déguisé en texte fini reste en ligne un an.
+   - **Un bouton pour supprimer son compte.** Il n'y en a pas, et la page l'admet
+     plutôt que de le cacher : l'effacement sur demande est conforme, donc elle dit
+     d'écrire. Mais c'est le seul droit du RGPD que le site ne sert pas lui-même, et
+     `sessions` et `post_likes` cascadent déjà sur `users` — le travail est surtout
+     de décider ce qu'il advient des ouvrages publiés (les supprimer, ou les
+     anonymiser pour ne pas trouer les fils de commentaires des autres).
+
+   Une bannière de cookies n'est **pas** nécessaire en l'état : le seul cookie posé
+   est celui de session, strictement nécessaire au service demandé, donc exempté.
+   Le jour où une régie publicitaire arrive, elle en pose d'autres et le consentement
+   devient obligatoire — c'est un coût de la publicité, à mettre en face du gain.
 3. enough content to be approved at all; AdSense rejects thin sites, and right now
    this is one tool and a gallery
 4. only then apply
