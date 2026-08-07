@@ -21,9 +21,7 @@ import { findThread, type Thread } from "@/engine/dmc"
 import { clearSession, loadSession, saveSession } from "@/engine/storage"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
-import { paths } from "@/lib/routes"
-import { application, breadcrumb, graph } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
+import { convertGraph } from "@/lib/schema"
 
 type ErrorKey = keyof ReturnType<typeof useI18n>["t"]["converter"]["errors"]
 
@@ -42,13 +40,7 @@ export default function Convert() {
     // The application node lives here as well as on the home page, and points at
     // the same @id: this is the URL that *is* the tool, so it is the one an answer
     // engine should send someone to when asked where to convert a photo.
-    jsonLd: graph(
-      application(t.head.convert.description, t.head.features),
-      breadcrumb([
-        { name: SITE_NAME, path: paths.home },
-        { name: t.nav.convert, path: paths.convert },
-      ]),
-    ),
+    jsonLd: convertGraph(t),
   })
 
   // inputs

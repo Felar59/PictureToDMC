@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
 import { paths } from "@/lib/routes"
-import { breadcrumb, graph } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
+import { guideGraph } from "@/lib/schema"
 
 /**
  * The guide: how to get from a photograph to something in a hoop.
@@ -34,26 +33,7 @@ export default function Guide() {
      * procedure with ordered steps rather than an article that happens to have
      * headings.
      */
-    jsonLd: graph(
-      {
-        "@type": "HowTo",
-        name: t.guide.title,
-        description: t.guide.lead,
-        totalTime: "PT1M",
-        // Free, and saying so in the schema as well as in the copy.
-        estimatedCost: { "@type": "MonetaryAmount", currency: "EUR", value: "0" },
-        step: t.guide.steps.map((step, i) => ({
-          "@type": "HowToStep",
-          position: i + 1,
-          name: step.heading,
-          text: step.body,
-        })),
-      },
-      breadcrumb([
-        { name: SITE_NAME, path: paths.home },
-        { name: t.nav.guide, path: paths.guide },
-      ]),
-    ),
+    jsonLd: guideGraph(t),
   })
 
   return (

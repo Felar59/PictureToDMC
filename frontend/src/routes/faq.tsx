@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
 import { paths } from "@/lib/routes"
-import { breadcrumb, graph } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
+import { faqGraph } from "@/lib/schema"
 
 /**
  * The FAQ, on its own address.
@@ -39,22 +38,7 @@ export default function Faq() {
      * questions and answers is the cheapest way to be quotable. Nobody should
      * expect a richer blue link from it.
      */
-    jsonLd: graph(
-      {
-        "@type": "FAQPage",
-        mainEntity: t.faqPage.groups.flatMap((group) =>
-          group.items.map((item) => ({
-            "@type": "Question",
-            name: item.q,
-            acceptedAnswer: { "@type": "Answer", text: item.a },
-          })),
-        ),
-      },
-      breadcrumb([
-        { name: SITE_NAME, path: paths.home },
-        { name: t.nav.faq, path: paths.faq },
-      ]),
-    ),
+    jsonLd: faqGraph(t),
   })
 
   return (

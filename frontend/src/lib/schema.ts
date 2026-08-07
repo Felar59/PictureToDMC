@@ -24,6 +24,8 @@
  * at, rather than a fresh copy of the same claim on each URL.
  */
 
+import type { Copy } from "../i18n/copy"
+
 import { ORIGIN, SITE_NAME, absolute } from "./site"
 import { paths } from "./routes"
 
@@ -32,6 +34,15 @@ export const ORG_ID = `${ORIGIN}/#organization`
 export const SITE_ID = `${ORIGIN}/#website`
 
 type Node = Record<string, unknown>
+
+/**
+ * The craft, in words somebody would search for. `genre` is free text, so this is
+ * the one string in a piece's graph that is a choice rather than a fact — which is
+ * why it is a named constant: the Python server builds that same graph for crawlers
+ * that do not run JavaScript, and it reads this value out of the head manifest
+ * rather than carrying its own spelling of it.
+ */
+export const PIECE_GENRE = "Cross stitch pattern"
 
 /** Wrap nodes into the single script tag `useHead` writes. */
 export function graph(...nodes: Array<Node | Node[] | null | undefined>): object {
@@ -178,7 +189,7 @@ export function piece(opts: {
       url,
       // The craft, in the words someone would search for. `genre` is free text and
       // this is the honest one.
-      genre: "Cross stitch pattern",
+      genre: PIECE_GENRE,
       author,
       creator: author,
       // Milliseconds in the database; schema.org wants ISO 8601.
@@ -269,4 +280,138 @@ export function collection(opts: {
       })),
     },
   }
+}
+
+/* ------------------------------------------------------------------ pages
+ *
+ * One builder per fixed route, so the graph for a page is written once and read
+ * twice: by the route component at runtime, and by `head-manifest.ts` at build
+ * time, which bakes the result into a JSON file the Python server pastes into the
+ * HTML it serves.
+ *
+ * That second reader is the whole reason these exist as functions rather than as
+ * object literals inside the route components. A crawler that does not run
+ * JavaScript — which is every AI crawler — only ever sees what the server sent, so
+ * the graph has to exist before React does. Building it in Python as well would
+ * have been two descriptions of the same page in two languages, drifting apart
+ * from the first edit. Precomputing it means the server holds no schema logic at
+ * all for these routes.
+ *
+ * The dynamic routes (a piece, a member) cannot work this way — their graphs
+ * depend on rows in the database — so those *are* built twice, and there is a test
+ * that fetches both and compares them.
+ */
+
+export function homeGraph(t: Copy, lang: string): object {
+  return graph(
+    organization(),
+    webSite(lang),
+    application(t.head.home.description, t.head.features),
+  )
+}
+
+export function convertGraph(t: Copy): object {
+  return graph(
+    application(t.head.convert.description, t.head.features),
+    breadcrumb([
+      { name: SITE_NAME, path: paths.home },
+      { name: t.nav.convert, path: paths.convert },
+    ]),
+  )
+}
+
+/**
+ * A gallery.
+ *
+ * `pieces` is what the page is currently showing, so the server — which renders
+ * this before anything has been fetched — passes none and emits a CollectionPage
+ * with no item list. The client then replaces the whole graph with the same page
+ * plus its items. The server's version is a strict subset rather than a different
+ * claim, which is the property that matters: a crawler is never told something the
+ * page will later contradict.
+ */
+export function galleryGraph(
+  t: Copy,
+  lang: string,
+  photos: boolean,
+  pieces: Array<{ id: number; title: string }> = [],
+): object {
+  const head = photos ? t.head.galleryStitches : t.head.gallery
+  return graph(
+    collection({
+      path: photos ? paths.galleryStitches : paths.gallery,
+      name: photos ? t.gallery.finished.title : t.gallery.patterns.title,
+      description: head.description,
+      lang,
+      pieces,
+    }),
+    breadcrumb(
+      photos
+        ? [
+            { name: SITE_NAME, path: paths.home },
+            { name: t.nav.gallery, path: paths.gallery },
+            { name: t.gallery.tabs.finished, path: paths.galleryStitches },
+          ]
+        : [
+            { name: SITE_NAME, path: paths.home },
+            { name: t.nav.gallery, path: paths.gallery },
+          ],
+    ),
+  )
+}
+
+export function faqGraph(t: Copy): object {
+  return graph(
+    {
+      "@type": "FAQPage",
+      mainEntity: t.faqPage.groups.flatMap((group) =>
+        group.items.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      ),
+    },
+    breadcrumb([
+      { name: SITE_NAME, path: paths.home },
+      { name: t.nav.faq, path: paths.faq },
+    ]),
+  )
+}
+
+export function guideGraph(t: Copy): object {
+  return graph(
+    {
+      "@type": "HowTo",
+      name: t.guide.title,
+      description: t.guide.lead,
+      totalTime: "PT1M",
+      estimatedCost: { "@type": "MonetaryAmount", currency: "EUR", value: "0" },
+      step: t.guide.steps.map((step, i) => ({
+        "@type": "HowToStep",
+        position: i + 1,
+        name: step.heading,
+        text: step.body,
+      })),
+    },
+    breadcrumb([
+      { name: SITE_NAME, path: paths.home },
+      { name: t.nav.guide, path: paths.guide },
+    ]),
+  )
+}
+
+export function aboutGraph(t: Copy): object {
+  return graph(
+    {
+      "@type": "AboutPage",
+      name: t.aboutPage.title,
+      description: t.aboutPage.lead,
+      mainEntity: { "@id": ORG_ID },
+    },
+    breadcrumb([
+      { name: SITE_NAME, path: paths.home },
+      { name: t.nav.about, path: paths.about },
+    ]),
+  )
 }

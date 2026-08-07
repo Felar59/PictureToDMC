@@ -17,10 +17,10 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
-from starlette.responses import Response
+from starlette.responses import HTMLResponse, Response
 from starlette.types import Scope
 
-from .api import config, db
+from .api import config, db, prerender
 from .api.routes_auth import router as auth_router
 from .api.routes_gallery import router as gallery_router
 from .api.routes_reports import router as reports_router
@@ -76,6 +76,19 @@ class SinglePageFiles(StaticFiles):
         # ask the same question about the path, and only one of them should have to
         # remember that Windows spells it with backslashes.
         clean = path.replace("\\", "/").lstrip("/")
+
+        # The site's front door. StaticFiles(html=True) would answer this with
+        # index.html verbatim, which is the one case the fallback below never sees —
+        # so without this branch the home page was the only route left unrendered.
+        #
+        # "." and not just "": StaticFiles builds the path with os.path.normpath, and
+        # normpath("") is ".". Checking only for the empty string left the home page
+        # — the most linked URL on the site — quietly serving the raw shell while
+        # every other route rendered, which is exactly the kind of miss that looks
+        # like it works.
+        if clean in ("", ".", "index.html"):
+            return self._shell("/", 200)
+
         try:
             response = await super().get_response(path, scope)
 
@@ -122,10 +135,29 @@ class SinglePageFiles(StaticFiles):
             # nobody meant. So a path the router knows about answers 200 and anything
             # else answers 404 — both with the same HTML, so the React NotFound page
             # still renders and a visitor sees something friendly either way.
-            shell = await super().get_response("index.html", scope)
-            if not _is_client_route(path):
-                shell.status_code = 404
-            return shell
+            return self._shell(path, 200 if _is_client_route(path) else 404)
+
+    def _shell(self, path: str, status: int) -> Response:
+        """index.html, with this route's head written into it where possible.
+
+        Everything that does not run JavaScript — which is every AI crawler — only
+        ever sees what comes back from here, so this is the only place a title, a
+        description or a JSON-LD graph can reach them. See api/prerender.py.
+
+        A miss returns the file untouched rather than failing: the client still
+        writes its own head, which is where the site was before this existed.
+        """
+        rendered = prerender.render(path)
+        if rendered is None:
+            with open(os.path.join(DIST_DIR, "index.html"), encoding="utf-8") as fh:
+                rendered = fh.read()
+        return HTMLResponse(
+            rendered,
+            status_code=status,
+            # The one file whose name never changes, and the file that names every
+            # other one. It must be revalidated or a deploy reaches nobody.
+            headers={"Cache-Control": "no-cache"},
+        )
 
 
 #: Paths the React router actually has a page for.

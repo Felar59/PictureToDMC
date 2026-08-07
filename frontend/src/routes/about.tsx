@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
-import { ORG_ID, breadcrumb, graph } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
+import { aboutGraph } from "@/lib/schema"
 
 /**
  * Who is behind the site.
@@ -30,18 +29,7 @@ export default function About() {
     description: t.aboutPage.lead,
     // AboutPage, pointing at the same organisation node the home page defines
     // rather than describing it again in slightly different words here.
-    jsonLd: graph(
-      {
-        "@type": "AboutPage",
-        name: t.aboutPage.title,
-        description: t.aboutPage.lead,
-        mainEntity: { "@id": ORG_ID },
-      },
-      breadcrumb([
-        { name: SITE_NAME, path: paths.home },
-        { name: t.nav.about, path: paths.about },
-      ]),
-    ),
+    jsonLd: aboutGraph(t),
   })
 
   return (
