@@ -401,6 +401,29 @@ export function guideGraph(t: Copy): object {
   )
 }
 
+/**
+ * The privacy page.
+ *
+ * `WebPage`, not `AboutPage`: schema.org has no privacy-policy type, and the
+ * nearest candidates would each claim something untrue. A plain WebPage with a
+ * name and a description is the honest amount to say.
+ */
+export function privacyGraph(t: Copy): object {
+  return graph(
+    {
+      "@type": "WebPage",
+      name: t.privacyPage.title,
+      description: t.privacyPage.lead,
+      isPartOf: { "@id": SITE_ID },
+      publisher: { "@id": ORG_ID },
+    },
+    breadcrumb([
+      { name: SITE_NAME, path: paths.home },
+      { name: t.privacyPage.title, path: paths.privacy },
+    ]),
+  )
+}
+
 export function aboutGraph(t: Copy): object {
   return graph(
     {

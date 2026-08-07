@@ -37,6 +37,11 @@ export function SiteFooter() {
           <Link to={paths.faq} className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
             {t.footer.faq}
           </Link>
+          {/* The string for this has existed in both dictionaries since the footer
+              was written, pointing at a page that did not exist. */}
+          <Link to={paths.privacy} className="hover:text-coral-deep transition-colors inline-flex items-center min-h-11 px-1">
+            {t.footer.privacy}
+          </Link>
           <a
             href="https://github.com/Felar59"
             target="_blank"

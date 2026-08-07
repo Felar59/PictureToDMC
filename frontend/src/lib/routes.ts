@@ -33,6 +33,14 @@ export const paths = {
    */
   galleryStitches: "/galerie/broderies",
   about: "/qui-sommes-nous",
+  /**
+   * What the site knows about you.
+   *
+   * French, like its neighbours, and spelled the way somebody would search for it
+   * — "politique de confidentialité" is what a French reader looks for, and
+   * /privacy would be the one English word left in a French path set.
+   */
+  privacy: "/confidentialite",
   faq: "/faq",
   guide: "/comment-faire-une-grille-de-point-de-croix",
   account: "/compte",
@@ -61,7 +69,7 @@ export const legacyRedirects: ReadonlyArray<readonly [string, string]> = [
 export const indexable: ReadonlyArray<{
   path: string
   /** Rough guide for crawlers, and honest: the gallery really does change daily. */
-  changefreq: "daily" | "weekly" | "monthly"
+  changefreq: "daily" | "weekly" | "monthly" | "yearly"
   priority: string
 }> = [
   { path: paths.home, changefreq: "weekly", priority: "1.0" },
@@ -73,6 +81,7 @@ export const indexable: ReadonlyArray<{
   { path: paths.guide, changefreq: "monthly", priority: "0.7" },
   { path: paths.faq, changefreq: "monthly", priority: "0.6" },
   { path: paths.about, changefreq: "monthly", priority: "0.4" },
+  { path: paths.privacy, changefreq: "yearly", priority: "0.3" },
 ]
 
 /**

@@ -34,6 +34,7 @@ import { paths } from "./routes"
 import {
   PIECE_GENRE,
   aboutGraph,
+  privacyGraph,
   convertGraph,
   faqGraph,
   galleryGraph,
@@ -177,6 +178,17 @@ function faqBody(t: typeof fr): string {
   )
 }
 
+function privacyBody(t: typeof fr): string {
+  return chrome(
+    t,
+    h1(t.privacyPage.title) +
+      p(t.privacyPage.lead) +
+      p(t.privacyPage.updated) +
+      sections(t.privacyPage.blocks) +
+      `<section>${h2(t.privacyPage.contactHeading)}${p(t.privacyPage.contactBody)}</section>`,
+  )
+}
+
 function aboutBody(t: typeof fr): string {
   return chrome(t, h1(t.aboutPage.title) + p(t.aboutPage.lead) + sections(t.aboutPage.blocks))
 }
@@ -236,6 +248,12 @@ export function headManifest() {
       description: t.guide.lead,
       jsonLd: JSON.stringify(guideGraph(t)),
       body: guideBody(t),
+    },
+    [paths.privacy]: {
+      title: `${t.privacyPage.title} — ${SITE_NAME}`,
+      description: t.privacyPage.lead,
+      jsonLd: JSON.stringify(privacyGraph(t)),
+      body: privacyBody(t),
     },
     [paths.about]: {
       title: t.head.about.title,

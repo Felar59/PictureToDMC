@@ -173,6 +173,7 @@ _CLIENT_ROUTES = {
     "galerie/broderies",
     "qui-sommes-nous",
     "faq",
+    "confidentialite",
     "comment-faire-une-grille-de-point-de-croix",
     "compte",
     "signalements",

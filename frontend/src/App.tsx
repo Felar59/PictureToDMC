@@ -23,6 +23,7 @@ const Convert = lazy(() => import("@/routes/convert"))
 const Gallery = lazy(() => import("@/routes/gallery"))
 const NotFound = lazy(() => import("@/routes/not-found"))
 const Piece = lazy(() => import("@/routes/piece"))
+const Privacy = lazy(() => import("@/routes/privacy"))
 // Linked from the account page, and only for an admin.
 const Reports = lazy(() => import("@/routes/reports"))
 const Profile = lazy(() => import("@/routes/profile"))
@@ -95,6 +96,7 @@ export default function App() {
                 <Route path={paths.galleryStitches} element={<Gallery />} />
                 <Route path={paths.about} element={<About />} />
                 <Route path={paths.faq} element={<Faq />} />
+                <Route path={paths.privacy} element={<Privacy />} />
                 <Route path={paths.guide} element={<Guide />} />
                 <Route path={paths.atelier} element={<Atelier />} />
                 <Route path={paths.account} element={<Account />} />

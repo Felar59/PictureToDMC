@@ -718,6 +718,62 @@ export const en = {
     link: "Reported pieces",
   },
 
+  /** The privacy page. See the note on the French copy: every sentence is drawn from
+   *  the code, and the two bracketed values are Felix's to fill in. */
+  privacyPage: {
+    kicker: "what this site knows about you",
+    title: "Privacy",
+    lead:
+      "Short, because there is not much to say: your photo never leaves your browser, and the site does not follow you around.",
+    updated: "Last updated: 7 August 2026",
+    blocks: [
+      {
+        heading: "Your photo does not leave",
+        body:
+          "The whole conversion — the downscale, the colour choice, the DMC thread matching, drawing the chart — runs on your machine, in your browser. No image is sent to a server to be converted, so there is nothing to keep, nothing to analyse and nothing to lose. Cut your connection once the page has loaded and the conversion still works.",
+      },
+      {
+        heading: "Without an account, nothing is recorded",
+        body:
+          "Converting a photo, downloading a chart, browsing the gallery: none of it needs an account and none of it is recorded on the server. Your current settings are kept in your browser's local storage, on your device, so your work is still there when you come back. Clearing the site's data removes them.",
+      },
+      {
+        heading: "If you sign in with Google",
+        body:
+          "Signing in does one thing: it lets you publish to the gallery and comment. Google then passes us your name, your email address and the address of your profile picture. We keep those three, plus the date the account was created, and the bio and mark you choose. We ask Google for nothing else and can see nothing else — not your contacts, not your calendar, not your files.",
+      },
+      {
+        heading: "What you publish is public",
+        body:
+          "A shared chart, its title, its category, a photo of the finished piece if you add one, your comments and your hearts are visible to everyone, with your name on them. That is what a gallery is. You can delete your own posts and your own comments whenever you like.",
+      },
+      {
+        heading: "One cookie, and it follows nothing",
+        body:
+          "The session cookie keeps you signed in. It holds a random token that means nothing anywhere but this site, the page's JavaScript cannot read it, and the database keeps only a fingerprint of that token — so a copy of the database would let nobody sign in as anybody. It lasts 180 days, and expired sessions are deleted. A second, temporary cookie exists for the round trip to Google, to stop anyone signing you in without your knowing. That is all: no advertising cookie, no analytics cookie.",
+      },
+      {
+        heading: "No trackers, no analytics",
+        body:
+          "No Google Analytics, no pixel, no social network button, no third-party script of any kind. Even the fonts are served from this server rather than by Google Fonts, precisely so that no request goes elsewhere while you read. The site does not know how many people visit it, and that is a choice.",
+      },
+      {
+        heading: "How long",
+        body:
+          "Your account and what you have published stay for as long as you keep them. Sessions expire after 180 days. The server logs of the host that runs this site hold IP addresses for a few days, as any web server does, for diagnosis and security.",
+      },
+      {
+        heading: "Your rights",
+        body:
+          "You can ask for a copy of what the site holds about you, for it to be corrected, or for all of it to be deleted — account, posts and comments. Write to the address below and it will be done. There is no button yet to delete your own account: it is planned, and until then asking is enough. You can also withdraw this site's access at any time from your Google account settings.",
+      },
+    ],
+    contactHeading: "Write to us",
+    contactBody:
+      "For anything about this page, or to exercise one of those rights, write to [ADDRESS TO FILL IN]. The data controller is [IDENTITY TO FILL IN].",
+    contactNote: "Both bracketed values still need filling in — see ROADMAP.md.",
+  },
+
   head: {
     home: {
       title: "Photo to cross-stitch pattern \u2014 free, real DMC threads",

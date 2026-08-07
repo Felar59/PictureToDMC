@@ -666,6 +666,72 @@ export const fr: Copy = {
     link: "Ouvrages signalés",
   },
 
+  /**
+   * La page de confidentialité.
+   *
+   * Écrite depuis le code, pas depuis un modèle : chaque phrase décrit ce que
+   * `PythonDCA/api/db.py`, `auth.py` et `google.py` font réellement. C'est aussi, sans
+   * le chercher, la page la plus convaincante du site — l'argument central est
+   * vérifiable et aucun concurrent payant ne peut le tenir : la photo ne part jamais.
+   *
+   * Deux valeurs restent à compléter par Felix et sont marquées comme telles dans le
+   * texte : l'identité du responsable de traitement et une adresse de contact. Un
+   * lien GitHub n'est pas une adresse à laquelle exercer un droit.
+   */
+  privacyPage: {
+    kicker: "ce que ce site sait de vous",
+    title: "Confidentialité",
+    lead:
+      "Court, parce qu'il n'y a pas grand-chose à dire : votre photo ne quitte jamais votre navigateur, et le site ne vous suit pas.",
+    updated: "Dernière mise à jour : 7 août 2026",
+    blocks: [
+      {
+        heading: "Votre photo ne part pas",
+        body:
+          "Toute la conversion — la réduction, le choix des couleurs, la correspondance avec les fils DMC, le dessin de la grille — tourne sur votre machine, dans votre navigateur. Aucune image n'est envoyée à un serveur pour être convertie : il n'y a donc rien à conserver, rien à analyser et rien à perdre. Coupez votre connexion une fois la page chargée, la conversion fonctionne encore.",
+      },
+      {
+        heading: "Sans compte, rien n'est enregistré",
+        body:
+          "Convertir une photo, télécharger une grille, parcourir la galerie : rien de tout cela ne demande de compte et rien n'en est enregistré côté serveur. Vos réglages en cours sont rangés dans le stockage local de votre navigateur, sur votre appareil, pour que vous retrouviez votre travail en revenant. Vider les données du site les efface.",
+      },
+      {
+        heading: "Si vous vous connectez avec Google",
+        body:
+          "Se connecter ne sert qu'à une chose : publier dans la galerie et commenter. Google nous transmet alors votre nom, votre adresse e-mail et l'adresse de votre photo de profil. Nous gardons ces trois éléments, plus la date de création du compte, ainsi que la biographie et la marque que vous choisissez. Nous ne demandons rien d'autre à Google et nous ne voyons rien d'autre : ni vos contacts, ni votre agenda, ni vos fichiers.",
+      },
+      {
+        heading: "Ce que vous publiez est public",
+        body:
+          "Une grille partagée, son titre, sa catégorie, la photo de l'ouvrage si vous en ajoutez une, vos commentaires et vos cœurs sont visibles de tous, avec votre nom. C'est ce qu'est une galerie. Vous pouvez supprimer vos propres publications et vos propres commentaires quand vous voulez.",
+      },
+      {
+        heading: "Un seul cookie, et il ne suit rien",
+        body:
+          "Le cookie de session vous garde connecté. Il contient un jeton tiré au hasard qui ne veut rien dire ailleurs que sur ce site, le JavaScript de la page ne peut pas le lire, et la base ne range qu'une empreinte de ce jeton — une copie de la base ne permettrait donc de se connecter au nom de personne. Il dure 180 jours, et les sessions expirées sont effacées. Un second cookie, temporaire, existe le temps de l'aller-retour vers Google, pour empêcher qu'on vous fasse signer une connexion à votre insu. C'est tout : pas de cookie publicitaire, pas de cookie de mesure.",
+      },
+      {
+        heading: "Aucun traqueur, aucune mesure d'audience",
+        body:
+          "Pas de Google Analytics, pas de pixel, pas de bouton de réseau social, aucun script tiers d'aucune sorte. Même les polices de caractères sont servies depuis ce serveur plutôt que par Google Fonts, précisément pour qu'aucune requête ne parte ailleurs pendant que vous lisez. Le site ne sait pas combien de personnes le visitent, et c'est un choix.",
+      },
+      {
+        heading: "Combien de temps",
+        body:
+          "Votre compte et ce que vous avez publié restent tant que vous les gardez. Les sessions expirent au bout de 180 jours. Les journaux du serveur qui héberge le site retiennent des adresses IP quelques jours, comme tout serveur web, pour le diagnostic et la sécurité.",
+      },
+      {
+        heading: "Vos droits",
+        body:
+          "Vous pouvez demander une copie de ce que le site détient sur vous, sa correction, ou sa suppression complète — compte, publications et commentaires. Écrivez à l'adresse ci-dessous et ce sera fait. Il n'y a pas encore de bouton pour supprimer son compte soi-même : c'est prévu, et en attendant la demande suffit. Vous pouvez aussi retirer à tout moment l'accès accordé à ce site depuis les paramètres de votre compte Google.",
+      },
+    ],
+    contactHeading: "Nous écrire",
+    contactBody:
+      "Pour toute question sur cette page, ou pour exercer un de ces droits, écrivez à [ADRESSE À COMPLÉTER]. Le responsable du traitement est [IDENTITÉ À COMPLÉTER].",
+    contactNote: "Les deux mentions entre crochets restent à remplir — voir ROADMAP.md.",
+  },
+
   head: {
     home: {
       title: "Photo en grille de point de croix \u2014 gratuit, vrais fils DMC",
