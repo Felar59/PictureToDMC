@@ -108,10 +108,24 @@ same shape: a browser-side tool with no signup.
     ld+json : CreativeWork, ImageObject, Person, BreadcrumbList
   ```
 
-  **Reste l'étape 2 : le corps.** Le `<body>` est toujours un `div` vide avant que le
-  JS tourne. Une IA sait désormais *de quoi parle* chaque page ; elle n'a toujours
-  rien à **citer**. C'est ce qui manque pour l'accueil, le guide et la FAQ — les trois
-  pages qui répondraient à « comment faire une grille de point de croix ».
+  **Étape 2 faite aussi** (commit `af2739f`). `#root` arrive rempli : titre, texte,
+  et les liens de navigation. Mesuré sur la production :
+
+  ```
+  /                     9 liens   276 mots
+  /comment-faire-…      8 liens   588 mots
+  /faq                  7 liens   695 mots
+  /piece/4              4 liens    43 mots
+  ```
+
+  Avant : **0 lien et 0 mot sur chaque page**. Sans JavaScript le site n'avait aucune
+  structure — seul `sitemap.xml` le tenait, et un sitemap est une liste d'adresses,
+  pas une forme. La page d'un membre est ce qui rend ses grilles atteignables : la
+  galerie est une liste construite par `fetch`, donc invisible.
+
+  React vide `#root` au montage : personne ne voit les deux versions. En attendant,
+  un visiteur lit les vrais mots dans les vraies polices au lieu d'un rectangle
+  crème vide — c'est donc aussi un premier affichage que le site n'avait pas.
 
   Le contexte, gardé parce qu'il explique pourquoi. Mesuré le 7 août 2026 :
 
