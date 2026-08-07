@@ -12,6 +12,8 @@ import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
+import { breadcrumb, collection, graph } from "@/lib/schema"
+import { SITE_NAME } from "@/lib/site"
 
 const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
 
@@ -29,7 +31,7 @@ const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
  * title. That is also why the tabs are links rather than buttons.
  */
 export default function Gallery() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
@@ -38,11 +40,6 @@ export default function Gallery() {
   const photos = kind === "photo"
   const copy = photos ? t.gallery.finished : t.gallery.patterns
 
-  useHead(
-    photos
-      ? { title: t.head.galleryStitches.title, description: t.head.galleryStitches.description }
-      : { title: t.head.gallery.title, description: t.head.gallery.description },
-  )
   const { user, signIn } = useAuth()
 
   const [filter, setFilter] = useState<string>("all")
@@ -119,6 +116,36 @@ export default function Gallery() {
   useEffect(() => {
     void load(0, true)
   }, [load])
+
+  // Declared down here because the graph lists what is actually on screen, so it
+  // has to come after the posts do. It rewrites as pages load, which is correct:
+  // pressing "voir plus" really does change what this page contains.
+  const head = photos ? t.head.galleryStitches : t.head.gallery
+  useHead({
+    title: head.title,
+    description: head.description,
+    jsonLd: graph(
+      collection({
+        path: photos ? paths.galleryStitches : paths.gallery,
+        name: copy.title,
+        description: head.description,
+        lang,
+        pieces: posts,
+      }),
+      breadcrumb(
+        photos
+          ? [
+              { name: SITE_NAME, path: paths.home },
+              { name: t.nav.gallery, path: paths.gallery },
+              { name: t.gallery.tabs.finished, path: paths.galleryStitches },
+            ]
+          : [
+              { name: SITE_NAME, path: paths.home },
+              { name: t.nav.gallery, path: paths.gallery },
+            ],
+      ),
+    ),
+  })
 
   const like = async (id: number) => {
     if (!user) return signIn(pathname)

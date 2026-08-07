@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
 import { paths } from "@/lib/routes"
+import { breadcrumb, graph } from "@/lib/schema"
+import { SITE_NAME } from "@/lib/site"
 
 /**
  * The guide: how to get from a photograph to something in a hoop.
@@ -24,21 +26,34 @@ export default function Guide() {
   useHead({
     title: `${t.guide.title} — Picture to DMC`,
     description: t.guide.lead,
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "HowTo",
-      name: t.guide.title,
-      description: t.guide.lead,
-      totalTime: "PT1M",
-      // Free, and saying so in the schema as well as in the copy.
-      estimatedCost: { "@type": "MonetaryAmount", currency: "EUR", value: "0" },
-      step: t.guide.steps.map((step, i) => ({
-        "@type": "HowToStep",
-        position: i + 1,
-        name: step.heading,
-        text: step.body,
-      })),
-    },
+    /**
+     * HowTo earns nothing from Google — those rich results were removed in
+     * September 2023 and have not come back. It is kept for the same reason as the
+     * FAQ graph next door: still valid, still read by everything that is not
+     * Google, and it states in one machine-readable place that this page is a
+     * procedure with ordered steps rather than an article that happens to have
+     * headings.
+     */
+    jsonLd: graph(
+      {
+        "@type": "HowTo",
+        name: t.guide.title,
+        description: t.guide.lead,
+        totalTime: "PT1M",
+        // Free, and saying so in the schema as well as in the copy.
+        estimatedCost: { "@type": "MonetaryAmount", currency: "EUR", value: "0" },
+        step: t.guide.steps.map((step, i) => ({
+          "@type": "HowToStep",
+          position: i + 1,
+          name: step.heading,
+          text: step.body,
+        })),
+      },
+      breadcrumb([
+        { name: SITE_NAME, path: paths.home },
+        { name: t.nav.guide, path: paths.guide },
+      ]),
+    ),
   })
 
   return (

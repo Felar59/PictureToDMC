@@ -706,6 +706,24 @@ export const fr: Copy = {
       description: (maker: string) =>
         `Une broderie termin\u00e9e, partag\u00e9e par ${maker} dans la galerie \u2014 photographi\u00e9e une fois le dernier n\u0153ud fait.`,
     },
+    maker: {
+      title: (maker: string) => `${maker} \u2014 ses grilles de point de croix`,
+      description: (maker: string, pieces: number) =>
+        pieces === 1
+          ? `La grille que ${maker} a partag\u00e9e dans la galerie. \u00c0 r\u00e9cup\u00e9rer gratuitement, avec sa liste de fils DMC.`
+          : `Les ${pieces} grilles que ${maker} a partag\u00e9es dans la galerie. \u00c0 r\u00e9cup\u00e9rer gratuitement, avec leur liste de fils DMC.`,
+      /** Quand le membre n'a encore rien publi\u00e9. */
+      empty: (maker: string) =>
+        `${maker} n'a encore rien partag\u00e9 dans la galerie de Picture to DMC.`,
+    },
+    /** Ce que fait l'outil, pour le graphe SoftwareApplication. Court : ce sont des
+     *  \u00e9tiquettes lues par une machine, pas une page de vente. */
+    features: [
+      "Convertit une photo en grille de point de croix",
+      "Vraies r\u00e9f\u00e9rences de fils DMC",
+      "Grille imprimable avec la liste des fils",
+      "Tout tourne dans le navigateur",
+    ],
   },
 
   notFound: {

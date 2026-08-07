@@ -1,0 +1,272 @@
+/**
+ * Structured data: what each page *is*, said in a vocabulary machines already read.
+ *
+ * Worth being straight about the payoff, because most writing on this subject is
+ * selling something. Google removed HowTo rich results in September 2023 and FAQ
+ * rich results in May 2026, so two of the three graphs this site already had earn
+ * nothing in a search result any more. They are kept because the markup is still
+ * valid schema.org and is still read by Bing, Perplexity and the retrieval crawlers
+ * — but nobody should expect a fancier blue link out of them.
+ *
+ * What genuinely still pays, from Google's own current gallery, and all of it
+ * applies here: Organization, Breadcrumb, Image metadata (a licence and a creator
+ * shown against a picture in Google Images), Profile page, and Software app. A
+ * gallery of member-made work whose pages are mostly pictures by named people is
+ * close to the middle of that list, which is the answer to "is schema.org not just
+ * an e-commerce thing" — the e-commerce half (Product, Offer, AggregateRating,
+ * Review) is exactly the half this site has no honest use for.
+ *
+ * The other reason, and the durable one: an answer engine that has to *infer* what
+ * this site does will sometimes infer wrong. Stating it costs a few hundred bytes.
+ *
+ * Everything is emitted as one `@graph` per page with stable `@id`s, so the
+ * organisation and the site are single nodes that every page's other nodes point
+ * at, rather than a fresh copy of the same claim on each URL.
+ */
+
+import { ORIGIN, SITE_NAME, absolute } from "./site"
+import { paths } from "./routes"
+
+/** Stable anchors. A node with an `@id` is one thing mentioned in many places. */
+export const ORG_ID = `${ORIGIN}/#organization`
+export const SITE_ID = `${ORIGIN}/#website`
+
+type Node = Record<string, unknown>
+
+/** Wrap nodes into the single script tag `useHead` writes. */
+export function graph(...nodes: Array<Node | Node[] | null | undefined>): object {
+  return {
+    "@context": "https://schema.org",
+    "@graph": nodes.flat().filter(Boolean),
+  }
+}
+
+/**
+ * Who runs this. Deliberately thin: an Organization may carry an address, a
+ * founder, a telephone number and half a dozen sameAs profiles, and every one of
+ * those here would be invented. It says the name, the mark and the site.
+ */
+export function organization(): Node {
+  return {
+    "@type": "Organization",
+    "@id": ORG_ID,
+    name: SITE_NAME,
+    url: ORIGIN,
+    logo: { "@type": "ImageObject", url: `${ORIGIN}/og.png` },
+  }
+}
+
+/** The site as a thing, so pages can say which site they belong to. */
+export function webSite(lang: string): Node {
+  return {
+    "@type": "WebSite",
+    "@id": SITE_ID,
+    name: SITE_NAME,
+    url: ORIGIN,
+    inLanguage: lang,
+    publisher: { "@id": ORG_ID },
+  }
+}
+
+/**
+ * The trail to the current page.
+ *
+ * One of the few types with a live rich result: Google draws it as the path under
+ * the title instead of a bare URL. The trail must match what a visitor can
+ * actually click, which is why the caller passes it rather than it being derived
+ * from the path — `/piece/12` sits under the gallery, and no amount of splitting
+ * the URL on slashes would know that.
+ */
+export function breadcrumb(trail: Array<{ name: string; path: string }>): Node {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((step, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: step.name,
+      item: absolute(step.path),
+    })),
+  }
+}
+
+/**
+ * The converter, as an application.
+ *
+ * `offers` at zero is not decoration: "free" is the single most load-bearing fact
+ * about this tool and the one an answer engine is most likely to get wrong, since
+ * nearly every competitor charges. No `aggregateRating`, which means no Software
+ * App rich result — that one needs a rating, and there is no rating system here.
+ * Inventing one to earn a star in a search result is exactly the kind of thing this
+ * markup is not for.
+ */
+export function application(description: string, features: string[]): Node {
+  return {
+    "@type": "SoftwareApplication",
+    "@id": `${ORIGIN}${paths.convert}#app`,
+    name: SITE_NAME,
+    url: absolute(paths.convert),
+    applicationCategory: "DesignApplication",
+    // The browser is the runtime. Not "Windows, macOS, Linux" — nothing installs.
+    operatingSystem: "Web browser",
+    browserRequirements: "Requires JavaScript",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+    description,
+    featureList: features,
+    publisher: { "@id": ORG_ID },
+  }
+}
+
+/** A member, referenced by their profile URL so every mention is the same person. */
+export function person(id: number, name: string): Node {
+  return {
+    "@type": "Person",
+    "@id": `${ORIGIN}${paths.maker(id)}#person`,
+    name,
+    url: absolute(paths.maker(id)),
+  }
+}
+
+/**
+ * One published piece: the work, the picture of it, and who made it.
+ *
+ * `ImageObject` is the part with a current, documented payoff — it is what puts a
+ * creator and a licence link against a picture in Google Images, which for a
+ * gallery is the search surface that matters most. `creditText` and `creator` are
+ * facts the database holds.
+ *
+ * There is deliberately no `license` field. Every published chart here can be
+ * downloaded by anyone, and the gallery says as much in French, but "you may take
+ * this" is not the same statement as a named licence with terms, and picking one on
+ * a member's behalf is not mine to do. `acquireLicensePage` points at the piece,
+ * which is where the download actually is. See ROADMAP.md — it wants a decision,
+ * not a guess.
+ */
+export function piece(opts: {
+  id: number
+  title: string
+  description: string
+  authorId: number
+  authorName: string
+  createdAt: number
+  likeCount: number
+  /** Absent on a piece whose thumbnail never rendered. */
+  imagePath?: string
+  lang: string
+}): Node[] {
+  const url = absolute(paths.piece(opts.id))
+  const author = { "@id": `${ORIGIN}${paths.maker(opts.authorId)}#person` }
+
+  const image: Node | null = opts.imagePath
+    ? {
+        "@type": "ImageObject",
+        "@id": `${url}#image`,
+        contentUrl: `${ORIGIN}${opts.imagePath}`,
+        url: `${ORIGIN}${opts.imagePath}`,
+        creator: author,
+        creditText: opts.authorName,
+        acquireLicensePage: url,
+      }
+    : null
+
+  return [
+    {
+      "@type": "CreativeWork",
+      "@id": `${url}#work`,
+      name: opts.title,
+      description: opts.description,
+      url,
+      // The craft, in the words someone would search for. `genre` is free text and
+      // this is the honest one.
+      genre: "Cross stitch pattern",
+      author,
+      creator: author,
+      // Milliseconds in the database; schema.org wants ISO 8601.
+      dateCreated: new Date(opts.createdAt).toISOString(),
+      datePublished: new Date(opts.createdAt).toISOString(),
+      inLanguage: opts.lang,
+      isPartOf: { "@id": SITE_ID },
+      publisher: { "@id": ORG_ID },
+      ...(image ? { image: { "@id": `${url}#image` } } : {}),
+      interactionStatistic: {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/LikeAction",
+        userInteractionCount: opts.likeCount,
+      },
+    },
+    ...(image ? [image] : []),
+  ]
+}
+
+/**
+ * A member's page. `ProfilePage` is in Google's current gallery and means exactly
+ * this: a page about one person, with what they have posted on it.
+ */
+export function profile(opts: {
+  id: number
+  name: string
+  bio?: string | null
+  joinedAt: number
+  pieces: Array<{ id: number; title: string }>
+}): Node[] {
+  const url = absolute(paths.maker(opts.id))
+  return [
+    {
+      "@type": "ProfilePage",
+      "@id": `${url}#profile`,
+      url,
+      mainEntity: { "@id": `${url}#person` },
+      isPartOf: { "@id": SITE_ID },
+      // What the page is a list of, which is the reason to index it at all.
+      hasPart: opts.pieces.map((p) => ({
+        "@type": "CreativeWork",
+        "@id": `${ORIGIN}${paths.piece(p.id)}#work`,
+        name: p.title,
+        url: absolute(paths.piece(p.id)),
+      })),
+    },
+    {
+      "@type": "Person",
+      "@id": `${url}#person`,
+      name: opts.name,
+      url,
+      ...(opts.bio ? { description: opts.bio } : {}),
+      // `dateCreated` on a Person would be a birth date. This is when the account
+      // started, and there is no schema.org property for that — so it is left out
+      // rather than put somewhere that reads as something else.
+    },
+  ]
+}
+
+/** A gallery: a page whose content is a list of other pages. */
+export function collection(opts: {
+  path: string
+  name: string
+  description: string
+  lang: string
+  pieces: Array<{ id: number; title: string }>
+}): Node {
+  const url = absolute(opts.path)
+  return {
+    "@type": "CollectionPage",
+    "@id": `${url}#collection`,
+    url,
+    name: opts.name,
+    description: opts.description,
+    inLanguage: opts.lang,
+    isPartOf: { "@id": SITE_ID },
+    publisher: { "@id": ORG_ID },
+    mainEntity: {
+      "@type": "ItemList",
+      // Only what this page is actually showing. A count of everything ever
+      // published would be a claim the page does not back up.
+      numberOfItems: opts.pieces.length,
+      itemListElement: opts.pieces.map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: p.title,
+        url: absolute(paths.piece(p.id)),
+      })),
+    },
+  }
+}

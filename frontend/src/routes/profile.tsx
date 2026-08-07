@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Tag } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
+import { useHead } from "@/lib/head"
 import { paths } from "@/lib/routes"
+import { breadcrumb, graph, profile as profileNodes } from "@/lib/schema"
+import { SITE_NAME } from "@/lib/site"
 
 type Profile = {
   user: api.PublicUser
@@ -40,6 +43,47 @@ export default function ProfilePage() {
   }, [userId])
 
   useEffect(load, [load])
+
+  /**
+   * A head of its own — this page had none at all.
+   *
+   * Every member page was answering with index.html's defaults, so a crawler that
+   * followed an author's name out of the gallery found a second copy of the home
+   * page's title, description and self-canonical. That is the same soft duplicate
+   * the piece pages had, on a route the gallery links to from every single card.
+   *
+   * ProfilePage is in Google's current gallery of supported types and means
+   * precisely this: one page about one person, listing what they have posted.
+   */
+  const maker = profile?.user.displayName ?? ""
+  useHead({
+    title: profile ? t.head.maker.title(maker) : t.notFound.title,
+    description: profile
+      ? profile.posts.length
+        ? t.head.maker.description(maker, profile.posts.length)
+        : t.head.maker.empty(maker)
+      : t.notFound.body,
+    canonicalPath: paths.maker(userId),
+    // Same rule as a deleted piece: gone means out of the index, and only once the
+    // request has actually come back rather than while it is still in flight.
+    noindex: state === "failed",
+    jsonLd: profile
+      ? graph(
+          profileNodes({
+            id: profile.user.id,
+            name: maker,
+            bio: profile.user.bio,
+            joinedAt: profile.joinedAt,
+            pieces: profile.posts,
+          }),
+          breadcrumb([
+            { name: SITE_NAME, path: paths.home },
+            { name: t.nav.gallery, path: paths.gallery },
+            { name: maker, path: paths.maker(userId) },
+          ]),
+        )
+      : undefined,
+  })
 
   const like = async (postId: number) => {
     if (!user) return signIn(`/brodeur/${userId}`)

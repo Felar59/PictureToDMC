@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n"
 import { demoThreads } from "@/lib/pixel-art"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
+import { application, graph, organization, webSite } from "@/lib/schema"
 
 /** Per-step badge colors, in the design's order: coral, golden, nile, sky. */
 const STEP_TONES = [
@@ -31,21 +32,14 @@ export default function Home() {
     title: t.head.home.title,
     description: t.head.home.description,
     canonicalPath: "/",
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "Picture to DMC",
-      applicationCategory: "DesignApplication",
-      operatingSystem: "Web",
-      description: t.head.home.description,
-      offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
-      featureList: [
-        "Photo to cross-stitch chart",
-        "Real DMC thread matching",
-        "Printable chart with a thread list",
-        "Runs entirely in the browser",
-      ],
-    },
+    // The home page is where the site's own identity is declared — the
+    // organisation and the website as nodes every other page's graph points back
+    // at by @id, rather than each URL repeating the same claim in its own words.
+    jsonLd: graph(
+      organization(),
+      webSite(lang),
+      application(t.head.home.description, t.head.features),
+    ),
   })
 
   return (

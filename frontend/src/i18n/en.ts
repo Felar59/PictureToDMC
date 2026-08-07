@@ -762,6 +762,23 @@ export const en = {
       description: (maker: string) =>
         `A finished cross-stitch piece shared by ${maker} in the gallery — photographed once the last knot was tied.`,
     },
+    maker: {
+      title: (maker: string) => `${maker} — their cross-stitch charts`,
+      description: (maker: string, pieces: number) =>
+        pieces === 1
+          ? `The chart ${maker} shared in the gallery. Free to take, with its DMC thread list.`
+          : `The ${pieces} charts ${maker} shared in the gallery. Free to take, with their DMC thread lists.`,
+      /** When the member has published nothing yet. */
+      empty: (maker: string) => `${maker} hasn't shared anything in the Picture to DMC gallery yet.`,
+    },
+    /** What the tool does, for the SoftwareApplication graph. Short: these are
+     *  labels a machine reads, not a sales page. */
+    features: [
+      "Turns a photo into a cross-stitch chart",
+      "Real DMC thread references",
+      "Printable chart with its thread list",
+      "Runs entirely in the browser",
+    ],
   },
 
   notFound: {

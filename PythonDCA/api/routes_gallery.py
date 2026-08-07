@@ -68,7 +68,26 @@ def _decode_data_url(value: str, limit: int) -> tuple[bytes, str]:
     return raw, mime
 
 
+#: What a row must carry for `_card` to build a card from it.
+#:
+#: Three separate queries feed `_card`, and adding a field to a card means editing
+#: all three. One of them was missed when `kind` arrived and the member pages
+#: answered 500 for months — `sqlite3.Row` raises a bare `IndexError: No item with
+#: that key` naming neither the column nor the query, which is a poor clue in a
+#: log and no clue at all to whoever sees the blank page.
+_CARD_COLUMNS = (
+    "id", "title", "category", "kind", "width", "height", "thread_codes",
+    "like_count", "created_at", "author_id", "palette", "display_name", "icon", "role",
+)
+
+
 def _card(row: sqlite3.Row, liked: bool) -> dict:
+    missing = [c for c in _CARD_COLUMNS if c not in row.keys()]
+    if missing:
+        raise RuntimeError(
+            f"_card was handed a row without {', '.join(missing)} — "
+            "add the column to that query's SELECT"
+        )
     # A photo post has no chart behind it, so every pattern field here can be
     # empty. Read through helpers rather than indexing the row directly: the old
     # version passed `row["thread_codes"]` straight to json.loads, which raises
@@ -640,9 +659,15 @@ def get_profile(user_id: int, request: Request) -> JSONResponse:
     if not who:
         raise HTTPException(404, "No such member")
 
+    # `p.kind` was missing here, and had been since the photo gallery shipped: this
+    # is the only query feeding `_card` that was not updated with it, so every
+    # member page answered 500 and the site showed "ce membre n'existe pas" for
+    # members who plainly exist — reachable from the author line on every card in
+    # the gallery. `sqlite3.Row` raises IndexError on a column that was not
+    # selected, so the miss was total rather than a null somewhere.
     rows = conn.execute(
         """
-        SELECT p.id, p.title, p.category, p.width, p.height, p.thread_codes,
+        SELECT p.id, p.title, p.category, p.kind, p.width, p.height, p.thread_codes,
                p.like_count, p.created_at, p.author_id, p.palette,
                p.photo IS NOT NULL AS has_photo,
                p.thumb_png IS NOT NULL AS has_thumb,
@@ -650,7 +675,7 @@ def get_profile(user_id: int, request: Request) -> JSONResponse:
                EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
         FROM posts p JOIN users u ON u.id = p.author_id
         WHERE p.author_id = ?
-        ORDER BY p.created_at DESC
+        ORDER BY p.created_at DESC, p.id DESC
         LIMIT 60
         """,
         (viewer["id"] if viewer else -1, user_id),

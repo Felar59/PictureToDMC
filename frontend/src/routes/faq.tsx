@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
 import { paths } from "@/lib/routes"
+import { breadcrumb, graph } from "@/lib/schema"
+import { SITE_NAME } from "@/lib/site"
 
 /**
  * The FAQ, on its own address.
@@ -26,19 +28,33 @@ export default function Faq() {
   useHead({
     title: `${t.faqPage.title} · ${t.nav.faq} — Picture to DMC`,
     description: t.faqPage.lead,
-    // The one page on the site with a schema that changes how it appears in a
-    // result: a FAQPage can be shown with its questions expanded.
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: t.faqPage.groups.flatMap((group) =>
-        group.items.map((item) => ({
-          "@type": "Question",
-          name: item.q,
-          acceptedAnswer: { "@type": "Answer", text: item.a },
-        })),
-      ),
-    },
+    /**
+     * This used to say a FAQPage is drawn with its questions expanded in a
+     * result. That stopped being true on 7 May 2026, when Google removed FAQ rich
+     * results for everyone — so the claim is gone rather than left to mislead the
+     * next person who reads it.
+     *
+     * The markup stays. It is still valid schema.org, Bing and the answer-engine
+     * crawlers still read it, and a page of questions and answers marked up as
+     * questions and answers is the cheapest way to be quotable. Nobody should
+     * expect a richer blue link from it.
+     */
+    jsonLd: graph(
+      {
+        "@type": "FAQPage",
+        mainEntity: t.faqPage.groups.flatMap((group) =>
+          group.items.map((item) => ({
+            "@type": "Question",
+            name: item.q,
+            acceptedAnswer: { "@type": "Answer", text: item.a },
+          })),
+        ),
+      },
+      breadcrumb([
+        { name: SITE_NAME, path: paths.home },
+        { name: t.nav.faq, path: paths.faq },
+      ]),
+    ),
   })
 
   return (

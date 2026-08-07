@@ -18,6 +18,8 @@ import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
+import { breadcrumb, graph, person, piece } from "@/lib/schema"
+import { SITE_NAME } from "@/lib/site"
 
 /**
  * One published piece: the work, then what you can do with it, then what people
@@ -40,7 +42,7 @@ const MAX_ART_WIDTH = 620
 const MAX_ART_HEIGHT = 640
 
 export default function Piece() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const { user, signIn } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams()
@@ -216,25 +218,64 @@ export default function Piece() {
   // A photo post has no measurements to quote, and quoting them anyway is how you
   // get "null × null stitches in 0 DMC threads" in a link preview. It gets a head
   // about what it is: somebody's finished work.
+  // Pulled out of the call below because the description is wanted twice — once as
+  // the meta tag a person reads in a result, once inside the graph a machine reads.
+  // Two nested ternaries producing the same sentence would eventually drift apart.
+  const headTitle = post
+    ? isPhoto
+      ? t.head.pieceStitch.title(post.title, post.author.displayName)
+      : t.head.piece.title(post.title, post.author.displayName)
+    : t.notFound.title
+  const headDescription = post
+    ? isPhoto || post.width === null || post.height === null || !post.threadCodes
+      ? t.head.pieceStitch.description(post.author.displayName)
+      : t.head.piece.description(
+          post.author.displayName,
+          post.width,
+          post.height,
+          post.threadCodes.length,
+        )
+    : t.notFound.body
+
   useHead({
-    title: post
-      ? isPhoto
-        ? t.head.pieceStitch.title(post.title, post.author.displayName)
-        : t.head.piece.title(post.title, post.author.displayName)
-      : t.notFound.title,
-    description: post
-      ? isPhoto || post.width === null || post.height === null || !post.threadCodes
-        ? t.head.pieceStitch.description(post.author.displayName)
-        : t.head.piece.description(
-            post.author.displayName,
-            post.width,
-            post.height,
-            post.threadCodes.length,
-          )
-      : t.notFound.body,
+    title: headTitle,
+    description: headDescription,
     canonicalPath: `/piece/${postId}`,
     image: post ? `/api/posts/${postId}/share.png` : undefined,
     type: "article",
+    /**
+     * The work, its picture and its maker.
+     *
+     * This is the one page on the site where structured data still buys something
+     * Google actively shows: image metadata puts a creator and a licence link
+     * against the picture in Google Images, which for a gallery is the surface
+     * that matters. The share card is used as the image because it is a real file
+     * a crawler can fetch without running any of this JavaScript.
+     *
+     * Nothing at all when the piece is missing — a graph describing a CreativeWork
+     * that 404s is worse than silence.
+     */
+    jsonLd: post
+      ? graph(
+          piece({
+            id: post.id,
+            title: post.title,
+            description: headDescription,
+            authorId: post.author.id,
+            authorName: post.author.displayName,
+            createdAt: post.createdAt,
+            likeCount: post.likeCount,
+            imagePath: `/api/posts/${postId}/share.png`,
+            lang,
+          }),
+          person(post.author.id, post.author.displayName),
+          breadcrumb([
+            { name: SITE_NAME, path: paths.home },
+            { name: t.nav.gallery, path: homeGallery },
+            { name: post.title, path: paths.piece(post.id) },
+          ]),
+        )
+      : undefined,
     // A piece that is gone must not be indexed under a canonical pointing at itself.
     // People delete their work, and the URL stays in the wild — without this the page
     // answered with the home page's title and description while still claiming to be
