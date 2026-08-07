@@ -62,8 +62,22 @@ same shape: a browser-side tool with no signup.
   English paths redirect. All of them live in `frontend/src/lib/routes.ts`.
 - **A real head per route** — title, description, canonical, Open Graph, Twitter —
   written by hand in `frontend/src/lib/head.ts`, no dependency.
-- **`JSON-LD`**: `SoftwareApplication` on the home page, `FAQPage` on the FAQ,
-  `HowTo` on the guide.
+- **`JSON-LD` on every route**, composed in `frontend/src/lib/schema.ts` as one
+  `@graph` per page with stable `@id`s. `Organization` + `WebSite` + `SoftwareApplication`
+  (home and converter), `BreadcrumbList` everywhere, `CollectionPage` + `ItemList` on
+  both galleries, `CreativeWork` + `ImageObject` + `Person` on a piece, `ProfilePage`
+  on a member, `AboutPage`, and the older `FAQPage` / `HowTo`.
+
+  Worth recording what this is and is not worth, since the internet is confident and
+  wrong about it in both directions. Google removed `HowTo` rich results in September
+  2023 and `FAQPage` rich results on 7 May 2026 — those two earn *nothing* in a search
+  result now and are kept only because they stay valid and are read by everything that
+  is not Google. The types with a live payoff are the ones added later: breadcrumbs,
+  image metadata (creator and licence shown against a picture in Google Images),
+  profile pages, organisation. Schema.org is emphatically not an e-commerce-only
+  vocabulary — but the e-commerce half of it (`Product`, `Offer`, `AggregateRating`,
+  `Review`) is exactly the half this site has no honest use for, and inventing a rating
+  to earn a star would be the wrong trade.
 - **`robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt`**, generated at build
   time by a Vite plugin from `routes.ts` and `site.ts`, so a new page reaches all four
   by being added to `indexable` and the domain changes in one line.
@@ -75,6 +89,43 @@ same shape: a browser-side tool with no signup.
 - **The FAQ and the guide exist as pages** rather than as an anchor.
 
 ### Still to do
+
+- **Rendre le head côté serveur — le plus gros point, et il annule en partie tout ce
+  qui précède.**
+
+  Mesuré le 7 août 2026, sur la production :
+
+  ```
+  curl https://…/piece/4
+    3 324 octets
+    <title>Photo en grille de point de croix — gratuit…</title>   ← celui de l'accueil
+    0 bloc ld+json
+    <body> vide
+  ```
+
+  Tout ce que fait `useHead` — titre, description, canonique, Open Graph, JSON-LD —
+  s'écrit **après** que le JavaScript a tourné. Googlebot exécute le JS et voit donc
+  tout. GPTBot, ClaudeBot et PerplexityBot **n'exécutent pas de JavaScript** : ils
+  lisent le HTML initial et repartent. La documentation d'Anthropic le dit noir sur
+  blanc pour son propre outil de récupération web.
+
+  Conséquence : pour ChatGPT, Claude et Perplexity, *chaque* page du site est
+  aujourd'hui le titre de l'accueil, la description de l'accueil, aucun balisage et un
+  corps vide. Le travail de structure est correct ; il est simplement invisible pour
+  exactement les moteurs qui motivaient ce chantier.
+
+  Le serveur sert déjà `index.html` à chaque route (`SinglePageFiles.get_response`) et
+  sait déjà lire la base — c'est comme ça que `share.png` est dessinée. Injecter le head
+  au passage est le même mouvement. Trois niveaux possibles, du moins cher au plus
+  complet :
+
+  1. **Le head seulement**, pour `/piece/{id}` et `/brodeur/{id}` : les données sont
+     déjà dans SQLite, rien à générer.
+  2. **Le head de toutes les routes** : demande d'exporter les chaînes de `i18n/fr.ts`
+     vers un JSON lu par Python, comme `scripts/export-dmc.py` le fait déjà pour les
+     couleurs.
+  3. **Un corps rendu** — au minimum un `<h1>` et le texte principal — pour qu'il y ait
+     quelque chose à *citer* et pas seulement à classer.
 
 - **Content.** The FAQ is fourteen questions; the guide is one page. What earns links
   is more of both — how to read a chart, what to do about a photo with a busy
