@@ -69,11 +69,132 @@ function template(built: string): string {
     .replaceAll(String(S.pieces), "{pieces}")
 }
 
+/* ------------------------------------------------------------------- body
+ *
+ * A readable document for the readers that never run the JavaScript.
+ *
+ * The head told them what each page *is*. This gives them something to quote —
+ * and, just as importantly, something to follow: measured on production before
+ * this existed, the served HTML contained **zero links**, on every page. A crawler
+ * that does not execute JavaScript could reach nothing from the home page. Only
+ * sitemap.xml was holding the site together, and a sitemap is a list of addresses,
+ * not a structure.
+ *
+ * React clears `#root` when it mounts, so everything below is replaced the moment
+ * the app boots. Nobody sees two versions. What a person on a slow connection sees
+ * in the meantime is the page's actual words in the site's actual fonts, instead of
+ * the blank cream rectangle they got before — so this is not only for machines.
+ *
+ * Only classes already used by the real pages appear here, so Tailwind has
+ * certainly emitted them.
+ */
+
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
+/** The links every page carries, so the site has a shape without JavaScript. */
+function chrome(t: typeof fr, inner: string): string {
+  const link = (to: string, label: string) => `<a href="${to}">${esc(label)}</a>`
+  const nav = [
+    link(paths.home, SITE_NAME),
+    link(paths.convert, t.nav.convert),
+    link(paths.gallery, t.nav.gallery),
+    link(paths.guide, t.nav.guide),
+    link(paths.faq, t.nav.faq),
+  ].join(" · ")
+  const foot = [
+    link(paths.galleryStitches, t.footer.stitches),
+    link(paths.about, t.footer.about),
+  ].join(" · ")
+  return (
+    `<div class="mx-auto max-w-[780px] px-5 py-12">` +
+    `<nav class="text-[14px] text-cocoa mb-8 flex flex-wrap gap-2">${nav}</nav>` +
+    inner +
+    `<nav class="text-[14px] text-cocoa mt-12 flex flex-wrap gap-2">${foot}</nav>` +
+    `</div>`
+  )
+}
+
+const h1 = (text: string) =>
+  `<h1 class="text-[32px] sm:text-[40px] leading-[1.12] mt-2 mb-5">${esc(text)}</h1>`
+const h2 = (text: string) => `<h2 class="text-[22px] m-0 mb-4">${esc(text)}</h2>`
+const p = (text: string) =>
+  `<p class="text-[16px] leading-[1.7] text-clay m-0 mb-4">${esc(text)}</p>`
+
+/** heading-and-body pairs — the shape the guide, the about page and the home
+ *  page's steps all happen to share. */
+function sections(items: ReadonlyArray<{ heading: string; body: string }>): string {
+  return items.map((s) => `<section>${h2(s.heading)}${p(s.body)}</section>`).join("")
+}
+
+function homeBody(t: typeof fr): string {
+  return chrome(
+    t,
+    h1(t.home.heroTitleBefore + t.home.heroTitleAccent + t.home.heroTitleAfter) +
+      p(t.home.heroLead) +
+      `<p class="text-[16px] m-0 mb-8"><a href="${paths.convert}">${esc(t.home.ctaUpload)}</a></p>` +
+      h2(t.home.stepsTitle) +
+      // The home page's steps say `title` where the guide's say `heading`. Mapped
+      // rather than made uniform: those two dictionaries are read by components
+      // that are not being touched here.
+      sections(t.home.steps.map((s) => ({ heading: s.title, body: s.body }))) +
+      h2(t.home.faqTitle) +
+      t.home.faq.map((f) => `<section>${h2(f.q)}${p(f.a)}</section>`).join("") +
+      `<p class="text-[16px] m-0"><a href="${paths.faq}">${esc(t.home.faqMore)}</a></p>`,
+  )
+}
+
+function guideBody(t: typeof fr): string {
+  return chrome(
+    t,
+    h1(t.guide.title) +
+      p(t.guide.lead) +
+      p(t.guide.intro) +
+      sections(t.guide.steps) +
+      `<section>${h2(t.guide.ctaTitle)}${p(t.guide.ctaBody)}` +
+      `<p class="text-[16px] m-0"><a href="${paths.convert}">${esc(t.guide.ctaButton)}</a></p></section>`,
+  )
+}
+
+function faqBody(t: typeof fr): string {
+  return chrome(
+    t,
+    h1(t.faqPage.title) +
+      p(t.faqPage.lead) +
+      t.faqPage.groups
+        .map(
+          (g) =>
+            `<section>${h2(g.heading)}` +
+            g.items.map((i) => `<h3 class="text-[17px] m-0 mb-1">${esc(i.q)}</h3>${p(i.a)}`).join("") +
+            `</section>`,
+        )
+        .join(""),
+  )
+}
+
+function aboutBody(t: typeof fr): string {
+  return chrome(t, h1(t.aboutPage.title) + p(t.aboutPage.lead) + sections(t.aboutPage.blocks))
+}
+
+/** The two interactive pages. Their content is a tool and a live list, neither of
+ *  which can be written down here — so they get their heading, what they are for,
+ *  and the links. That is honest, and it is more than the nothing they had. */
+function plainBody(t: typeof fr, heading: string, lead: string): string {
+  return chrome(t, h1(heading) + p(lead))
+}
+
 export type StaticHead = {
   title: string
   description: string
   /** Already serialised: the server pastes it into a script tag verbatim. */
   jsonLd: string
+  /** Ready-made HTML for `#root`, replaced by React the moment it mounts. */
+  body: string
 }
 
 export function headManifest() {
@@ -84,36 +205,43 @@ export function headManifest() {
       title: t.head.home.title,
       description: t.head.home.description,
       jsonLd: JSON.stringify(homeGraph(t, LANG)),
+      body: homeBody(t),
     },
     [paths.convert]: {
       title: t.head.convert.title,
       description: t.head.convert.description,
       jsonLd: JSON.stringify(convertGraph(t)),
+      body: plainBody(t, t.converter.title, t.head.convert.description),
     },
     [paths.gallery]: {
       title: t.head.gallery.title,
       description: t.head.gallery.description,
       jsonLd: JSON.stringify(galleryGraph(t, LANG, false)),
+      body: plainBody(t, t.gallery.patterns.title, t.head.gallery.description),
     },
     [paths.galleryStitches]: {
       title: t.head.galleryStitches.title,
       description: t.head.galleryStitches.description,
       jsonLd: JSON.stringify(galleryGraph(t, LANG, true)),
+      body: plainBody(t, t.gallery.finished.title, t.head.galleryStitches.description),
     },
     [paths.faq]: {
       title: `${t.faqPage.title} · ${t.nav.faq} — ${SITE_NAME}`,
       description: t.faqPage.lead,
       jsonLd: JSON.stringify(faqGraph(t)),
+      body: faqBody(t),
     },
     [paths.guide]: {
       title: `${t.guide.title} — ${SITE_NAME}`,
       description: t.guide.lead,
       jsonLd: JSON.stringify(guideGraph(t)),
+      body: guideBody(t),
     },
     [paths.about]: {
       title: t.head.about.title,
       description: t.aboutPage.lead,
       jsonLd: JSON.stringify(aboutGraph(t)),
+      body: aboutBody(t),
     },
   }
 

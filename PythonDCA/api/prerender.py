@@ -287,13 +287,31 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
         "threads": len(codes),
     }
     description = _fill(shape["description"], values)
+    title = _fill(shape["title"], values)
+    gallery = (
+        manifest["dynamic"]["stitchesPath"]
+        if row["kind"] == "photo"
+        else manifest["dynamic"]["galleryPath"]
+    )
     return {
-        "title": _fill(shape["title"], values),
+        "title": title,
         "description": description,
         "canonical": f"/piece/{row['id']}",
         "image": f"/api/posts/{row['id']}/share.png",
         "type": "article",
         "jsonLd": json.dumps(_piece_graph(manifest, row, description), ensure_ascii=False),
+        # The picture is the page, and a crawler cannot see a canvas that has not
+        # been drawn — so what it gets instead is the piece named, described,
+        # credited to its maker, and linked to both of them.
+        "body": _body(
+            manifest,
+            row["title"],
+            description,
+            [
+                (f"/brodeur/{row['author_id']}", row["display_name"]),
+                (gallery, manifest["dynamic"]["crumbGallery"]),
+            ],
+        ),
     }
 
 
@@ -324,7 +342,40 @@ def _maker_head(manifest: Any, user_id: int) -> dict | None:
         "description": description,
         "canonical": f"/brodeur/{user['id']}",
         "jsonLd": json.dumps(_maker_graph(manifest, user, posts), ensure_ascii=False),
+        # Their pieces as real links: this is the page that makes every piece
+        # reachable without JavaScript, the gallery being a list built by fetch.
+        "body": _body(
+            manifest,
+            user["display_name"],
+            description,
+            [(f"/piece/{p['id']}", p["title"]) for p in posts],
+        ),
     }
+
+
+def _body(manifest: Any, heading: str, lead: str, links: list[tuple[str, str]]) -> str:
+    """A heading, a sentence and some links — the same skeleton the fixed routes get.
+
+    Built here rather than in the manifest because every word of it is a database
+    row. The wrapper classes match the ones head-manifest.ts uses so the two look
+    like the same site during the moment before React takes over.
+    """
+    items = "".join(
+        f'<li class="m-0 mb-1"><a href="{html.escape(href, quote=True)}">'
+        f"{html.escape(text)}</a></li>"
+        for href, text in links
+    )
+    gallery = manifest["dynamic"]["galleryPath"]
+    return (
+        '<div class="mx-auto max-w-[780px] px-5 py-12">'
+        f'<nav class="text-[14px] text-cocoa mb-8 flex flex-wrap gap-2">'
+        f'<a href="/">{html.escape(manifest["siteName"])}</a> · '
+        f'<a href="{gallery}">{html.escape(manifest["dynamic"]["crumbGallery"])}</a></nav>'
+        f'<h1 class="text-[32px] sm:text-[40px] leading-[1.12] mt-2 mb-5">{html.escape(heading)}</h1>'
+        f'<p class="text-[16px] leading-[1.7] text-clay m-0 mb-4">{html.escape(lead)}</p>'
+        + (f'<ul class="list-none p-0 m-0">{items}</ul>' if items else "")
+        + "</div>"
+    )
 
 
 #: Routes that exist but have no business being in an index — someone's account
@@ -350,6 +401,7 @@ def head_for(path: str) -> dict | None:
             "description": fixed["description"],
             "canonical": clean,
             "jsonLd": fixed["jsonLd"],
+            "body": fixed.get("body"),
         }
 
     if clean in PRIVATE:
@@ -439,5 +491,26 @@ def render(path: str) -> str | None:
         safe = head["jsonLd"].replace("</", "<\\/")
         parts.append(f'<script type="application/ld+json" data-head>{safe}</script>')
 
-    body = _STRIP.sub("", shell)
-    return body.replace("</head>", "\n    ".join(["", *parts]) + "\n  </head>", 1)
+    out = _STRIP.sub("", shell)
+    out = out.replace("</head>", "\n    ".join(["", *parts]) + "\n  </head>", 1)
+
+    # And the page itself, where there is one to give.
+    #
+    # React clears #root when it mounts, so this is replaced the instant the app
+    # boots and nobody ever sees both. Until then it is the page's real words in
+    # the page's real fonts, where a blank rectangle used to be — and it is the
+    # only thing a crawler that does not run JavaScript will ever read, including
+    # every link on the site.
+    body = head.get("body")
+    if body:
+        # *Inside* the mount point, not after it. Written the other way round the
+        # content becomes a sibling of #root, which React never clears — so the page
+        # would carry the skeleton and the real app at once, forever, for everyone.
+        out = out.replace(_ROOT, f'<div id="root">{body}</div>', 1)
+    return out
+
+
+#: The mount point, exactly as index.html writes it. A literal rather than a regex
+#: so a change to that markup fails visibly here instead of silently skipping the
+#: body on every page.
+_ROOT = '<div id="root"></div>'
