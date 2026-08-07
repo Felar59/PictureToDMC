@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
+import { DeleteAccountDialog } from "@/community/delete-account-dialog"
 import { useI18n } from "@/i18n"
 import { ApiError } from "@/lib/community"
 import { paths } from "@/lib/routes"
@@ -23,6 +24,7 @@ import { useHead } from "@/lib/head"
  * name is kept exactly as it was.
  */
 export default function Account() {
+  const [deleting, setDeleting] = useState(false)
   const { t } = useI18n()
   const { user, signIn, signOut, updateProfile } = useAuth()
   const navigate = useNavigate()
@@ -183,6 +185,33 @@ export default function Account() {
           {t.account.signOut}
         </Button>
       </div>
+
+      {/* Last on the page, and deliberately dull.
+          The privacy policy says you may have everything erased, so there has to be
+          a way to do it that is not writing an e-mail and waiting. It is quiet
+          rather than red-and-shouting: this is a right, not a trap, and a wall of
+          warning colour would make an ordinary decision feel like a mistake. The
+          dialog is where the real weight sits, because that is where the numbers
+          are and where the word has to be typed. */}
+      <div className="mt-8 pt-5 border-t-2 border-dashed border-edge-2">
+        <h2 className="text-[17px] m-0 mb-1">{t.account.danger.heading}</h2>
+        <p className="text-[14.5px] text-cocoa m-0 mb-3">{t.account.danger.lead}</p>
+        <Button variant="quiet" size="sm" onClick={() => setDeleting(true)}>
+          {t.account.danger.open}
+        </Button>
+      </div>
+
+      <DeleteAccountDialog
+        open={deleting}
+        onClose={() => setDeleting(false)}
+        // Straight to the home page with a word about what happened. Staying put
+        // would leave the account page open for an account that no longer exists,
+        // and a full navigation is also the simplest way to be sure nothing signed
+        // in is still held anywhere in memory.
+        onDeleted={() => {
+          window.location.assign(`${paths.home}?compte=supprime`)
+        }}
+      />
     </div>
   )
 }

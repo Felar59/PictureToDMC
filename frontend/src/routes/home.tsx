@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
 import strawberryChart from "@/assets/demo/strawberry-chart.avif"
@@ -28,6 +29,26 @@ function SectionShell({ children, className }: { children: React.ReactNode; clas
 export default function Home() {
   const { t, lang } = useI18n()
 
+  /**
+   * "Your account has been deleted", after the fact.
+   *
+   * Deleting an account ends with a full navigation here, which is the simplest way
+   * to be certain nothing signed-in is still held in memory — but a full navigation
+   * also means no state survives to say what just happened. Without this the last
+   * thing a departing member sees is the marketing page, silently, which reads as
+   * though the button did nothing.
+   *
+   * The query is cleared straight away so a reload, or a bookmark, does not
+   * announce it again to somebody who never left.
+   */
+  const [farewell, setFarewell] = useState(false)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("compte") !== "supprime") return
+    setFarewell(true)
+    window.history.replaceState({}, "", window.location.pathname)
+  }, [])
+
   useHead({
     title: t.head.home.title,
     description: t.head.home.description,
@@ -40,6 +61,17 @@ export default function Home() {
 
   return (
     <>
+      {farewell && (
+        <SectionShell className="pt-8">
+          <p
+            role="status"
+            className="mx-auto max-w-[560px] bg-linen border-2 border-dashed border-edge-3 text-cocoa rounded-[16px] px-5 py-3 text-[15px] text-center m-0"
+          >
+            {t.account.danger.done}
+          </p>
+        </SectionShell>
+      )}
+
       {/* ---------------- hero ---------------- */}
       <SectionShell className="pt-12 pb-14 lg:pt-[72px] lg:pb-16">
         <div className="grid lg:grid-cols-[1.05fr_.95fr] gap-10 lg:gap-14 items-center">

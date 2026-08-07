@@ -141,6 +141,32 @@ export const en = {
     /** A name off the reserved list. "Try again" would be the wrong advice — the
      *  same name fails the same way — so it says what to do instead. */
     nameReserved: "That name is kept for the people who run the site. Pick another one!",
+
+    /** Deleting your own account. See the note on the French copy: the privacy page
+     *  promises deletion, so this deletes rather than anonymises. */
+    danger: {
+      heading: "Delete my account",
+      lead: "Permanent. Nothing can be put back afterwards.",
+      open: "Delete my account",
+      dialogTitle: "Delete your account?",
+      whatGoes: "Here is what will be erased:",
+      account: "Your account, your name and your email address",
+      posts: (n: number) =>
+        n === 0 ? "No published charts" : n === 1 ? "Your published chart" : `Your ${n} published charts`,
+      comments: (n: number) =>
+        n === 0 ? "No comments" : n === 1 ? "Your comment" : `Your ${n} comments`,
+      likes: (n: number) =>
+        n === 0 ? "No hearts given" : n === 1 ? "The heart you gave" : `The ${n} hearts you gave`,
+      irreversible:
+        "Anyone who downloaded one of your charts keeps it — it is already on their machine. But it leaves the gallery for everybody.",
+      confirmLabel: "To confirm, type DELETE",
+      confirmWord: "DELETE",
+      confirm: "Delete permanently",
+      cancel: "Cancel",
+      working: "Deleting…",
+      failed: "That didn't go through. Try again.",
+      done: "Your account has been deleted.",
+    },
   },
 
   publish: {
@@ -765,7 +791,7 @@ export const en = {
       {
         heading: "Your rights",
         body:
-          "You can ask for a copy of what the site holds about you, for it to be corrected, or for all of it to be deleted — account, posts and comments. Write to the address below and it will be done. There is no button yet to delete your own account: it is planned, and until then asking is enough. You can also withdraw this site's access at any time from your Google account settings.",
+          "You can ask for a copy of what the site holds about you, for it to be corrected, or for all of it to be deleted — account, posts and comments. Write to the address below and it will be done. You can also do all of it yourself without writing to anyone: “Delete my account”, at the foot of your account page. It is immediate and permanent. You can also withdraw this site's access at any time from your Google account settings.",
       },
     ],
     contactHeading: "Write to us",

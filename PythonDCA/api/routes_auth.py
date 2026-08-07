@@ -225,3 +225,71 @@ async def update_me(request: Request) -> JSONResponse:
     conn.execute(f"UPDATE users SET {', '.join(sets)} WHERE id = ?", values)
     fresh = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
     return JSONResponse({"user": auth.me_payload(fresh)})
+
+
+@router.get("/me/summary")
+def me_summary(request: Request) -> JSONResponse:
+    """What deleting this account would take with it.
+
+    The confirmation dialog quotes these back before anything happens. A prompt
+    that says "everything" makes someone guess how much everything is; one that
+    says "vos 4 grilles et vos 12 commentaires" is the same warning with the fear
+    taken out of it, and it lets someone notice the number is wrong before they
+    agree rather than after.
+    """
+    user = auth.current_user(request)
+    if not user:
+        raise HTTPException(401, "Not signed in")
+    conn = connect()
+    one = lambda sql: conn.execute(sql, (user["id"],)).fetchone()[0]  # noqa: E731
+    return JSONResponse(
+        {
+            "posts": one("SELECT COUNT(*) FROM posts WHERE author_id = ?"),
+            "comments": one("SELECT COUNT(*) FROM comments WHERE author_id = ?"),
+            "likesGiven": one("SELECT COUNT(*) FROM post_likes WHERE user_id = ?"),
+        }
+    )
+
+
+@router.delete("/me")
+def delete_me(request: Request) -> Response:
+    """Erase this account and everything attached to it.
+
+    The privacy page promises "sa suppression complète — compte, publications et
+    commentaires", so that is exactly what this does rather than anonymising: a
+    page that says one thing while the code does another is the failure mode that
+    whole page exists to avoid.
+
+    Every table that references `users` cascades, and `PRAGMA foreign_keys` is ON
+    for every connection, so one DELETE clears oauth_accounts, sessions, posts,
+    post_likes, comments and reports. Deleted post ids are never reissued —
+    `app_meta` keeps the high-water mark — so a shared link to a piece that is gone
+    stays gone rather than landing on a stranger's work.
+
+    The one thing the cascade cannot do on its own is the line above it. Hearts this
+    member gave to *other people's* pieces live in `post_likes`, but the number shown
+    on a card is the denormalised `posts.like_count`. Letting those rows cascade away
+    silently would leave every one of those pieces claiming a like that no longer
+    exists — invisible, permanent, and worse each time somebody leaves.
+    """
+    user = auth.current_user(request)
+    if not user:
+        raise HTTPException(401, "Not signed in")
+
+    conn = connect()
+    with conn:
+        conn.execute(
+            """
+            UPDATE posts SET like_count = MAX(like_count - 1, 0)
+            WHERE id IN (SELECT post_id FROM post_likes WHERE user_id = ?)
+            """,
+            (user["id"],),
+        )
+        conn.execute("DELETE FROM users WHERE id = ?", (user["id"],))
+
+    # The session rows are gone with the user; this clears the cookie that pointed
+    # at them, so the browser is not left holding a token for an account that no
+    # longer exists.
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(config.SESSION_COOKIE, path="/")
+    return response

@@ -114,6 +114,18 @@ export function signOut() {
   return call<{ ok: true }>("/api/auth/logout", { method: "POST" })
 }
 
+/** What deleting this account would take with it, counted before we ask. */
+export type AccountSummary = { posts: number; comments: number; likesGiven: number }
+
+export function accountSummary() {
+  return call<AccountSummary>("/api/auth/me/summary")
+}
+
+/** Erase this account and everything attached to it. There is no undo. */
+export function deleteAccount() {
+  return call<{ ok: true }>("/api/auth/me", { method: "DELETE" })
+}
+
 export type ProfileEdit = { displayName?: string; bio?: string; icon?: string | null }
 
 /** Any field left out is left alone, so this serves both the one-time name step

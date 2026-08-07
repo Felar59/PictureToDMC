@@ -229,12 +229,25 @@ Prerequisites, in order:
      peut exercer un droit — un lien GitHub n'en est pas une. La page dit elle-même,
      en toutes lettres et de façon visible, qu'il reste des crochets : c'est
      volontaire, un texte à trous déguisé en texte fini reste en ligne un an.
-   - **Un bouton pour supprimer son compte.** Il n'y en a pas, et la page l'admet
-     plutôt que de le cacher : l'effacement sur demande est conforme, donc elle dit
-     d'écrire. Mais c'est le seul droit du RGPD que le site ne sert pas lui-même, et
-     `sessions` et `post_likes` cascadent déjà sur `users` — le travail est surtout
-     de décider ce qu'il advient des ouvrages publiés (les supprimer, ou les
-     anonymiser pour ne pas trouer les fils de commentaires des autres).
+   - ~~**Un bouton pour supprimer son compte.**~~ — **fait.** En bas de `/compte`.
+     Suppression et non anonymisation, parce que c'est ce que la page de
+     confidentialité promet — « compte, publications et commentaires » — et qu'une
+     page qui dit autre chose que ce que fait le code est précisément ce que cette
+     page existe pour éviter.
+
+     Le dialogue compte d'abord : « vos 2 grilles publiées », « votre commentaire ».
+     « Tout supprimer » oblige à deviner combien « tout » représente, et surtout à
+     ne pas pouvoir remarquer qu'on est connecté au mauvais compte. Il faut ensuite
+     taper le mot — la casse est ignorée, un clavier de téléphone ne doit pas être
+     ce qui empêche quelqu'un de partir.
+
+     Le piège n'était pas la cascade : toutes les tables qui référencent `users`
+     cascadent déjà. C'était `posts.like_count`, dénormalisé. Les cœurs donnés aux
+     ouvrages **des autres** disparaissent de `post_likes` sans qu'aucune clé
+     étrangère ne touche au compteur affiché sur la carte — chaque départ aurait
+     laissé derrière lui des ouvrages annonçant un cœur qui n'existe plus,
+     silencieusement et définitivement. La suppression décrémente avant d'effacer,
+     et le test le vérifie sur l'ouvrage d'un tiers.
 
    Une bannière de cookies n'est **pas** nécessaire en l'état : le seul cookie posé
    est celui de session, strictement nécessaire au service demandé, donc exempté.

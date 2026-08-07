@@ -131,6 +131,45 @@ export const fr: Copy = {
     adminBadge: "Veille sur la galerie",
     adminLabel: "Admin",
     nameReserved: "Ce nom est réservé à l'équipe du site. Choisissez-en un autre !",
+
+    /**
+     * Supprimer son compte.
+     *
+     * La page de confidentialité promet « sa suppression complète — compte,
+     * publications et commentaires », donc c'est bien une suppression et pas une
+     * anonymisation : la page dirait autre chose que ce que fait le code.
+     *
+     * Le dialogue chiffre ce qui va partir. « Tout supprimer » oblige à deviner
+     * combien « tout » représente ; « vos 4 grilles et vos 12 commentaires » est le
+     * même avertissement, sans la peur, et permet de remarquer avant de confirmer
+     * que le compte n'est pas le bon.
+     */
+    danger: {
+      heading: "Supprimer mon compte",
+      lead: "Définitif. Rien ne peut être remis en place ensuite.",
+      open: "Supprimer mon compte",
+      dialogTitle: "Supprimer votre compte ?",
+      /** Ce qui part, compté avant de demander. */
+      whatGoes: "Voici ce qui sera effacé :",
+      account: "Votre compte, votre nom et votre adresse e-mail",
+      posts: (n: number) =>
+        n === 0 ? "Aucune grille publiée" : n === 1 ? "Votre grille publiée" : `Vos ${n} grilles publiées`,
+      comments: (n: number) =>
+        n === 0 ? "Aucun commentaire" : n === 1 ? "Votre commentaire" : `Vos ${n} commentaires`,
+      likes: (n: number) =>
+        n === 0 ? "Aucun cœur donné" : n === 1 ? "Le cœur que vous avez donné" : `Les ${n} cœurs que vous avez donnés`,
+      /** Le seul cas qui mérite d'être dit à voix haute : ce que les autres perdent. */
+      irreversible:
+        "Les personnes qui ont récupéré une de vos grilles la gardent — elle est déjà sur leur machine. Mais elle disparaît de la galerie pour tout le monde.",
+      confirmLabel: "Pour confirmer, tapez SUPPRIMER",
+      confirmWord: "SUPPRIMER",
+      confirm: "Supprimer définitivement",
+      cancel: "Annuler",
+      working: "Suppression…",
+      failed: "La suppression n'a pas abouti. Réessayez.",
+      /** Après coup, sur la page d'accueil. */
+      done: "Votre compte a été supprimé.",
+    },
   },
 
   publish: {
@@ -723,7 +762,7 @@ export const fr: Copy = {
       {
         heading: "Vos droits",
         body:
-          "Vous pouvez demander une copie de ce que le site détient sur vous, sa correction, ou sa suppression complète — compte, publications et commentaires. Écrivez à l'adresse ci-dessous et ce sera fait. Il n'y a pas encore de bouton pour supprimer son compte soi-même : c'est prévu, et en attendant la demande suffit. Vous pouvez aussi retirer à tout moment l'accès accordé à ce site depuis les paramètres de votre compte Google.",
+          "Vous pouvez demander une copie de ce que le site détient sur vous, sa correction, ou sa suppression complète — compte, publications et commentaires. Écrivez à l'adresse ci-dessous et ce sera fait. Vous pouvez aussi tout supprimer vous-même, sans nous écrire : « Supprimer mon compte », en bas de votre page de compte. C'est immédiat et définitif. Vous pouvez aussi retirer à tout moment l'accès accordé à ce site depuis les paramètres de votre compte Google.",
       },
     ],
     contactHeading: "Nous écrire",
