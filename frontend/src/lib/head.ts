@@ -1,6 +1,8 @@
 import { useEffect } from "react"
 import { useLocation } from "react-router-dom"
 
+import { useI18n } from "@/i18n"
+
 import { ORIGIN, SITE_NAME, absolute } from "./site"
 
 /**
@@ -32,6 +34,17 @@ type Meta = {
   image?: string
   /** `website` for a page, `article` for a piece. */
   type?: "website" | "article"
+  /**
+   * What the share image shows, for someone who cannot see it.
+   *
+   * Not decoration: a link posted into a group chat is read aloud by a screen
+   * reader from this string alone, and "image" is what it says without one.
+   */
+  imageAlt?: string
+  /** ISO 8601. Only meaningful on an article, and cleared when the type is not. */
+  publishedTime?: string
+  /** Absolute URL of the person who made it. Articles only, same as above. */
+  authorUrl?: string
   /** Structured data, already an object. Serialised into one script tag. */
   jsonLd?: object
   /** Keep a page out of the index — a member's account, for instance. */
@@ -76,10 +89,14 @@ function meta(attr: "name" | "property", key: string, content: string) {
 
 export function useHead(m: Meta): void {
   const { pathname } = useLocation()
+  // og:locale has to follow the toggle, so the language is part of what this
+  // effect depends on — otherwise switching to English leaves the head claiming
+  // fr_FR on every page until a navigation happens to rewrite it.
+  const { lang } = useI18n()
   // Serialised so a caller can build the object inline without memoising it: these
   // are small, and a fresh object every render would otherwise rewrite the head on
   // every render.
-  const key = JSON.stringify([m, pathname])
+  const key = JSON.stringify([m, pathname, lang])
 
   useEffect(() => {
     const canonical = absolute(m.canonicalPath ?? pathname)
@@ -104,11 +121,42 @@ export function useHead(m: Meta): void {
     meta("property", "og:type", m.type ?? "website")
     meta("property", "og:site_name", SITE_NAME)
     meta("property", "og:image", image)
+    /**
+     * The size of that image, stated rather than discovered.
+     *
+     * Every share image this site produces is 1200×630 — `og.png` and every card
+     * `api/sharecard.py` draws — so this is a fact, not a hint. Facebook, LinkedIn
+     * and WhatsApp lay the preview out before the image has finished downloading,
+     * and without these they either guess small or reflow once it lands.
+     */
+    meta("property", "og:image:width", "1200")
+    meta("property", "og:image:height", "630")
+    meta("property", "og:image:alt", m.imageAlt ?? m.title)
+    meta("property", "og:locale", lang === "fr" ? "fr_FR" : "en_GB")
     // Twitter reads og:* for most things but wants to be told the card is large.
     meta("name", "twitter:card", "summary_large_image")
     meta("name", "twitter:title", m.title)
     meta("name", "twitter:description", m.description)
     meta("name", "twitter:image", image)
+    meta("name", "twitter:image:alt", m.imageAlt ?? m.title)
+
+    /**
+     * Article facts, and their removal.
+     *
+     * The removal is the part that matters. These are written on a piece's page and
+     * would otherwise sit there through a client-side navigation to the FAQ, which
+     * would then be published as an article written by whoever made the last chart
+     * you looked at. Every other tag here is overwritten on the next route; these
+     * are the only ones that have to be taken away.
+     */
+    const article = (m.type ?? "website") === "article"
+    for (const [key, value] of [
+      ["article:published_time", m.publishedTime],
+      ["article:author", m.authorUrl],
+    ] as const) {
+      if (article && value) meta("property", key, value)
+      else document.head.querySelector(`meta[property="${key}"]`)?.remove()
+    }
 
     meta("name", "robots", m.noindex ? "noindex, follow" : "index, follow")
 
@@ -125,5 +173,5 @@ export function useHead(m: Meta): void {
     }
     // Nothing is torn down on unmount: the next route writes over every tag, and
     // removing them first would leave a frame with no description at all.
-  }, [key, m, pathname])
+  }, [key, m, pathname, lang])
 }

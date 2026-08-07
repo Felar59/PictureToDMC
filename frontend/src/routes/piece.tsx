@@ -19,7 +19,7 @@ import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
 import { breadcrumb, graph, person, piece } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
+import { ORIGIN, SITE_NAME } from "@/lib/site"
 
 /**
  * One published piece: the work, then what you can do with it, then what people
@@ -243,6 +243,11 @@ export default function Piece() {
     canonicalPath: `/piece/${postId}`,
     image: post ? `/api/posts/${postId}/share.png` : undefined,
     type: "article",
+    // The card is a picture of this pattern, so the alt is the piece and its
+    // maker — which is what somebody hearing the link read out needs.
+    imageAlt: post ? t.head.piece.title(post.title, post.author.displayName) : undefined,
+    publishedTime: post ? new Date(post.createdAt).toISOString() : undefined,
+    authorUrl: post ? `${ORIGIN}${paths.maker(post.author.id)}` : undefined,
     /**
      * The work, its picture and its maker.
      *

@@ -298,7 +298,10 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
         "description": description,
         "canonical": f"/piece/{row['id']}",
         "image": f"/api/posts/{row['id']}/share.png",
+        "imageAlt": title,
         "type": "article",
+        "publishedTime": _iso(row["created_at"]),
+        "authorUrl": f"{manifest['origin']}/brodeur/{row['author_id']}",
         "jsonLd": json.dumps(_piece_graph(manifest, row, description), ensure_ascii=False),
         # The picture is the page, and a crawler cannot see a canvas that has not
         # been drawn — so what it gets instead is the piece named, described,
@@ -479,12 +482,34 @@ def render(path: str) -> str | None:
         _tag("meta", "property", "og:type", head.get("type") or "website"),
         _tag("meta", "property", "og:site_name", manifest["siteName"]),
         _tag("meta", "property", "og:image", image),
+        # The size, restated. `_STRIP` above removes every og:* tag index.html
+        # shipped with, which included these two — so the first version of this
+        # module quietly deleted them from every page and put nothing back.
+        # Facebook, LinkedIn and WhatsApp lay a preview out before the image has
+        # downloaded; without them they guess small or reflow when it lands. Both
+        # og.png and every card sharecard.py draws are exactly 1200x630, so this is
+        # a fact rather than a hint.
+        _tag("meta", "property", "og:image:width", "1200"),
+        _tag("meta", "property", "og:image:height", "630"),
+        _tag("meta", "property", "og:image:alt", head.get("imageAlt") or head["title"]),
+        # The served HTML is always French — the server cannot know a visitor's
+        # toggle, and this is the canonical language.
+        _tag("meta", "property", "og:locale", "fr_FR" if manifest["lang"] == "fr" else "en_GB"),
         _tag("meta", "name", "twitter:card", "summary_large_image"),
         _tag("meta", "name", "twitter:title", head["title"]),
         _tag("meta", "name", "twitter:description", head["description"]),
         _tag("meta", "name", "twitter:image", image),
+        _tag("meta", "name", "twitter:image:alt", head.get("imageAlt") or head["title"]),
         _tag("meta", "name", "robots", "noindex, follow" if head.get("noindex") else "index, follow"),
     ]
+    # Only on a piece, and only when the row supplied them. Emitted on a page that
+    # is not an article, these would tell a scraper the FAQ was written on a date
+    # by whoever made the last chart.
+    if (head.get("type") or "website") == "article":
+        if head.get("publishedTime"):
+            parts.append(_tag("meta", "property", "article:published_time", head["publishedTime"]))
+        if head.get("authorUrl"):
+            parts.append(_tag("meta", "property", "article:author", head["authorUrl"]))
     if head.get("jsonLd"):
         # `</script>` inside the JSON would end the tag early — the one escape a
         # JSON-LD block genuinely needs.
