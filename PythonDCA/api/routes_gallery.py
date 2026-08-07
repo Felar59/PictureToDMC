@@ -110,11 +110,38 @@ def _card(row: sqlite3.Row, liked: bool) -> dict:
     }
 
 
+#: Every ordering the gallery offers, as whole literal clauses.
+#:
+#: A lookup rather than pieces assembled from `sort` and `direction`, because this
+#: string is the one part of the query below that is interpolated rather than
+#: bound — a parameter cannot carry an ORDER BY. Composing it would put request
+#: text one refactor away from the f-string; a dict keyed by a pair can only ever
+#: return something written here.
+#:
+#: `p.id` closes every clause, so no ordering is ever partly arbitrary. On dates
+#: alone a tie needs the same millisecond and is unlikely; on `top` it needs only
+#: the same number of likes, and in a gallery this young most pieces have none —
+#: so the whole unliked tail is one big tie. An unbroken tie is not merely
+#: unstable between reloads: SQLite is free to answer page 0 and page 1
+#: inconsistently, which surfaces as a card appearing twice, or never at all,
+#: when somebody presses "voir plus". The id settles it the same way every time.
+_ORDERS = {
+    ("new", "desc"): "p.created_at DESC, p.id DESC",
+    ("new", "asc"): "p.created_at ASC, p.id ASC",
+    # Ties on likes fall back to newest-first in both directions: among pieces with
+    # no likes at all — which, in a young gallery, is most of them — the recent one
+    # is the more interesting, whichever end of the list you asked for.
+    ("top", "desc"): "p.like_count DESC, p.created_at DESC, p.id DESC",
+    ("top", "asc"): "p.like_count ASC, p.created_at DESC, p.id DESC",
+}
+
+
 @router.get("/posts")
 def list_posts(
     request: Request,
     category: str = "all",
     sort: str = "new",
+    direction: str = "desc",
     page: int = 0,
     kind: str = "all",
 ) -> JSONResponse:
@@ -135,7 +162,7 @@ def list_posts(
         params.append(category)
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
 
-    order = "p.like_count DESC, p.created_at DESC" if sort == "top" else "p.created_at DESC"
+    order = _ORDERS.get((sort, direction), _ORDERS[("new", "desc")])
     page = max(0, min(page, 500))
 
     rows = connect().execute(

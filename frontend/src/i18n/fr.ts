@@ -289,18 +289,17 @@ export const fr: Copy = {
     empty: "Rien dans cette catégorie pour l'instant. Le vôtre pourrait être le premier !",
     tabs: { patterns: "Les grilles", finished: "Les broderies" },
     patterns: {
-      kicker: "créées ici, libres à prendre",
       title: "La galerie de grilles",
-      lead: "Les grilles que la communauté a créées depuis ses propres photos. Parcourez-les, voyez les fils qu'elles demandent, et gardez celle qui vous plaît.",
       inviteTitle: "Créez-en une depuis une photo",
       inviteBody: "Convertissez une image et votre grille arrive ici, avec votre nom.",
       inviteCta: "Convertir une photo",
       emptyAll: "Aucune grille pour l'instant. La vôtre pourrait être la première !",
     },
     finished: {
-      kicker: "brodé par des gens comme vous",
       title: "Les broderies",
-      lead: "De vrais ouvrages, photographiés dans leur tambour. La grille peut venir d'ici ou d'ailleurs — si vous l'avez brodé, il a sa place ici.",
+      // La seule chose que le titre ne dit pas déjà, et celle qui évite de croire
+      // qu'on ne peut montrer que ce qu'on a converti ici.
+      lead: "La grille peut venir d'ici ou d'ailleurs.",
       inviteTitle: "Un ouvrage terminé ?",
       inviteBody: "Une photo suffit. Pas besoin de grille, d'où qu'elle vienne.",
       inviteCta: "Ajouter votre photo",
@@ -308,8 +307,16 @@ export const fr: Copy = {
     },
     loading: "Chargement de la galerie…",
     failed: "Impossible de charger la galerie. Recharger la page ?",
-    sortNew: "Les plus récents",
-    sortTop: "Les plus aimés",
+    filterLabel: "Filtrer par sujet",
+    // Chaque bouton de tri dit dans quel sens il trie : une flèche seule donne une
+    // direction sans dire ce qu'elle ordonne. Celui qui est déjà choisi porte la
+    // flèche ; le cliquer retourne l'ordre.
+    sort: {
+      label: "Trier",
+      new: { desc: "Les plus récents", asc: "Les plus anciens" },
+      top: { desc: "Les plus aimés", asc: "Les moins aimés" },
+      reverse: (current: string) => `Trié par « ${current} ». Cliquez pour inverser l'ordre.`,
+    },
     likeAria: (title: string) => `Aimer « ${title} »`,
     deleteAria: (title: string) => `Supprimer « ${title} »`,
     confirmDelete: "Supprimer définitivement cet ouvrage ?",

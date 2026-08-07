@@ -128,11 +128,20 @@ export function updateMe(edit: ProfileEdit) {
 /* -------------------------------------------------------------- gallery */
 
 export function fetchPosts(
-  options: { category?: string; sort?: "new" | "top"; page?: number; kind?: PostKind | "all" } = {},
+  options: {
+    category?: string
+    sort?: "new" | "top"
+    /** Which way `sort` runs. Omitted means the useful end first: newest, or
+     *  best-loved. */
+    direction?: "desc" | "asc"
+    page?: number
+    kind?: PostKind | "all"
+  } = {},
 ) {
   const params = new URLSearchParams({
     category: options.category ?? "all",
     sort: options.sort ?? "new",
+    direction: options.direction ?? "desc",
     page: String(options.page ?? 0),
     kind: options.kind ?? "all",
   })

@@ -29,6 +29,55 @@ export function StitchMark({ size = 34, className }: { size?: number; className?
   )
 }
 
+/**
+ * Which way a sort runs — the same stem-and-triangle as the download arrow, at
+ * the size of a word next to it.
+ *
+ * `currentColor` rather than a colour prop, unlike its neighbours here: this
+ * rides inside a Pill that is blanc-on-ink when chosen and cocoa-on-blanc when
+ * not, and an arrow that had to be *told* which of those it was sitting in is an
+ * arrow that will one day be told wrong. The two glyphs below predate the token
+ * set and are each only ever used on one known background.
+ *
+ * A full arrow and not the `Chevron`: at this size a bare corner reads as
+ * decoration, and the people this control is for should not have to work out
+ * that a small angle means "oldest first".
+ */
+export function SortArrow({ up = false, className }: { up?: boolean; className?: string }) {
+  const head = 5
+  const stem = <span className="block w-[2px] h-[5px] rounded-[1px] bg-current" />
+  const point = (
+    <span
+      className="block w-0 h-0"
+      style={{
+        borderLeft: `${head}px solid transparent`,
+        borderRight: `${head}px solid transparent`,
+        ...(up
+          ? { borderBottom: `${head + 1}px solid currentColor` }
+          : { borderTop: `${head + 1}px solid currentColor` }),
+      }}
+    />
+  )
+  return (
+    <span
+      className={cn("inline-flex flex-col items-center justify-center", className)}
+      aria-hidden="true"
+    >
+      {up ? (
+        <>
+          {point}
+          {stem}
+        </>
+      ) : (
+        <>
+          {stem}
+          {point}
+        </>
+      )}
+    </span>
+  )
+}
+
 /** Downward arrow built from a thread stem and a triangle. */
 export function DownloadGlyph({ color = "#FFF8F3" }: { color?: string }) {
   return (

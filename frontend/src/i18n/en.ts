@@ -312,18 +312,17 @@ export const en = {
     // Two galleries, one page. The same two words wherever they appear.
     tabs: { patterns: "Charts", finished: "Finished pieces" },
     patterns: {
-      kicker: "made here, free to take",
       title: "The chart gallery",
-      lead: "Charts the community made from their own photos. Browse them, see which threads they take, and keep any one you like.",
       inviteTitle: "Make one from a photo",
       inviteBody: "Convert a picture and your chart lands here with your name on it.",
       inviteCta: "Convert a photo",
       emptyAll: "No charts yet. Yours could be the first!",
     },
     finished: {
-      kicker: "stitched by people like you",
       title: "Finished pieces",
-      lead: "Real work, photographed in the hoop. The chart can come from here or from anywhere — if you stitched it, it belongs here.",
+      // The one thing this page's title does not already say, and the thing that
+      // stops people assuming they may only post what they charted here.
+      lead: "The chart can come from here or from anywhere.",
       inviteTitle: "Finished a piece?",
       inviteBody: "One photo is enough. No chart needed, wherever you got it.",
       inviteCta: "Add your photo",
@@ -331,8 +330,16 @@ export const en = {
     },
     loading: "Fetching the gallery…",
     failed: "Couldn't load the gallery. Reload the page?",
-    sortNew: "Newest",
-    sortTop: "Most loved",
+    filterLabel: "Filter by subject",
+    // Each sort button says which way it runs, because an arrow on its own tells
+    // you a direction without telling you what is being ordered. The button that
+    // is already chosen carries the arrow; clicking it turns the order around.
+    sort: {
+      label: "Sort",
+      new: { desc: "Newest", asc: "Oldest" },
+      top: { desc: "Most loved", asc: "Least loved" },
+      reverse: (current: string) => `Sorted by “${current}”. Click to reverse the order.`,
+    },
     likeAria: (title: string) => `Like “${title}”`,
     deleteAria: (title: string) => `Delete “${title}”`,
     confirmDelete: "Delete this piece for good?",

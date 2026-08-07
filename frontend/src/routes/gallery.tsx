@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { BrandMark } from "@/components/brand/logo"
+import { SortArrow } from "@/components/brand/icons"
 import { GalleryCard } from "@/community/gallery-card"
 import { ShareWorkDialog } from "@/community/share-work-dialog"
 import { useAuth } from "@/community/auth-context"
@@ -46,6 +47,27 @@ export default function Gallery() {
 
   const [filter, setFilter] = useState<string>("all")
   const [sort, setSort] = useState<"new" | "top">("new")
+  /** Which way `sort` runs. Newest and most-loved first is what people want on
+   *  arrival, so both start descending. */
+  const [direction, setDirection] = useState<"desc" | "asc">("desc")
+
+  /**
+   * Pick a sort, or turn the one already picked around.
+   *
+   * Choosing the other field resets to descending rather than carrying the
+   * direction across: having asked for the oldest charts, "les plus aimés" should
+   * hand you the best-loved ones, not the least-loved — the direction was a
+   * statement about dates, not a standing preference for the bottom of lists.
+   */
+  const chooseSort = (key: "new" | "top") => {
+    if (key !== sort) {
+      setSort(key)
+      setDirection("desc")
+      return
+    }
+    setDirection((d) => (d === "desc" ? "asc" : "desc"))
+  }
+
   const [posts, setPosts] = useState<api.PostCard[]>([])
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
@@ -73,7 +95,13 @@ export default function Gallery() {
     async (nextPage: number, replace: boolean) => {
       setState((s) => (replace ? "loading" : s))
       try {
-        const res = await api.fetchPosts({ category: filter, sort, page: nextPage, kind })
+        const res = await api.fetchPosts({
+          category: filter,
+          sort,
+          direction,
+          page: nextPage,
+          kind,
+        })
         setPosts((prev) => (replace ? res.posts : [...prev, ...res.posts]))
         setHasMore(res.hasMore)
         setPage(nextPage)
@@ -82,7 +110,7 @@ export default function Gallery() {
         setState("failed")
       }
     },
-    [filter, sort, kind],
+    [filter, sort, direction, kind],
   )
 
   // `kind` is in `load`'s dependencies, so switching tab refetches from page 0 —
@@ -121,12 +149,21 @@ export default function Gallery() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20">
+      {/* Title, and then only what the title does not already say.
+          The charts tab used to open with a handwritten kicker and three lines
+          restating its own heading, which pushed the first actual chart most of a
+          screen down — on the one page whose whole job is to show them. The photo
+          tab keeps a single line because it carries a rule people cannot guess:
+          the chart may come from anywhere. */}
       <header className="text-center pt-12 lg:pt-13 pb-2.5">
-        <div className="font-hand text-[17px] text-quill">{copy.kicker}</div>
-        <h1 className="text-[34px] sm:text-[40px] lg:text-[44px] mt-1.5 mb-3 tracking-[-.5px]">
+        <h1 className="text-[34px] sm:text-[40px] lg:text-[44px] mt-0 mb-0 tracking-[-.5px]">
           {copy.title}
         </h1>
-        <p className="text-[17px] leading-[1.6] text-clay mx-auto max-w-[560px] m-0">{copy.lead}</p>
+        {photos && (
+          <p className="text-[17px] leading-[1.6] text-clay mx-auto max-w-[560px] mt-3 mb-0">
+            {t.gallery.finished.lead}
+          </p>
+        )}
       </header>
 
       {/* Navigation, not a tablist: these are two pages. Marked up as links so a
@@ -174,21 +211,45 @@ export default function Gallery() {
         </p>
       )}
 
-      <div className="flex justify-center gap-2 pt-6 pb-2 flex-wrap">
-        {FILTER_KEYS.map((key) => (
-          <Pill key={key} selected={filter === key} onClick={() => setFilter(key)}>
-            {t.gallery.filters[key]}
-          </Pill>
-        ))}
-      </div>
+      {/* What you are looking at, and in what order — one line, read left to
+          right. They were two centred rows, which made a filter and a sort look
+          like the same kind of choice stacked twice; they are not. Wrapping puts
+          the sort on its own line below the subjects at narrow widths, which is
+          the same reading order, just folded. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-5 pt-6 pb-2">
+        <div role="group" aria-label={t.gallery.filterLabel} className="flex flex-wrap gap-2">
+          {FILTER_KEYS.map((key) => (
+            <Pill key={key} selected={filter === key} onClick={() => setFilter(key)}>
+              {t.gallery.filters[key]}
+            </Pill>
+          ))}
+        </div>
 
-      <div className="flex justify-center gap-2 pb-2">
-        <Pill selected={sort === "new"} onClick={() => setSort("new")}>
-          {t.gallery.sortNew}
-        </Pill>
-        <Pill selected={sort === "top"} onClick={() => setSort("top")}>
-          {t.gallery.sortTop}
-        </Pill>
+        <div role="group" aria-label={t.gallery.sort.label} className="flex flex-wrap gap-2">
+          {(["new", "top"] as const).map((key) => {
+            const active = sort === key
+            // The chosen button says which way it is running and carries the
+            // arrow; the other offers its default. Showing a direction on the
+            // button you are *not* using would claim an order that isn't in force.
+            const label = t.gallery.sort[key][active ? direction : "desc"]
+            return (
+              <Pill
+                key={key}
+                selected={active}
+                onClick={() => chooseSort(key)}
+                // Spelled out rather than left to the arrow: "click the one that
+                // is already on to turn it around" is not a thing anyone should
+                // have to discover, and a tooltip is where people look first.
+                title={active ? t.gallery.sort.reverse(label) : undefined}
+                aria-label={active ? t.gallery.sort.reverse(label) : undefined}
+                className="inline-flex items-center gap-2"
+              >
+                {label}
+                {active && <SortArrow up={direction === "asc"} />}
+              </Pill>
+            )
+          })}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-7 pb-7">
