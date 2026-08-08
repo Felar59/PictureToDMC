@@ -16,6 +16,7 @@ import Home from "@/routes/home"
 const About = lazy(() => import("@/routes/about"))
 const Faq = lazy(() => import("@/routes/faq"))
 const Guide = lazy(() => import("@/routes/guide"))
+const Article = lazy(() => import("@/routes/article"))
 const Account = lazy(() => import("@/routes/account"))
 // Not linked from anywhere: the bench for tuning the fabric shader.
 const Atelier = lazy(() => import("@/routes/atelier"))
@@ -98,6 +99,10 @@ export default function App() {
                 <Route path={paths.faq} element={<Faq />} />
                 <Route path={paths.privacy} element={<Privacy />} />
                 <Route path={paths.guide} element={<Guide />} />
+                {/* One component, three pages: they differ only in their words. */}
+                <Route path={paths.readChart} element={<Article which="readChart" />} />
+                <Route path={paths.choosePhoto} element={<Article which="choosePhoto" />} />
+                <Route path={paths.fabric} element={<Article which="fabric" />} />
                 <Route path={paths.atelier} element={<Atelier />} />
                 <Route path={paths.account} element={<Account />} />
                 <Route path={paths.reports} element={<Reports />} />

@@ -26,6 +26,8 @@
 
 import type { Copy } from "../i18n/copy"
 
+import { ARTICLES, type ArticleKey } from "./articles"
+
 import { ORIGIN, SITE_NAME, absolute } from "./site"
 import { paths } from "./routes"
 
@@ -442,6 +444,44 @@ export function aboutGraph(t: Copy): object {
     breadcrumb([
       { name: SITE_NAME, path: paths.home },
       { name: t.nav.about, path: paths.about },
+    ]),
+  )
+}
+
+/**
+ * A content page.
+ *
+ * `Article`, which is in Google's current gallery — unlike `HowTo`, which these
+ * are not: reading a chart is a set of conventions to understand rather than a
+ * procedure with ordered steps, and marking it up as one would be describing a
+ * different page from the one that exists.
+ *
+ * No `image`: an Article rich result wants one, and there is no picture on these
+ * pages to point at. Naming the site's default share card would be claiming an
+ * illustration this article does not have, which is the sort of small lie that
+ * makes the rest of a graph worth less.
+ */
+export function articleGraph(t: Copy, lang: string, which: ArticleKey): object {
+  const copy = t.articles[which]
+  const url = absolute(ARTICLES[which].path)
+  return graph(
+    {
+      "@type": "Article",
+      "@id": `${url}#article`,
+      headline: copy.title,
+      description: copy.lead,
+      url,
+      inLanguage: lang,
+      author: { "@id": ORG_ID },
+      publisher: { "@id": ORG_ID },
+      isPartOf: { "@id": SITE_ID },
+      // The sections, named. It is what the page is, and it costs a line.
+      articleSection: copy.sections.map((s) => s.heading),
+    },
+    breadcrumb([
+      { name: SITE_NAME, path: paths.home },
+      { name: t.guide.title, path: paths.guide },
+      { name: copy.title, path: ARTICLES[which].path },
     ]),
   )
 }

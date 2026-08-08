@@ -43,6 +43,21 @@ const DESCRIPTIONS: Record<string, { title: string; blurb: string }> = {
     blurb:
       "The whole process for someone who has never done it: which photographs survive being reduced to a grid, how to choose the width in stitches and the number of threads, what aida count means, how many stitches a skein covers, and how to stitch the result.",
   },
+  [paths.readChart]: {
+    title: "How to read a cross-stitch chart",
+    blurb:
+      "What the squares, the symbols, the heavy counting lines and the centre arrows mean, why you start from the middle, how to read the legend as a shopping list, and how to count without losing your place. For someone holding their first chart.",
+  },
+  [paths.choosePhoto]: {
+    title: "Which photo makes a good cross-stitch chart",
+    blurb:
+      "Why the subject must fill the frame, why contrast matters more than sharpness, what to do about a busy background, and how animals, portraits, flowers and landscapes each behave when reduced to a grid. Includes the honest warning that faces are the hardest subject and need about 120 stitches to look like anybody.",
+  },
+  [paths.fabric]: {
+    title: "Which fabric to choose, and how big the piece will be",
+    blurb:
+      "What a fabric's count means, the one-line sum from stitches to centimetres, how much margin to leave, how many strands to use at each count, and how many skeins a chart needs — one skein of DMC stranded cotton covers about 1,500 stitches at two strands on 14-count.",
+  },
   [paths.faq]: {
     title: "Questions and answers",
     blurb:
@@ -106,6 +121,9 @@ export function llmsTxt(): string {
     "",
     entry(paths.convert),
     entry(paths.guide),
+    entry(paths.readChart),
+    entry(paths.choosePhoto),
+    entry(paths.fabric),
     entry(paths.faq),
     entry(paths.gallery),
     entry(paths.galleryStitches),

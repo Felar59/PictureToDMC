@@ -800,6 +800,153 @@ export const en = {
     contactNote: "Both bracketed values still need filling in — see ROADMAP.md.",
   },
 
+  /** The content pages. See the note on the French copy — these answer a whole
+   *  question each, and half of what is in them does not mention the tool. */
+  articles: {
+    relatedHeading: "Read next",
+    ctaTitle: "Try it on one of your photos",
+    ctaBody: "It costs nothing, it takes a minute, and the chart is yours.",
+    ctaButton: "Make a chart",
+
+    readChart: {
+      kicker: "before the first stitch",
+      title: "How to read a cross-stitch chart",
+      lead:
+        "A chart is a plan: each square says where to put which thread. Once four or five conventions make sense, every chart looks the same.",
+      intro:
+        "This is the question that stops most people before they have started, and it has a short answer. A cross-stitch chart is neither a drawing to copy freehand nor a score to decipher: it is a grid where one square is one stitch, and a symbol or a colour tells you which. The rest is counting.",
+      sections: [
+        {
+          heading: "One square, one stitch",
+          body:
+            "The single rule everything follows from. Each little square on the chart is one cross on the fabric, and there is no scale to convert: a chart 60 squares wide is 60 stitches wide, whatever size paper it was printed on. An empty square is left empty — that is bare fabric, not a mistake.",
+        },
+        {
+          heading: "Symbols, and why they exist",
+          body:
+            "Many charts show a symbol in each square rather than a colour. That is not fussiness: two neighbouring greys are indistinguishable in print, and a chart in symbols stays readable photocopied in black and white, which is what half of all stitchers do so they can cross squares off in pencil. Charts from here are in colour, with an optional keyline that redraws the silhouette — useful precisely when two shades are too close to tell apart.",
+        },
+        {
+          heading: "The counting rules",
+          body:
+            "A heavier line every ten squares. It means nothing for the stitching: it is there only so you can count in tens rather than one at a time. The same thing is done on the fabric with a tacking thread run every ten threads, and it is the most profitable advice on this page: ten minutes of tacking at the start saves an evening of unpicking later.",
+        },
+        {
+          heading: "Start from the middle",
+          body:
+            "Charts mark their centre, usually with two arrows on the edges. You fold the fabric in four to find its own, and start there. The reason is dull and sufficient: begin in a corner, drift by one stitch, and the motif runs off the fabric. From the middle, an error has somewhere to go on both sides.",
+        },
+        {
+          heading: "The legend",
+          body:
+            "This is the shopping list. Each line gives the thread's reference — the number is what matters, not the name: \"310\" is sold everywhere, \"Black\" means nothing at a counter — and, on charts from here, how many stitches of that colour there are. That number tells you what to buy: one skein of stranded cotton covers about 1,500 stitches at two strands on 14-count.",
+        },
+        {
+          heading: "Counting without losing your place",
+          body:
+            "Always count from something already stitched, never from the edge of the fabric. A stitch in place is a certainty; the edge is twenty centimetres and three possible mistakes away. Work colour by colour across large areas and area by area on detail — and keep a pencil to cross things off as you go, because finding your place again is the real cost of a break.",
+        },
+        {
+          heading: "Fractional stitches and outlines",
+          body:
+            "Charts published elsewhere sometimes use half stitches, quarter stitches, or an outline worked in backstitch over the finished motif. Those are a designer's refinements. Charts from here contain none of them: they are whole stitches, one square one stitch, which makes them easier to read and a little bolder to look at.",
+        },
+      ],
+    },
+
+    choosePhoto: {
+      kicker: "everything is decided here",
+      title: "Which photo makes a good cross-stitch chart",
+      lead:
+        "The photograph decides the result far more than the settings do. Here is what survives being reduced to a grid, and what never does.",
+      intro:
+        "A chart is a very low-resolution image: 70 stitches wide is 70 pixels of information, less than an app icon. Anything that needs fine detail disappears, and no setting brings it back. A well-chosen photograph, though, gives something recognisable and often prettier than the original — reduction simplifies, and simplification flatters.",
+      sections: [
+        {
+          heading: "The subject must fill the frame",
+          body:
+            "This is the only criterion that really counts. A dog filling three quarters of the picture makes a readable chart; the same dog ten metres away in a garden makes a brown smudge. If you are choosing between two photographs, take the one where the subject is biggest, even if it is less sharp: sharpness will be lost anyway, framing will not. Crop before you convert.",
+        },
+        {
+          heading: "Contrast matters more than sharpness",
+          body:
+            "A slightly blurred but well-contrasted photograph makes a good chart. A perfectly sharp one whose subject sits at the same value as its background — a black cat on a dark sofa, a white dress against a white wall — makes none, because the converter picks its colours by difference and there is none. Squint at your photograph: if the subject still separates, that is a good sign.",
+        },
+        {
+          heading: "Busy backgrounds",
+          body:
+            "A shelf, foliage, a street: the converter spends its colours describing that clutter instead of the subject. Three fixes, best first: crop tighter, remove the background — the tool does it, with a model that runs on your own machine — or drop the thread count until the background flattens into a single mass, which is sometimes rather good.",
+        },
+        {
+          heading: "Animals",
+          body:
+            "This is the subject that works best, by a distance. Fur reduces well because it is made of areas of close values rather than of detail; eyes and nose supply the dark points that make it a face. Aim for a photograph taken head-on, at the animal's height, outdoors or near a window. A black animal needs more threads than others, not fewer: all the modelling lives in the very dark greys.",
+        },
+        {
+          heading: "Portraits, honestly",
+          body:
+            "This is the hardest subject and it is better to know beforehand. A face reads on tiny differences in skin tone, and the human eye notices immediately when they are wrong. Below about 90 stitches wide, a face becomes someone vaguely similar; it often takes 120 and fifteen threads to get an actual person back. A profile, a backlit silhouette, or a very contrasty black-and-white portrait do far better than a front-lit face in soft light.",
+        },
+        {
+          heading: "Flowers, objects, landscapes",
+          body:
+            "A single flower, a bunch, a bicycle, a house: anything with a clear shape and little background works. Landscapes are a special case — a whole panorama has no subject, so it makes no chart; but a lone tree, a boat, a horizon with a lighthouse on it, yes. Again: look for the shape, not the detail.",
+        },
+        {
+          heading: "What the settings can rescue, and what they cannot",
+          body:
+            "They can straighten a photograph taken sideways, lift the colour when the result looks washed out beside the original, cut the background away, and swap a thread you dislike. They cannot invent detail that is not in the image, nor separate a subject from a background of the same colour. The best setting is still a better photograph.",
+        },
+      ],
+    },
+
+    fabric: {
+      kicker: "before you order",
+      title: "Which fabric to choose, and how big the piece will be",
+      lead:
+        "The fabric's count decides the finished size. A one-line sum tells you what you will get — and how much thread to buy.",
+      intro:
+        "This is the question that comes straight after \"how many stitches wide\", and the two are the same question from opposite ends. The chart gives a number of stitches; the fabric decides how much room a stitch takes; multiply them and you have your finished piece, in centimetres, on the table.",
+      sections: [
+        {
+          heading: "What a fabric's count is",
+          body:
+            "The number on the label — 11, 14, 16, 18 — is stitches per inch. So 14-count aida, the commonest and the easiest to start on, is 14 stitches in 2.54 cm, about 5.5 per centimetre. The bigger the number, the smaller the stitches: finer work, longer work, and better eyesight required.",
+        },
+        {
+          heading: "Working out the finished size",
+          body:
+            "Divide the number of stitches by the fabric's count, keeping the units the same. In centimetres: stitches ÷ 5.5 for 14-count. A chart of 80 × 100 stitches is therefore about 14.5 × 18 cm on 14-count, 18.5 × 23 cm on 11-count, and 11.5 × 14 cm on 18-count. One chart, three very different pieces: the fabric decides, not the chart.",
+        },
+        {
+          heading: "Margins",
+          body:
+            "Add at least 5 cm of fabric on every side — 10 cm to the width and 10 cm to the height. This is not waste: you need enough to hold in the hoop, enough to frame afterwards, and enough to recover if the motif drifted. Fabric cut close to the motif is a piece that can never be mounted.",
+        },
+        {
+          heading: "How many strands",
+          body:
+            "Stranded cotton is sold in skeins of six strands, separated before stitching. Two strands on 14-count is the usual choice: good coverage without bulk. On 11-count people often go to three, on 16 or 18 to one. If the fabric shows between your stitches, add a strand; if they look padded, take one away.",
+        },
+        {
+          heading: "How much thread to buy",
+          body:
+            "One skein of DMC stranded cotton is 8 metres and covers about 1,500 stitches at two strands on 14-count. The legend on charts from here gives the stitch count for every colour: divide by 1,500, round up, and that is your list. In practice most colours in a chart fit in a single skein, and only one or two — the background, the bulk of the subject — need a second.",
+        },
+        {
+          heading: "The colour of the fabric",
+          body:
+            "Ecru and white sell most, and ecru is the more forgiving: pure white shows up every hole left bare. If your motif has a lot of pale background, fabric the colour of that background saves you thousands of stitches — you stitch only the subject and the cloth does the rest. That is also what the tool's background removal does, but earlier.",
+        },
+        {
+          heading: "A table, to be quick about it",
+          body:
+            "On 14-count aida, margins included: 50 stitches is about 9 cm of motif and a 19 cm piece of fabric; 70 stitches, 13 cm and 23 cm; 100 stitches, 18 cm and 28 cm; 150 stitches, 27 cm and 37 cm. Past 150 stitches wide, count in months rather than evenings.",
+        },
+      ],
+    },
+  },
+
   head: {
     home: {
       title: "Photo to cross-stitch pattern \u2014 free, real DMC threads",

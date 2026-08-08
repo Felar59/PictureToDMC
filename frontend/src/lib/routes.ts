@@ -43,6 +43,22 @@ export const paths = {
   privacy: "/confidentialite",
   faq: "/faq",
   guide: "/comment-faire-une-grille-de-point-de-croix",
+
+  /**
+   * The content pages.
+   *
+   * Flat French slugs rather than a `/guides/…` prefix, for the same reason the rest
+   * of this table is French: the path is read by a person deciding whether to click,
+   * and it is the one part of a search result that is neither the title nor the
+   * description. A directory segment would spend characters on a word nobody types.
+   *
+   * Each answers one whole question. That is deliberate: the guide walks the journey
+   * end to end, which is what somebody who already knows this site wants — these are
+   * what somebody types before they know it exists.
+   */
+  readChart: "/comment-lire-une-grille-de-point-de-croix",
+  choosePhoto: "/quelle-photo-pour-le-point-de-croix",
+  fabric: "/quelle-toile-pour-le-point-de-croix",
   account: "/compte",
   atelier: "/atelier",
   /** Not linked for anyone but an admin, and noindex — the moderation queue. */
@@ -79,6 +95,11 @@ export const indexable: ReadonlyArray<{
   // ("broderie point de croix terminée") and it starts out nearly empty.
   { path: paths.galleryStitches, changefreq: "daily", priority: "0.5" },
   { path: paths.guide, changefreq: "monthly", priority: "0.7" },
+  // The same priority as the guide: each of these answers a question somebody
+  // actually searches for, which is more than can be said for the about page.
+  { path: paths.readChart, changefreq: "monthly", priority: "0.7" },
+  { path: paths.choosePhoto, changefreq: "monthly", priority: "0.7" },
+  { path: paths.fabric, changefreq: "monthly", priority: "0.7" },
   { path: paths.faq, changefreq: "monthly", priority: "0.6" },
   { path: paths.about, changefreq: "monthly", priority: "0.4" },
   { path: paths.privacy, changefreq: "yearly", priority: "0.3" },

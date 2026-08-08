@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
+import { ARTICLE_KEYS, ARTICLES } from "@/lib/articles"
 import { paths } from "@/lib/routes"
 import { guideGraph } from "@/lib/schema"
 
@@ -64,6 +65,26 @@ export default function Guide() {
           </li>
         ))}
       </ol>
+
+      {/* The three pages that each answer one of this guide's steps in full.
+          Here rather than in the header: the guide is where somebody already
+          reading about the process is, and it is the page most likely to be
+          entered from a search — so it is the right place to hand over. */}
+      <div className="mt-14 pt-8 border-t-2 border-dashed border-edge-2">
+        <h2 className="text-[19px] m-0 mb-4">{t.articles.relatedHeading}</h2>
+        <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
+          {ARTICLE_KEYS.map((key) => (
+            <li key={key}>
+              <Link
+                to={ARTICLES[key].path}
+                className="text-[16.5px] text-coral-deep hover:text-coral-deeper underline-offset-4 hover:underline"
+              >
+                {t.articles[key].title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <div className="mt-12 text-center border-2 border-dashed border-edge-4 rounded-card-lg px-6 py-9">
         <h2 className="text-[24px] m-0 mb-2">{t.guide.ctaTitle}</h2>

@@ -771,6 +771,166 @@ export const fr: Copy = {
     contactNote: "Les deux mentions entre crochets restent à remplir — voir ROADMAP.md.",
   },
 
+  /**
+   * Les pages de contenu.
+   *
+   * Trois questions qu'on tape dans un moteur avant de savoir que ce site existe :
+   * comment on lit une grille, quelle photo donne quelque chose, et quelle toile
+   * acheter. Le guide existant raconte le trajet du début à la fin ; celles-ci
+   * répondent chacune à une question entière, ce qui est la forme qu'un moteur —
+   * et une personne — cherche réellement.
+   *
+   * Écrites pour quelqu'un qui n'a jamais brodé, sans rien vendre : la moitié de ce
+   * qui suit ne parle pas du convertisseur du tout. C'est voulu. Une page qui répond
+   * vraiment est ce qui se partage et ce qui se cite ; une page qui ramène chaque
+   * paragraphe au produit est ce qu'on quitte.
+   */
+  articles: {
+    /** Le fil rouge en bas de chaque page : où aller ensuite. */
+    relatedHeading: "À lire ensuite",
+    ctaTitle: "Essayez sur une de vos photos",
+    ctaBody: "Ça ne coûte rien, ça prend une minute, et la grille est à vous.",
+    ctaButton: "Créer une grille",
+
+    readChart: {
+      kicker: "avant le premier point",
+      title: "Comment lire une grille de point de croix",
+      lead:
+        "Une grille est un plan : chaque case dit où mettre quel fil. Une fois qu'on a compris quatre ou cinq conventions, toutes les grilles se ressemblent.",
+      intro:
+        "C'est la question qui arrête le plus de monde avant d'avoir commencé, et elle a une réponse courte. Une grille de point de croix n'est ni un dessin à reproduire à main levée ni une partition à déchiffrer : c'est un quadrillage où une case vaut un point, et où un symbole ou une couleur vous dit lequel. Le reste n'est que du comptage.",
+      sections: [
+        {
+          heading: "Une case, un point",
+          body:
+            "La règle unique dont tout découle. Chaque petit carré de la grille correspond à un croix sur la toile, et il n'y a pas d'échelle à convertir : une grille de 60 cases de large fait 60 points de large, quelle que soit la taille du papier sur lequel elle est imprimée. Une case vide se laisse vide — c'est de la toile nue, pas une erreur.",
+        },
+        {
+          heading: "Les symboles, et pourquoi ils existent",
+          body:
+            "Beaucoup de grilles montrent un symbole dans chaque case plutôt qu'une couleur. Ce n'est pas de la coquetterie : deux gris voisins sont indiscernables à l'impression, et surtout une grille en symboles reste lisible photocopiée en noir et blanc, ce que fait la moitié des brodeuses pour pouvoir barrer au crayon. Les grilles d'ici sont en couleurs, avec un contour optionnel qui redessine la silhouette — utile justement quand deux nuances se ressemblent trop.",
+        },
+        {
+          heading: "Les traits de comptage",
+          body:
+            "Un trait plus épais tous les dix carreaux. Il ne veut rien dire pour la broderie : il est là uniquement pour compter par paquets de dix plutôt qu'un par un. La même chose se fait sur la toile avec un fil de bâti passé tous les dix fils, et c'est le conseil le plus rentable de cette page : dix minutes de bâti au début épargnent une soirée de décousage plus tard.",
+        },
+        {
+          heading: "Commencer par le milieu",
+          body:
+            "Les grilles marquent leur centre, souvent par deux flèches sur les bords. On plie la toile en quatre pour trouver le sien, et on commence là. La raison est bête et suffisante : si vous démarrez dans un coin et que votre comptage dérive d'un point, le motif sort de la toile. En partant du milieu, une erreur se rattrape des deux côtés.",
+        },
+        {
+          heading: "La légende",
+          body:
+            "C'est la liste de courses. Chaque ligne donne la référence du fil — c'est le numéro qui compte, pas le nom : « 310 » se vend partout, « Noir » ne veut rien dire au comptoir — et, sur les grilles d'ici, le nombre de points de cette couleur. Ce nombre vous dit quoi acheter : un écheveau de coton mouliné couvre environ 1 500 points à deux brins sur de la toile 14 fils.",
+        },
+        {
+          heading: "Compter sans se perdre",
+          body:
+            "Comptez toujours depuis un repère déjà brodé, jamais depuis le bord de la toile. Un point posé est une certitude ; le bord est à vingt centimètres et à trois erreurs possibles. Travaillez couleur par couleur sur les grandes plages, et zone par zone sur les détails — et gardez un crayon pour barrer au fur et à mesure, parce que retrouver sa place est le vrai coût d'une pause.",
+        },
+        {
+          heading: "Les points partiels et les contours",
+          body:
+            "Les grilles publiées ailleurs utilisent parfois des demi-points, des quarts de point, ou un trait de contour brodé au point arrière par-dessus le motif fini. Ce sont des raffinements de dessinateur. Les grilles d'ici n'en contiennent aucun : elles sont en points entiers, une case un point, ce qui les rend plus faciles à lire et un peu plus franches à l'œil.",
+        },
+      ],
+    },
+
+    choosePhoto: {
+      kicker: "tout se joue ici",
+      title: "Quelle photo donne une belle grille de point de croix",
+      lead:
+        "Le choix de la photo décide du résultat bien plus que les réglages. Voici ce qui survit à la réduction, et ce qui n'y survit jamais.",
+      intro:
+        "Une grille est une image en très basse définition : 70 points de large, c'est 70 pixels d'information, moins que la vignette d'une application. Tout ce qui demande du détail fin disparaît, et aucun réglage ne le fait revenir. En revanche une photo bien choisie donne quelque chose de reconnaissable, et souvent de plus joli que l'original — la réduction simplifie, et la simplification flatte.",
+      sections: [
+        {
+          heading: "Le sujet doit remplir le cadre",
+          body:
+            "C'est le seul critère qui compte vraiment. Un chien qui occupe les trois quarts de l'image donne une grille lisible ; le même chien à dix mètres au milieu d'un jardin donne une tache brune. Si vous hésitez entre deux photos, prenez celle où le sujet est le plus gros, même si elle est moins nette : la netteté sera perdue de toute façon, le cadrage non. Recadrez avant de convertir.",
+        },
+        {
+          heading: "Le contraste compte plus que la netteté",
+          body:
+            "Une photo légèrement floue mais bien contrastée donne une bonne grille. Une photo parfaitement nette dont le sujet a la même valeur que le fond — un chat noir sur un canapé foncé, une robe blanche sur un mur blanc — n'en donne aucune, parce que le convertisseur choisit ses couleurs par différence et qu'il n'y en a pas. Regardez votre photo en plissant les yeux : si le sujet se détache encore, c'est bon signe.",
+        },
+        {
+          heading: "Les fonds chargés",
+          body:
+            "Une étagère, un feuillage, une rue : le convertisseur dépense ses couleurs à décrire ce désordre au lieu du sujet. Trois solutions, de la plus simple à la moins : recadrer serré, retirer le fond — l'outil le fait, avec un modèle qui tourne sur votre machine — ou baisser le nombre de fils jusqu'à ce que le fond s'aplatisse en une seule masse, ce qui est parfois joli.",
+        },
+        {
+          heading: "Les animaux",
+          body:
+            "C'est le sujet qui rend le mieux, et de loin. Un pelage se réduit bien parce qu'il est fait de plages de valeurs proches plutôt que de détails ; les yeux et le museau fournissent les points sombres qui donnent une tête. Visez la photo de face, à hauteur de l'animal, prise dehors ou près d'une fenêtre. Un animal noir demande plus de fils que les autres, pas moins : c'est dans les gris très foncés que se joue tout le relief.",
+        },
+        {
+          heading: "Les portraits, franchement",
+          body:
+            "C'est le sujet le plus difficile, et il vaut mieux le savoir avant. Un visage se lit sur des écarts de carnation minuscules, et l'œil humain remarque immédiatement qu'ils ne sont pas justes. En dessous de 90 points de large, un visage devient une personne vaguement ressemblante ; il faut souvent 120 et une quinzaine de fils pour retrouver quelqu'un. Un profil, une silhouette à contre-jour ou un portrait très contrasté en noir et blanc s'en sortent beaucoup mieux qu'un portrait de face en lumière douce.",
+        },
+        {
+          heading: "Les fleurs, les objets, les paysages",
+          body:
+            "Une fleur seule, un bouquet, un vélo, une maison : tout ce qui a une forme franche et peu de fond fonctionne. Les paysages sont un cas à part — un panorama entier n'a pas de sujet, donc pas de grille ; mais un arbre isolé, une barque, une ligne d'horizon avec un phare, oui. Là encore : cherchez la forme, pas le détail.",
+        },
+        {
+          heading: "Ce que les réglages peuvent rattraper, et ce qu'ils ne peuvent pas",
+          body:
+            "Ils peuvent redresser une photo prise de travers, relever l'éclat quand le rendu paraît délavé à côté de l'original, retirer le fond, et changer un fil qui ne vous plaît pas. Ils ne peuvent pas inventer du détail qui n'est pas dans l'image, ni séparer un sujet d'un fond de la même couleur. Le meilleur réglage reste une meilleure photo.",
+        },
+      ],
+    },
+
+    fabric: {
+      kicker: "avant de commander",
+      title: "Quelle toile choisir, et quelle taille fera la broderie",
+      lead:
+        "Le compte de la toile décide de la taille finie. Un calcul à une ligne vous dit ce que vous allez obtenir — et combien de fil acheter.",
+      intro:
+        "C'est la question qui vient juste après « quelle largeur en points », et les deux sont la même question vue des deux bouts. La grille donne un nombre de points ; la toile décide de la place que prend un point ; le produit des deux est votre broderie finie, en centimètres, sur la table.",
+      sections: [
+        {
+          heading: "Ce qu'est le compte d'une toile",
+          body:
+            "Le nombre inscrit sur l'étiquette — 11, 14, 16, 18 — est le nombre de points par pouce. De la toile aida 14, la plus courante et la plus facile pour commencer, fait donc 14 points sur 2,54 cm, soit environ 5,5 points par centimètre. Plus le nombre est grand, plus les points sont petits : la broderie est plus fine, plus longue, et demande une meilleure vue.",
+        },
+        {
+          heading: "Le calcul de la taille finie",
+          body:
+            "Divisez le nombre de points par le compte de la toile, en gardant les deux mêmes unités. En centimètres : largeur en points ÷ 5,5 pour de l'aida 14. Une grille de 80 × 100 points donne donc environ 14,5 × 18 cm sur du 14 fils, 18,5 × 23 cm sur du 11 fils, et 11,5 × 14 cm sur du 18 fils. La même grille, trois broderies de tailles très différentes : c'est la toile qui décide, pas la grille.",
+        },
+        {
+          heading: "Les marges",
+          body:
+            "Ajoutez au moins 5 cm de toile de chaque côté, soit 10 cm à la largeur et 10 cm à la hauteur. Ce n'est pas du gaspillage : il faut de quoi tenir dans le tambour, de quoi encadrer ensuite, et de quoi rattraper si le motif s'est décalé. Une toile coupée au ras du motif est une broderie qu'on ne peut plus monter.",
+        },
+        {
+          heading: "Combien de brins",
+          body:
+            "Le coton mouliné se vend en écheveaux de six brins qu'on sépare avant de broder. Deux brins sur de la toile 14 fils est le choix habituel : ça couvre bien sans faire de bourrelet. Sur du 11 fils on passe souvent à trois brins, sur du 16 ou du 18 fils à un seul. Si vos points laissent voir la toile entre eux, ajoutez un brin ; s'ils gonflent, enlevez-en un.",
+        },
+        {
+          heading: "Combien de fil acheter",
+          body:
+            "Un écheveau de coton mouliné DMC fait 8 mètres et couvre environ 1 500 points à deux brins sur de la toile 14 fils. La légende des grilles d'ici donne le nombre de points de chaque couleur : divisez par 1 500, arrondissez au-dessus, et vous avez votre liste. En pratique la plupart des couleurs d'une grille tiennent dans un seul écheveau, et seules une ou deux — le fond, le gros du sujet — en demandent deux.",
+        },
+        {
+          heading: "La couleur de la toile",
+          body:
+            "L'écru et le blanc sont les plus vendus, et l'écru pardonne davantage : le blanc pur fait ressortir le moindre trou laissé nu. Si votre motif a beaucoup de fond clair, une toile de la couleur de ce fond vous épargne des milliers de points — vous ne brodez alors que le sujet, et la toile fait le reste. C'est aussi ce que fait le retrait de fond de l'outil, mais en amont.",
+        },
+        {
+          heading: "Un tableau pour aller vite",
+          body:
+            "Sur de l'aida 14 fils, marges comprises : 50 points font environ 9 cm de motif, soit une toile de 19 cm ; 70 points, 13 cm de motif et 23 cm de toile ; 100 points, 18 cm et 28 cm ; 150 points, 27 cm et 37 cm. Au-delà de 150 points de large, comptez en mois plutôt qu'en soirées.",
+        },
+      ],
+    },
+  },
+
   head: {
     home: {
       title: "Photo en grille de point de croix \u2014 gratuit, vrais fils DMC",

@@ -30,10 +30,12 @@
 
 import { fr } from "../i18n/fr"
 
+import { ARTICLE_KEYS, ARTICLES } from "./articles"
 import { indexable, paths } from "./routes"
 import {
   PIECE_GENRE,
   aboutGraph,
+  articleGraph,
   privacyGraph,
   convertGraph,
   faqGraph,
@@ -189,6 +191,34 @@ function privacyBody(t: typeof fr): string {
   )
 }
 
+/**
+ * A content page, for the readers that never run the JavaScript.
+ *
+ * These are the pages most likely to be *read* by one — they are answers to whole
+ * questions, which is what an answer engine quotes — so serving them as an empty
+ * div would have been the one place the prerendering mattered most and did least.
+ */
+function articleBody(t: typeof fr, which: (typeof ARTICLE_KEYS)[number]): string {
+  const copy = t.articles[which]
+  const related = ARTICLES[which].related
+    .map((key) => {
+      const to = key === "guide" ? paths.guide : ARTICLES[key].path
+      const label = key === "guide" ? t.guide.title : t.articles[key].title
+      return `<li class="m-0 mb-1"><a href="${to}">${esc(label)}</a></li>`
+    })
+    .join("")
+  return chrome(
+    t,
+    h1(copy.title) +
+      p(copy.lead) +
+      p(copy.intro) +
+      sections(copy.sections) +
+      `<section>${h2(t.articles.relatedHeading)}<ul class="list-none p-0 m-0">${related}</ul></section>` +
+      `<section>${h2(t.articles.ctaTitle)}${p(t.articles.ctaBody)}` +
+      `<p class="text-[16px] m-0"><a href="${paths.convert}">${esc(t.articles.ctaButton)}</a></p></section>`,
+  )
+}
+
 function aboutBody(t: typeof fr): string {
   return chrome(t, h1(t.aboutPage.title) + p(t.aboutPage.lead) + sections(t.aboutPage.blocks))
 }
@@ -249,6 +279,19 @@ export function headManifest() {
       jsonLd: JSON.stringify(guideGraph(t)),
       body: guideBody(t),
     },
+    // The three content pages, spread in rather than listed one by one: adding a
+    // fourth is then a row in articles.ts and nothing here.
+    ...Object.fromEntries(
+      ARTICLE_KEYS.map((key) => [
+        ARTICLES[key].path,
+        {
+          title: `${t.articles[key].title} — ${SITE_NAME}`,
+          description: t.articles[key].lead,
+          jsonLd: JSON.stringify(articleGraph(t, LANG, key)),
+          body: articleBody(t, key),
+        },
+      ]),
+    ),
     [paths.privacy]: {
       title: `${t.privacyPage.title} — ${SITE_NAME}`,
       description: t.privacyPage.lead,
