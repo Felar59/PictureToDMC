@@ -1,24 +1,28 @@
+import { useEffect, useRef, useState } from "react"
+
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { Chevron } from "@/components/brand/icons"
 import { MARK_GROUPS, MARK_PREFIX, type MarkGroup } from "@/components/brand/marks"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 
 /**
- * Choosing a mark.
+ * Choosing a mark, from behind a closed door.
  *
- * Grouped by subject and picked by eye, with no label on any individual mark.
- * That is not laziness: at 56 squares a flower is plainly a flower but the
- * difference between a peony and an aster is gone, and a caption naming the wrong
- * one is worse than no caption. The groups are labelled because the groups are
+ * Eighteen marks laid out flat pushed the save button off the screen on a laptop
+ * and made the account page mostly avatars. So the page shows the one you have,
+ * and the rest arrive when you ask for them.
+ *
+ * Not a `<select>`, despite being a dropdown: the whole content of each option is
+ * a picture, and a native select can only hold text. This is the other kind of
+ * dropdown — a disclosure holding a radio group — which keeps the one-of-many
+ * semantics a select would have given, keeps arrow keys moving between marks, and
+ * can actually show them.
+ *
+ * No mark is named individually. At 56 squares a flower is plainly a flower but
+ * the difference between a dahlia and a peony is gone, and a caption naming the
+ * wrong one is worse than no caption. The groups are named because the groups are
  * true.
- *
- * The account's own drawn mark comes first and is always there. It is what
- * everybody starts with, it is the only one that is *theirs* rather than chosen
- * from a shelf, and leaving it out would make picking a picture feel compulsory.
- *
- * Radios, not buttons. This is one choice among many with exactly one answer,
- * which is what a radio group is, and it means arrow keys move between marks and
- * a screen reader says "3 sur 18" instead of reading eighteen unlabelled images.
  */
 export function MarkPicker({
   userId,
@@ -34,6 +38,22 @@ export function MarkPicker({
   disabled?: boolean
 }) {
   const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+
+  // Escape closes it and puts focus back, which is the one thing a disclosure
+  // has to do that a `<details>` does not do on its own.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      setOpen(false)
+      triggerRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [open])
 
   const Option = ({
     icon,
@@ -59,13 +79,11 @@ export function MarkPicker({
           checked={selected}
           disabled={disabled}
           onChange={() => onChange(icon)}
-          // Visually gone, still focusable and still announced — the ring below
-          // is drawn from :focus-visible on the input via peer state.
           className="peer sr-only"
         />
         <StitchAvatar
           seed={seed}
-          size={52}
+          size={48}
           className={cn(
             "transition-shadow",
             selected
@@ -80,32 +98,67 @@ export function MarkPicker({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <div className="text-[13px] font-bold text-cocoa mb-2">{t.account.marks.mine}</div>
-        <div className="flex flex-wrap gap-1.5">
-          <Option icon={null} seed={userId} label={t.account.marks.mine} />
-        </div>
-      </div>
+    <div className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        aria-expanded={open}
+        aria-controls="mark-panel"
+        className={cn(
+          "w-full flex items-center gap-3 bg-blanc border-2 border-edge-3 rounded-card px-3 py-2.5",
+          "hover:border-coral transition-colors text-left min-h-14",
+          disabled && "opacity-60 cursor-not-allowed",
+        )}
+      >
+        {/* The mark you have now, at the size it appears on a card, so the
+            preview is the thing rather than a description of it. */}
+        <StitchAvatar seed={value ?? userId} size={40} />
+        <span className="flex-1 min-w-0">
+          <span className="block text-[14.5px] font-bold text-ink">
+            {t.account.marks.heading}
+          </span>
+          <span className="block text-[13px] text-stone">{t.account.marks.change}</span>
+        </span>
+        <Chevron
+          size={11}
+          className={cn("text-cocoa transition-transform mr-1", open ? "-rotate-90" : "rotate-90")}
+        />
+      </button>
 
-      {(["flowers", "animals"] as MarkGroup[]).map((group) => (
-        <div key={group}>
-          <div className="text-[13px] font-bold text-cocoa mb-2">
-            {t.account.marks.groups[group]}
+      {open && (
+        <div
+          id="mark-panel"
+          ref={panelRef}
+          className="mt-2 bg-blanc border-2 border-edge-3 rounded-card p-4 flex flex-col gap-4 max-h-[340px] overflow-y-auto"
+        >
+          <div>
+            <div className="text-[13px] font-bold text-cocoa mb-2">{t.account.marks.mine}</div>
+            <div className="flex flex-wrap gap-1.5">
+              <Option icon={null} seed={userId} label={t.account.marks.mine} />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {MARK_GROUPS[group].map((slug, i) => (
-              <Option
-                key={slug}
-                icon={`${MARK_PREFIX}${slug}`}
-                seed={`${MARK_PREFIX}${slug}`}
-                // Numbered rather than named, for the reason in the note above.
-                label={t.account.marks.option(t.account.marks.groups[group], i + 1)}
-              />
-            ))}
-          </div>
+
+          {(["flowers", "animals"] as MarkGroup[]).map((group) => (
+            <div key={group}>
+              <div className="text-[13px] font-bold text-cocoa mb-2">
+                {t.account.marks.groups[group]}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {MARK_GROUPS[group].map((slug, i) => (
+                  <Option
+                    key={slug}
+                    icon={`${MARK_PREFIX}${slug}`}
+                    seed={`${MARK_PREFIX}${slug}`}
+                    label={t.account.marks.option(t.account.marks.groups[group], i + 1)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   )
 }

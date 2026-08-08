@@ -79,9 +79,24 @@ def google_callback(request: Request, code: str | None = None, state: str | None
             (identity.name or "Brodeur·se", identity.email, user_id),
         )
     else:
+        # A picture mark, picked at random, rather than the drawn one.
+        #
+        # Everybody used to start with the same kind of small woven motif, which
+        # made a gallery of new members look like a gallery of one person. A hen,
+        # an otter, a pansy — assigned rather than chosen — gives someone
+        # something before they have done anything, and the picker is right there
+        # if they would rather have another.
+        #
+        # `secrets` and not `random`: no reason beyond it being the module that is
+        # already imported here, and a shuffled avatar is nobody's secret.
         cur = conn.execute(
-            "INSERT INTO users (display_name, email, created_at) VALUES (?,?,?)",
-            (identity.name or "Brodeur·se", identity.email, now_ms()),
+            "INSERT INTO users (display_name, email, created_at, icon) VALUES (?,?,?,?)",
+            (
+                identity.name or "Brodeur·se",
+                identity.email,
+                now_ms(),
+                MARK_PREFIX + secrets.choice(sorted(MARK_SLUGS)),
+            ),
         )
         user_id = int(cur.lastrowid or 0)
         conn.execute(
@@ -108,6 +123,28 @@ def me(request: Request) -> JSONResponse:
             "googleEnabled": config.GOOGLE_ENABLED,
         }
     )
+
+
+@router.get("/dev/login")
+def dev_login(user_id: int = 1) -> Response:
+    """Sign in as a member, on a machine with no Google credentials.
+
+    See `config.DEV_LOGIN` for the two conditions that keep this shut. It is a GET
+    so it can be visited from the address bar, which is the whole point — the
+    alternative was inserting a session row by hand and then having no way to put
+    an httpOnly cookie into a browser.
+
+    404, not 403, when it is off: a route that answers "forbidden" tells whoever
+    asked that it exists.
+    """
+    if not config.DEV_LOGIN:
+        raise HTTPException(404, "Not found")
+    row = connect().execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, f"No member {user_id}")
+    response = RedirectResponse("/account", status_code=302)
+    auth.start_session(response, user_id)
+    return response
 
 
 @router.post("/logout")

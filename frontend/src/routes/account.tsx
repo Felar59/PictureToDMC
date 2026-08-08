@@ -26,7 +26,7 @@ import { useHead } from "@/lib/head"
 export default function Account() {
   const [deleting, setDeleting] = useState(false)
   const { t } = useI18n()
-  const { user, signIn, signOut, updateProfile } = useAuth()
+  const { user, googleEnabled, signIn, signOut, updateProfile } = useAuth()
   const navigate = useNavigate()
   const [search] = useSearchParams()
   const welcome = search.has("bienvenue")
@@ -62,7 +62,17 @@ export default function Account() {
     return (
       <div className="text-center py-24 flex flex-col items-center gap-4">
         <p className="text-clay m-0">{t.account.signInFirst}</p>
-        <Button onClick={() => signIn(paths.account)}>{t.account.signIn}</Button>
+        {/* A button that cannot work is worse than no button. When Google is not
+            configured — which is every checkout of this repository, since the
+            secret is not in it — clicking this used to return 503 and read as the
+            site being broken. */}
+        {googleEnabled ? (
+          <Button onClick={() => signIn(paths.account)}>{t.account.signIn}</Button>
+        ) : (
+          <p className="font-hand text-[14px] text-sand m-0 max-w-[420px]">
+            {t.account.signInUnavailable}
+          </p>
+        )}
       </div>
     )
   }

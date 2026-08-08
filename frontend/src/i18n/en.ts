@@ -149,6 +149,7 @@ export const en = {
     marks: {
       heading: "Your mark",
       lead: "It appears on your pieces and your comments.",
+      change: "Choose another",
       mine: "The one from your account",
       groups: { flowers: "Flowers", animals: "Animals" },
       option: (group: string, n: number) => `${group}, mark ${n}`,
@@ -159,6 +160,9 @@ export const en = {
     saved: "saved",
     publicPage: "See my page",
     signInFirst: "Sign in to see your account.",
+    /** See the note on the French copy. */
+    signInUnavailable:
+      "Google sign-in is not configured on this server. That is normal locally — see DEV_LOGIN in PythonDCA/api/config.py.",
     save: "Save",
     cancel: "Cancel",
     signedInAs: "Signed in as",

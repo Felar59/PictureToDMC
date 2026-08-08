@@ -282,7 +282,15 @@ def boot() -> None:
     removed = db.purge_expired_sessions()
     print(
         f"[ptd] db={config.DB_PATH} google={'on' if config.GOOGLE_ENABLED else 'OFF'} "
-        f"origin={config.PUBLIC_ORIGIN} purged_sessions={removed}",
+        f"origin={config.PUBLIC_ORIGIN} purged_sessions={removed}"
+        # Said out loud every time, because a sign-in bypass that runs quietly is
+        # one nobody remembers is running.
+        + (
+            "\n[ptd] DEV LOGIN IS ON — visit /api/auth/dev/login to sign in without "
+            "Google. Never reachable when Google is configured."
+            if config.DEV_LOGIN
+            else ""
+        ),
         flush=True,
     )
 

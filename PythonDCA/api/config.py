@@ -33,6 +33,18 @@ SESSION_TTL_DAYS = 180
 # rather than silently disabling sign-in.
 GOOGLE_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
 
+# A way to be signed in on a machine that has no Google credentials.
+#
+# The client secret is not in this repository and must never be, so a developer
+# checking out the project cannot sign in at all — which means the account page,
+# publishing, commenting and the whole moderation side are unreachable locally.
+#
+# Two independent conditions, either of which alone is enough to keep this shut in
+# production: the environment variable has to be set on purpose, AND Google has to
+# be unconfigured. Production configures Google, so it can never be on there even
+# if the variable leaked into its environment by accident.
+DEV_LOGIN = bool(os.environ.get("PTD_DEV_LOGIN")) and not GOOGLE_ENABLED
+
 
 def google_redirect_uri() -> str:
     return f"{PUBLIC_ORIGIN}/api/auth/google/callback"

@@ -149,6 +149,7 @@ export const fr: Copy = {
     marks: {
       heading: "Votre marque",
       lead: "Elle apparaît sur vos ouvrages et vos commentaires.",
+      change: "Choisir une autre",
       mine: "Celle de votre compte",
       groups: { flowers: "Fleurs", animals: "Animaux" },
       option: (group: string, n: number) => `${group}, marque ${n}`,
@@ -160,6 +161,11 @@ export const fr: Copy = {
     saved: "enregistré",
     publicPage: "Voir ma page",
     signInFirst: "Connectez-vous pour voir votre compte.",
+    /** Quand Google n'est pas configuré — c'est le cas de toute copie locale du
+     *  dépôt, puisque le secret n'y est pas. Mieux vaut le dire que proposer un
+     *  bouton qui répond 503. */
+    signInUnavailable:
+      "La connexion Google n'est pas configurée sur ce serveur. C'est normal en local — voir DEV_LOGIN dans PythonDCA/api/config.py.",
     save: "Enregistrer",
     cancel: "Annuler",
     signedInAs: "Connecté en tant que",
