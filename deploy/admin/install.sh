@@ -51,4 +51,4 @@ echo "  ✓ $LIB ($(ls -1 "$LIB" | tr '\n' ' '))"
 
 python3 -m compileall -q "$LIB" >/dev/null && echo "  ✓ compilation Python OK"
 echo ""
-echo "Prêt : sudo ptd-panel"
+echo "Prêt : sudo vallee-panel · vallee-users · vallee-space"

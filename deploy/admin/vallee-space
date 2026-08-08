@@ -20,7 +20,11 @@ DB=/var/lib/picturetodmc/db.sqlite
 DIR=/var/lib/picturetodmc
 
 command -v sqlite3 >/dev/null || { echo "sqlite3 absent (apt install sqlite3)"; exit 1; }
-[ -f "$DB" ] || { echo "base introuvable : $DB"; exit 1; }
+# `sudo test`, pas `[ -f ]` : /var/lib/picturetodmc appartient à `deploy` et n'est
+# lisible que par lui, donc la vérification échouait sur une base parfaitement
+# présente — en annonçant « base introuvable », ce qui envoie chercher au mauvais
+# endroit. Toutes les requêtes plus bas passent déjà par sudo.
+sudo test -f "$DB" || { echo "base introuvable : $DB"; exit 1; }
 
 h() { numfmt --to=iec --suffix=B --format="%.1f" "${1:-0}" 2>/dev/null || echo "${1:-0} o"; }
 q() { sudo sqlite3 "$DB" "$1"; }
