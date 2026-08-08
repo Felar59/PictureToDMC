@@ -155,10 +155,25 @@ same shape: a browser-side tool with no signup.
   React les adopte au lieu d'en ajouter une seconde série — sans quoi c'était le
   bug des canoniques en double, en pire.
 
-- **Content.** The FAQ is fourteen questions; the guide is one page. What earns links
-  is more of both — how to read a chart, what to do about a photo with a busy
-  background, converting a pet versus a portrait. Each is a page somebody is looking
-  for.
+- ~~**Content.**~~ — **trois pages faites** (commit `a58f1fb`), soit ~2 100 mots :
+  `/comment-lire-une-grille-de-point-de-croix`, `/quelle-photo-pour-le-point-de-croix`,
+  `/quelle-toile-pour-le-point-de-croix`. Chacune répond à *une* question entière,
+  parce que c'est la forme qu'on tape dans un moteur avant de connaître le site — le
+  guide, lui, raconte le trajet pour quelqu'un déjà arrivé.
+
+  La règle suivie, si d'autres s'écrivent : la moitié du texte ne parle pas de
+  l'outil. Une page qui répond se fait citer ; une page qui ramène chaque paragraphe
+  au produit se fait fermer. La page sur les photos dit franchement que les portraits
+  sont le sujet le plus difficile et demandent ~120 points — ça coûte une conversion
+  et ça épargne une déception.
+
+  Une quatrième est une ligne dans `lib/articles.ts` et un bloc de copie : le
+  composant, le head, le corps rendu par le serveur, le sitemap et `llms.txt` suivent
+  tout seuls.
+
+  Restent des sujets évidents si l'envie vient : les fils de couleur unie contre les
+  dégradés, encadrer une broderie finie, et broder à partir d'une photo de mariage
+  (très cherché, et le pire cas pour l'outil — donc une page honnête).
 - **`hreflang`.** The language switch changes the copy but not the URL, so there is
   one address serving two languages and no way to tell a crawler that. Doing it
   properly means `/en/...` paths, which is a bigger change than it sounds.
