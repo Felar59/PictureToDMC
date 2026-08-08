@@ -67,6 +67,9 @@ export default function ProfilePage() {
     // Same rule as a deleted piece: gone means out of the index, and only once the
     // request has actually come back rather than while it is still in flight.
     noindex: state === "failed",
+    // See piece.tsx: on the first render `profile` is null and this would
+    // otherwise replace the server's correct head with the not-found one.
+    hold: state === "loading",
     jsonLd: profile
       ? graph(
           profileNodes({

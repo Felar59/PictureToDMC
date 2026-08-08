@@ -74,13 +74,26 @@ class _Cache:
     def __init__(self) -> None:
         self._manifest: Any = None
         self._shell: str = ""
-        self._stamp: tuple[float, float] | None = None
+        self._stamp: tuple | None = None
 
-    def _current(self) -> tuple[float, float] | None:
+    def _current(self) -> tuple | None:
+        """Size as well as time, and nanoseconds rather than seconds.
+
+        Modification time alone is not enough to notice a change. A file written
+        twice inside one timestamp tick keeps the same mtime, and so does one
+        restored by a rename from a copy made moments earlier — which is precisely
+        how a test that corrupted this manifest and put it back left the process
+        serving the corrupt version indefinitely, long after the file on disk was
+        correct again. A deploy that rsyncs twice in quick succession is the same
+        shape of event. Size is free to read and settles almost every real case
+        that time alone misses.
+        """
         try:
-            return (os.path.getmtime(MANIFEST_PATH), os.path.getmtime(INDEX_PATH))
+            manifest = os.stat(MANIFEST_PATH)
+            index = os.stat(INDEX_PATH)
         except OSError:
             return None
+        return (manifest.st_mtime_ns, manifest.st_size, index.st_mtime_ns, index.st_size)
 
     def get(self) -> tuple[Any, str] | None:
         stamp = self._current()
@@ -262,7 +275,12 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
     row = db.connect().execute(
         """
         SELECT p.id, p.title, p.kind, p.width, p.height, p.thread_codes,
-               p.like_count, p.created_at, p.author_id, u.display_name
+               p.like_count, p.created_at, p.author_id, u.display_name,
+               -- Tested, not fetched: `cells` is one byte of base64 per stitch and
+               -- can run to tens of kilobytes. This head only needs to know whether
+               -- there is a grid behind the post, which decides whether its share
+               -- image is a card this site drew or the member's own photograph.
+               p.cells IS NOT NULL AS has_cells
         FROM posts p JOIN users u ON u.id = p.author_id
         WHERE p.id = ?
         """,
@@ -298,6 +316,12 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
         "description": description,
         "canonical": f"/piece/{row['id']}",
         "image": f"/api/posts/{row['id']}/share.png",
+        # A pattern post's share image is drawn by sharecard.py at a known size. A
+        # photo post's is the member's uploaded JPEG, returned verbatim by
+        # `get_share_card`, at whatever shape their phone took it — so the size is
+        # not declared rather than declared wrongly. Claiming 1.91:1 for a portrait
+        # photo makes a scraper reserve a letterbox and crop the picture into it.
+        "cardIsDrawn": row["kind"] != "photo" and bool(row["has_cells"]),
         "imageAlt": title,
         "type": "article",
         "publishedTime": _iso(row["created_at"]),
@@ -330,12 +354,19 @@ def _maker_head(manifest: Any, user_id: int) -> dict | None:
         "SELECT id, title FROM posts WHERE author_id = ? ORDER BY created_at DESC, id DESC LIMIT 60",
         (user_id,),
     ).fetchall()
+    # Counted separately, because `posts` is capped at 60 for the page's own sake.
+    # Using len(posts) made the description of a member with 137 pieces read "les
+    # 60 grilles que…" — a number the page itself contradicts, and the sentence an
+    # answer engine quotes when asked how much somebody has published.
+    total = conn.execute(
+        "SELECT COUNT(*) FROM posts WHERE author_id = ?", (user_id,)
+    ).fetchone()[0]
 
     shape = manifest["maker"]
-    values = {"maker": user["display_name"], "pieces": len(posts)}
+    values = {"maker": user["display_name"], "pieces": total}
     if not posts:
         description = _fill(shape["empty"], values)
-    elif len(posts) == 1:
+    elif total == 1:
         description = _fill(shape["descriptionOne"], values)
     else:
         description = _fill(shape["descriptionMany"], values)
@@ -381,6 +412,58 @@ def _body(manifest: Any, heading: str, lead: str, links: list[tuple[str, str]]) 
     )
 
 
+#: How many pieces the server lists under a gallery.
+#:
+#: This is the site's crawl path, not a page of results: a reader that runs no
+#: JavaScript sees only what is in this list, and the gallery's own "voir plus"
+#: is a fetch it will never make. Sixty is roughly three pages of the real
+#: gallery — enough that a crawler arriving cold reaches most of what exists,
+#: small enough that the HTML stays a few kilobytes.
+GALLERY_LINKS = 60
+
+
+def _gallery_links(kind: str) -> list[tuple[str, str]]:
+    """The newest pieces in one gallery, as (href, title)."""
+    rows = db.connect().execute(
+        """
+        SELECT id, title FROM posts
+        WHERE kind = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?
+        """,
+        (kind, GALLERY_LINKS),
+    ).fetchall()
+    return [(f"/piece/{r['id']}", r["title"]) for r in rows]
+
+
+def _gallery_body(manifest: Any, base_body: str | None, kind: str) -> str | None:
+    """The baked gallery page, with the pieces it is a gallery *of* appended.
+
+    Without this the whole prerendering effort is unreachable by the readers it
+    was built for. The bodies come from the build, which has no database, so a
+    crawler that does not run JavaScript arrived at /galerie, found a heading and
+    the six fixed nav links, and stopped — every `_piece_head` and `_maker_head`
+    below was dead code to it. Pieces are deliberately absent from sitemap.xml on
+    the grounds that "the gallery links to every one of them", which was true only
+    once JavaScript had run.
+    """
+    if not base_body:
+        return base_body
+    links = _gallery_links(kind)
+    if not links:
+        return base_body
+    items = "".join(
+        f'<li class="m-0 mb-1"><a href="{html.escape(href, quote=True)}">'
+        f"{html.escape(title)}</a></li>"
+        for href, title in links
+    )
+    listing = f'<ul class="list-none p-0 m-0 mb-8">{items}</ul>'
+    # Inside the wrapper, before the footer nav, so the document still reads in
+    # order: heading, what this page is, then the pieces.
+    marker = '<nav class="text-[14px] text-cocoa mt-12'
+    return base_body.replace(marker, listing + marker, 1) if marker in base_body else base_body + listing
+
+
 #: Routes that exist but have no business being in an index — someone's account
 #: page, the moderation queue, the internal tuning bench.
 PRIVATE = {"/compte", "/atelier", "/signalements"}
@@ -399,12 +482,18 @@ def head_for(path: str) -> dict | None:
 
     fixed = manifest["fixed"].get(clean)
     if fixed:
+        body = fixed.get("body")
+        # The two galleries get the pieces they are galleries of. See _gallery_body.
+        if clean == manifest["dynamic"]["galleryPath"]:
+            body = _gallery_body(manifest, body, "pattern")
+        elif clean == manifest["dynamic"]["stitchesPath"]:
+            body = _gallery_body(manifest, body, "photo")
         return {
             "title": fixed["title"],
             "description": fixed["description"],
             "canonical": clean,
             "jsonLd": fixed["jsonLd"],
-            "body": fixed.get("body"),
+            "body": body,
         }
 
     if clean in PRIVATE:
@@ -423,14 +512,20 @@ def head_for(path: str) -> dict | None:
             found = lookup(manifest, int(rest))
             if found:
                 return found
-            # The row is gone. Say so, rather than answering with the home page's
-            # words under a canonical pointing at a piece that no longer exists —
-            # which is the textbook soft 404, and people do delete their work.
+            # The row is gone.
+            #
+            # `missing` is what makes this a real 404 rather than a soft one. The
+            # caller picks the status from the URL *shape* — any /piece/<digits>
+            # looks like a page — so without this flag the response was 200 OK
+            # carrying the words "cette page n'existe pas", which is the precise
+            # definition of a soft 404: link checkers and uptime monitors record
+            # the URL as live, and Search Console files it rather than dropping it.
             return {
                 "title": manifest["notFound"]["title"],
                 "description": manifest["notFound"]["description"],
                 "canonical": clean,
                 "noindex": True,
+                "missing": True,
             }
 
     return {
@@ -438,6 +533,7 @@ def head_for(path: str) -> dict | None:
         "description": manifest["notFound"]["description"],
         "canonical": clean,
         "noindex": True,
+        "missing": True,
     }
 
 
@@ -445,15 +541,29 @@ def _tag(name: str, attr: str, key: str, content: str) -> str:
     return f'<{name} {attr}="{key}" content="{html.escape(content, quote=True)}" data-head>'
 
 
-def render(path: str) -> str | None:
-    """index.html with this route's head in it, or None to serve it untouched."""
+def render(path: str) -> tuple[str, bool] | None:
+    """(html, missing) for this route, or None to serve index.html untouched.
+
+    `missing` is half of the soft-404 fix. The caller cannot tell a deleted piece
+    from a live one — `/piece/4171` and `/piece/4` are the same shape — so it used
+    to answer 200 for both, and a deleted piece came back as `200 OK` carrying the
+    words "cette page n'existe pas". Only the lookup knows; only the lookup can say.
+
+    The try wraps *everything*. It used to end after `head_for`, which left
+    `manifest["origin"]`, `manifest["lang"]`, `fixed["jsonLd"]` and the rest of the
+    body outside it — so a new server deployed against a `dist/` built before a
+    manifest key was renamed raised KeyError past this function, past `_shell`
+    (which has no guard either) and into a 500 on *every* HTML request. The comment
+    below promising that a head is not worth a 500 was describing a guard that
+    covered exactly one line of the function it was in.
+    """
     loaded = _cache.get()
     if loaded is None:
         return None
     manifest, shell = loaded
 
     try:
-        head = head_for(path)
+        return _render(manifest, shell, path)
     except Exception:
         # A head is not worth a 500. Fall back to the shell and let the client write
         # its own, exactly as the site did before any of this existed.
@@ -464,6 +574,10 @@ def render(path: str) -> str | None:
         # from the feature having never been deployed.
         traceback.print_exc()
         return None
+
+
+def _render(manifest: Any, shell: str, path: str) -> tuple[str, bool] | None:
+    head = head_for(path)
     if head is None:
         return None
 
@@ -482,15 +596,26 @@ def render(path: str) -> str | None:
         _tag("meta", "property", "og:type", head.get("type") or "website"),
         _tag("meta", "property", "og:site_name", manifest["siteName"]),
         _tag("meta", "property", "og:image", image),
-        # The size, restated. `_STRIP` above removes every og:* tag index.html
-        # shipped with, which included these two — so the first version of this
+        # The size, restated — `_STRIP` above removes every og:* tag index.html
+        # shipped with, which included these two, so an earlier version of this
         # module quietly deleted them from every page and put nothing back.
         # Facebook, LinkedIn and WhatsApp lay a preview out before the image has
-        # downloaded; without them they guess small or reflow when it lands. Both
-        # og.png and every card sharecard.py draws are exactly 1200x630, so this is
-        # a fact rather than a hint.
-        _tag("meta", "property", "og:image:width", "1200"),
-        _tag("meta", "property", "og:image:height", "630"),
+        # downloaded; without them they guess small or reflow when it lands.
+        #
+        # Conditional, because the claim is only true of an image this site drew.
+        # og.png and every card sharecard.py renders are exactly 1200x630 — but a
+        # photo post's share image is the member's uploaded JPEG returned verbatim
+        # by `get_share_card`, at whatever shape their phone took it. Asserting
+        # 1.91:1 there makes a scraper reserve a letterbox and crop a portrait
+        # photograph into it, which is worse than saying nothing.
+        *(
+            [
+                _tag("meta", "property", "og:image:width", "1200"),
+                _tag("meta", "property", "og:image:height", "630"),
+            ]
+            if head.get("cardIsDrawn", True)
+            else []
+        ),
         _tag("meta", "property", "og:image:alt", head.get("imageAlt") or head["title"]),
         # The served HTML is always French — the server cannot know a visitor's
         # toggle, and this is the canonical language.
@@ -526,13 +651,14 @@ def render(path: str) -> str | None:
     # the page's real fonts, where a blank rectangle used to be — and it is the
     # only thing a crawler that does not run JavaScript will ever read, including
     # every link on the site.
+    missing = bool(head.get("missing"))
     body = head.get("body")
     if body:
         # *Inside* the mount point, not after it. Written the other way round the
         # content becomes a sibling of #root, which React never clears — so the page
         # would carry the skeleton and the real app at once, forever, for everyone.
         out = out.replace(_ROOT, f'<div id="root">{body}</div>', 1)
-    return out
+    return out, missing
 
 
 #: The mount point, exactly as index.html writes it. A literal rather than a regex

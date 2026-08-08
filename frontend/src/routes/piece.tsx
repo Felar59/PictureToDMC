@@ -245,7 +245,12 @@ export default function Piece() {
     type: "article",
     // The card is a picture of this pattern, so the alt is the piece and its
     // maker — which is what somebody hearing the link read out needs.
-    imageAlt: post ? t.head.piece.title(post.title, post.author.displayName) : undefined,
+    // `headTitle`, not a fresh call to `t.head.piece.title` — that ignored
+    // `isPhoto`, so a finished-embroidery photo was described to every scraper as
+    // "…, par X — grille de point de croix", a chart it does not have. The server
+    // branches correctly, so the client was also overwriting a right answer with a
+    // wrong one on exactly those posts.
+    imageAlt: post ? headTitle : undefined,
     publishedTime: post ? new Date(post.createdAt).toISOString() : undefined,
     authorUrl: post ? `${ORIGIN}${paths.maker(post.author.id)}` : undefined,
     /**
@@ -288,6 +293,9 @@ export default function Piece() {
     // of a soft 404. `state` is "failed" only once the fetch has actually come back,
     // so a slow connection is not mistaken for a missing piece.
     noindex: state === "failed",
+    // Until the piece is here, the server's head is better than anything this
+    // component can say about it.
+    hold: state === "loading",
   })
 
   // How wide to draw the grid: as wide as the column allows, unless that would

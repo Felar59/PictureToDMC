@@ -49,6 +49,19 @@ type Meta = {
   jsonLd?: object
   /** Keep a page out of the index — a member's account, for instance. */
   noindex?: boolean
+  /**
+   * Leave the head exactly as it arrived, for now.
+   *
+   * For a page whose head depends on something still being fetched. Without it,
+   * piece.tsx and profile.tsx ran on their first render — before the request came
+   * back — with the not-found title and no graph, which overwrote the *correct*
+   * head the server had just sent and deleted its JSON-LD. A crawler that renders
+   * JavaScript and snapshots at first paint therefore saw every piece and every
+   * member under one identical title with no structured data: precisely the
+   * every-URL-is-the-same-page fault the server rendering exists to remove,
+   * reintroduced on the one crawler that had never suffered it.
+   */
+  hold?: boolean
 }
 
 const MANAGED = "data-head"
@@ -99,6 +112,10 @@ export function useHead(m: Meta): void {
   const key = JSON.stringify([m, pathname, lang])
 
   useEffect(() => {
+    // Nothing at all, not even a partial write: whatever is in the head came from
+    // the server and is right until we know better.
+    if (m.hold) return
+
     const canonical = absolute(m.canonicalPath ?? pathname)
     const image = m.image
       ? m.image.startsWith("http")

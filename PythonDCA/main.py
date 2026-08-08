@@ -17,7 +17,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
-from starlette.responses import HTMLResponse, Response
+from starlette.concurrency import run_in_threadpool
+from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.types import Scope
 
 from .api import config, db, prerender
@@ -87,7 +88,12 @@ class SinglePageFiles(StaticFiles):
         # every other route rendered, which is exactly the kind of miss that looks
         # like it works.
         if clean in ("", ".", "index.html"):
-            return self._shell("/", 200)
+            return await self._shell("/", 200)
+
+        # The old English URLs, moved permanently rather than rendered as missing.
+        moved = _LEGACY.get(clean.rstrip("/"))
+        if moved:
+            return RedirectResponse(moved, status_code=301)
 
         try:
             response = await super().get_response(path, scope)
@@ -135,9 +141,9 @@ class SinglePageFiles(StaticFiles):
             # nobody meant. So a path the router knows about answers 200 and anything
             # else answers 404 — both with the same HTML, so the React NotFound page
             # still renders and a visitor sees something friendly either way.
-            return self._shell(path, 200 if _is_client_route(path) else 404)
+            return await self._shell(path, 200 if _is_client_route(path) else 404)
 
-    def _shell(self, path: str, status: int) -> Response:
+    async def _shell(self, path: str, status: int) -> Response:
         """index.html, with this route's head written into it where possible.
 
         Everything that does not run JavaScript — which is every AI crawler — only
@@ -147,12 +153,30 @@ class SinglePageFiles(StaticFiles):
         A miss returns the file untouched rather than failing: the client still
         writes its own head, which is where the site was before this existed.
         """
-        rendered = prerender.render(path)
+        # In a worker thread, not here.
+        #
+        # Starlette awaits this on the event loop, and rendering a piece or a member
+        # reads SQLite synchronously. Every other database route in this app is a
+        # plain `def`, which is FastAPI's signal to run it in a threadpool; these two
+        # were reached through an `async def` and so ran on the loop itself. With
+        # `busy_timeout = 5000`, one concurrent writer meant every request in the
+        # process — API calls, static files, other people's pages — waited behind a
+        # single piece page for up to five seconds.
+        rendered = await run_in_threadpool(prerender.render, path)
         if rendered is None:
             with open(os.path.join(DIST_DIR, "index.html"), encoding="utf-8") as fh:
-                rendered = fh.read()
+                body = fh.read()
+        else:
+            body, missing = rendered
+            # The row decides, not the URL's shape. `/piece/4171` and `/piece/4` look
+            # identical from here, so answering 200 for both meant a deleted piece
+            # came back as `200 OK` whose body reads "cette page n'existe pas" — a
+            # soft 404 by definition, which link checkers and uptime monitors record
+            # as a live page and Search Console files rather than dropping.
+            if missing:
+                status = 404
         return HTMLResponse(
-            rendered,
+            body,
             status_code=status,
             # The one file whose name never changes, and the file that names every
             # other one. It must be revalidated or a deploy reaches nobody.
@@ -178,10 +202,26 @@ _CLIENT_ROUTES = {
     "compte",
     "signalements",
     "atelier",
-    # The English paths that shipped first; the router redirects them.
-    "convert",
-    "gallery",
-    "about",
+}
+
+#: The English paths that shipped first, and where they now go.
+#:
+#: Kept out of `_CLIENT_ROUTES` above and answered here instead. They were client
+#: routes so the React router could redirect them — which works for a person and
+#: for Googlebot, and for nobody else. Since the server started writing heads they
+#: were worse than that: no entry exists for them in the manifest, so they fell
+#: through to the not-found branch and every one of them served
+#: `<title>Page introuvable</title>` with `noindex` under a self-canonical. An old
+#: link pasted into WhatsApp previewed as a dead page, and any crawler holding one
+#: was told to drop it rather than to follow it.
+#:
+#: A 301 is the answer a search engine actually wants: it moves the old URL's
+#: standing to the new one instead of discarding it. Kept in step with
+#: `legacyRedirects` in frontend/src/lib/routes.ts.
+_LEGACY = {
+    "convert": "/convertir-photo-point-de-croix",
+    "gallery": "/galerie",
+    "about": "/qui-sommes-nous",
 }
 
 #: Prefixes with an id after them.

@@ -306,7 +306,14 @@ export function homeGraph(t: Copy, lang: string): object {
   return graph(
     organization(),
     webSite(lang),
-    application(t.head.home.description, t.head.features),
+    // The converter's description, on the home page too.
+    //
+    // Both pages emit a SoftwareApplication node under the same `@id`, which is
+    // the assertion "this is the same thing wherever you meet it". Passing the
+    // home page's wording here made that one entity carry two different
+    // descriptions, so a consumer merging the graph across the two URLs — the
+    // entire point of the stable `@id`s in this file — had to pick one at random.
+    application(t.head.convert.description, t.head.features),
   )
 }
 
