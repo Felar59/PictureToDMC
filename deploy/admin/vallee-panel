@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# Picture to DMC admin panel — four panes (service journal, accounts, the
-# gallery, disk space).
+# Panneau d'administration de La Vallée des Points de Croix — quatre volets
+# (journal du service, comptes, galerie, place disque).
 #
-#   ptd-panel
+#   vallee-panel
 #
-# The Python lives in /usr/local/lib/ptd-panel (see deploy/admin/panel/). Root is
+# The Python lives in /usr/local/lib/vallee-panel (see deploy/admin/panel/). Root is
 # needed for both halves of the job: writing to the database, reading the journal.
 set -euo pipefail
 
-LIB="${PTD_PANEL_LIB:-/usr/local/lib/ptd-panel}"
+LIB="${VALLEE_PANEL_LIB:-/usr/local/lib/vallee-panel}"
 [ -d "$LIB" ] || { echo "panneau absent : $LIB (relance deploy/admin/install.sh)"; exit 1; }
 command -v python3 >/dev/null || { echo "python3 absent (apt install python3)"; exit 1; }
 

@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+#
+# La place occupée par la galerie, et la place restante.
+#
+#   vallee-space          résumé
+#   vallee-space -t       + les 15 ouvrages les plus lourds
+#
+# Rappel utile : la base est en mode WAL. Le fichier db.sqlite peut paraître
+# minuscule alors que les données récentes sont dans db.sqlite-wal — c'est normal,
+# et le total ci-dessous additionne bien les trois fichiers.
+#
+# Le pendant de `ea-space`. Ce qui pèse n'est pas la même chose ici : une grille
+# est quelques kilo-octets de coton, une photo d'ouvrage est un JPEG de téléphone.
+# Le tableau les sépare parce que c'est la seule décision que ce chiffre sert à
+# prendre — si la place manque un jour, ce sont les photos qu'il faudra regarder,
+# jamais les grilles.
+set -uo pipefail
+
+DB=/var/lib/picturetodmc/db.sqlite
+DIR=/var/lib/picturetodmc
+
+command -v sqlite3 >/dev/null || { echo "sqlite3 absent (apt install sqlite3)"; exit 1; }
+[ -f "$DB" ] || { echo "base introuvable : $DB"; exit 1; }
+
+h() { numfmt --to=iec --suffix=B --format="%.1f" "${1:-0}" 2>/dev/null || echo "${1:-0} o"; }
+q() { sudo sqlite3 "$DB" "$1"; }
+
+posts=$(q "select count(*) from posts;")
+grilles=$(q "select count(*) from posts where kind='pattern';")
+photos_n=$(q "select count(*) from posts where photo is not null;")
+photo_b=$(q "select coalesce(sum(length(photo)),0) from posts;")
+thumb_b=$(q "select coalesce(sum(length(thumb_png)),0) from posts;")
+cells_b=$(q "select coalesce(sum(length(cells)+length(thread_codes)),0) from posts;")
+users=$(q "select count(*) from users;")
+coms=$(q "select count(*) from comments;")
+coeurs=$(q "select count(*) from post_likes;")
+
+main=$(sudo stat -c %s "$DB" 2>/dev/null || echo 0)
+wal=$(sudo stat -c %s "$DB-wal" 2>/dev/null || echo 0)
+shm=$(sudo stat -c %s "$DB-shm" 2>/dev/null || echo 0)
+dbtot=$((main + wal + shm))
+bkp=$(sudo du -sb "$DIR/backups" 2>/dev/null | cut -f1); bkp=${bkp:-0}
+
+echo "  LA GALERIE — $(date '+%d/%m/%Y %H:%M')"
+echo "  $posts ouvrages ($grilles grilles · $photos_n avec photo) · $users comptes · $coms commentaires · $coeurs cœurs"
+echo ""
+echo "  Contenu"
+printf "    photos d'ouvrages       %10s\n" "$(h "$photo_b")"
+printf "    vignettes PNG           %10s\n" "$(h "$thumb_b")"
+printf "    grilles (points + fils) %10s\n" "$(h "$cells_b")"
+[ "$photos_n" -gt 0 ] && printf "    moyenne par photo       %10s\n" "$(h $((photo_b / photos_n)))"
+[ "$grilles" -gt 0 ] && printf "    moyenne par grille      %10s\n" "$(h $(((cells_b + thumb_b) / grilles)))"
+echo ""
+echo "  Fichiers de la base"
+printf "    db.sqlite               %10s\n" "$(h "$main")"
+printf "    db.sqlite-wal           %10s\n" "$(h "$wal")"
+printf "    db.sqlite-shm           %10s\n" "$(h "$shm")"
+printf "    TOTAL base              %10s\n" "$(h "$dbtot")"
+printf "    sauvegardes             %10s\n" "$(h "$bkp")"
+echo ""
+echo "  Disque"
+df -h --output=size,used,avail,pcent / | tail -1 | awk '{printf "    total %s · utilisé %s · LIBRE %s (%s)\n",$1,$2,$3,$4}'
+avail_b=$(df -B1 --output=avail / | tail -1 | tr -d ' ')
+# Compté sur les photos, pas sur la moyenne de tout : une grille de plus ne coûte
+# rien, une photo de plus coûte un demi-méga. C'est ce chiffre-là qui alerte.
+if [ "$photos_n" -gt 0 ] && [ "$photo_b" -gt 0 ]; then
+  moy=$((photo_b / photos_n))
+  echo "    de quoi tenir encore ~$((avail_b / moy)) ouvrages photographiés"
+elif [ "$grilles" -gt 0 ] && [ "$cells_b" -gt 0 ]; then
+  moy=$(((cells_b + thumb_b) / grilles))
+  [ "$moy" -gt 0 ] && echo "    de quoi tenir encore ~$((avail_b / moy)) grilles"
+fi
+
+if [ "${1:-}" = "-t" ]; then
+  echo ""
+  echo "  Les 15 ouvrages les plus lourds"
+  sudo sqlite3 -header -column "$DB" "
+    SELECT p.id,
+           u.display_name AS auteur,
+           p.kind         AS type,
+           CASE WHEN p.photo IS NULL THEN '-'
+                ELSE printf('%.1f Ko', length(p.photo)/1024.0) END AS photo,
+           CASE WHEN p.cells IS NULL THEN '-'
+                ELSE printf('%.1f Ko', length(p.cells)/1024.0) END AS grille,
+           datetime(p.created_at/1000,'unixepoch','localtime') AS le
+    FROM posts p JOIN users u ON u.id = p.author_id
+    ORDER BY (COALESCE(length(p.photo),0) + COALESCE(length(p.cells),0)) DESC
+    LIMIT 15;" | sed 's/^/  /'
+fi

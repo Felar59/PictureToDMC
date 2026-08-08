@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# Les comptes de La Vallée des Points de Croix, du plus récent au plus ancien,
+# dans un pager navigable (flèches / PgUp / PgDn, `/` pour chercher, `q` pour
+# quitter).
+#
+#   vallee-users            tous les comptes
+#   vallee-users 20         les 20 derniers
+#   vallee-users -w         rafraîchi toutes les 10 s (veille)
+#
+# Lecture seule. SQLite est en mode WAL, donc lire pendant que l'API écrit ne la
+# bloque pas.
+#
+# Le pendant de `ea-users` côté emoji-art. Le schéma n'est pas le même — pas de
+# vérification d'e-mail ici, les comptes viennent tous de Google — donc les
+# colonnes diffèrent : ce qui compte sur ce site est ce qu'on a publié et sous
+# quelle marque.
+set -uo pipefail
+
+DB=/var/lib/picturetodmc/db.sqlite
+LIMIT="${1:-}"
+[ "${1:-}" = "-w" ] && LIMIT=""
+
+command -v sqlite3 >/dev/null || { echo "sqlite3 absent (apt install sqlite3)"; exit 1; }
+[ -f "$DB" ] || { echo "base introuvable : $DB"; exit 1; }
+
+render() {
+  # -1 et pas ALL : « LIMIT ALL » est du PostgreSQL, SQLite le refuse.
+  local lim="-1"
+  [[ "${LIMIT:-}" =~ ^[0-9]+$ ]] && lim="$LIMIT"
+
+  local total admin bannis j1 j7 sansmarque
+  total=$(sudo sqlite3 "$DB" "select count(*) from users;")
+  admin=$(sudo sqlite3 "$DB" "select count(*) from users where role='admin';")
+  bannis=$(sudo sqlite3 "$DB" "select count(*) from users where banned_at is not null;")
+  j1=$(sudo sqlite3 "$DB" "select count(*) from users where created_at > (strftime('%s','now')-86400)*1000;")
+  j7=$(sudo sqlite3 "$DB" "select count(*) from users where created_at > (strftime('%s','now')-7*86400)*1000;")
+  # Devrait toujours valoir 0 : db.init en donne une à qui n'en a pas. Si ce
+  # nombre bouge, c'est que le backfill ne tourne plus.
+  sansmarque=$(sudo sqlite3 "$DB" "select count(*) from users where icon is null;")
+
+  echo "  COMPTES — LA VALLÉE DES POINTS DE CROIX — $(date '+%d/%m/%Y %H:%M')"
+  echo "  $total au total · $admin admin · $bannis banni(s) · +$j1 sur 24 h · +$j7 sur 7 j"
+  [ "$sansmarque" -gt 0 ] && echo "  ⚠ $sansmarque compte(s) sans marque — le backfill de db.init n'a pas tourné"
+  echo ""
+  sudo sqlite3 -header -column "$DB" "
+    SELECT
+      u.id                                                        AS id,
+      u.display_name                                              AS pseudo,
+      CASE u.role WHEN 'admin' THEN 'admin' ELSE '' END           AS role,
+      CASE WHEN u.banned_at IS NULL THEN '' ELSE 'BANNI' END      AS statut,
+      COALESCE(REPLACE(u.icon, 'm:', ''), '(dessinée)')           AS marque,
+      (SELECT COUNT(*) FROM posts p WHERE p.author_id = u.id)     AS ouvrages,
+      (SELECT COUNT(*) FROM comments c WHERE c.author_id = u.id)  AS coms,
+      (SELECT COALESCE(SUM(p.like_count),0) FROM posts p
+         WHERE p.author_id = u.id)                                AS coeurs,
+      datetime(u.created_at/1000, 'unixepoch', 'localtime')       AS inscrit_le,
+      COALESCE(u.email, '(sans e-mail)')                          AS email
+    FROM users u
+    ORDER BY u.created_at DESC
+    LIMIT $lim;"
+}
+
+if [ "${1:-}" = "-w" ]; then
+  # Veille : on redessine en place, Ctrl-C pour sortir.
+  while true; do clear; render; sleep 10; done
+else
+  # -S : pas de retour à la ligne (on scrolle latéralement) ; -R : couleurs.
+  render | less -SR
+fi

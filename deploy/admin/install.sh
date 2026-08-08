@@ -10,19 +10,37 @@
 # rsyncs PythonDCA/, so nothing under deploy/ ever reaches the box by itself.
 #
 # Installs:
-#   ptd-panel   four-pane panel (journal, accounts, gallery, disk)
+#   vallee-panel   four-pane panel (journal, accounts, gallery, disk)
+#   vallee-users   the accounts, newest first, in a pager
+#   vallee-space   what the gallery weighs and what is left
+#
+# The three are deliberately the same set emoji-art has as ea-panel / ea-users /
+# ea-space: one box, two sites, and no reason to learn two habits.
 set -euo pipefail
 
 [ "$(id -u)" -eq 0 ] || { echo "à lancer avec sudo"; exit 1; }
 SRC="$(cd "$(dirname "$0")" && pwd)"
 BIN=/usr/local/bin
-LIB=/usr/local/lib/ptd-panel
+LIB=/usr/local/lib/vallee-panel
 
 command -v python3 >/dev/null || apt-get install -y python3
 command -v sqlite3 >/dev/null || apt-get install -y sqlite3
 
-install -m 0755 "$SRC/ptd-panel" "$BIN/ptd-panel"
-echo "  ✓ $BIN/ptd-panel"
+for cmd in vallee-panel vallee-users vallee-space; do
+  install -m 0755 "$SRC/$cmd" "$BIN/$cmd"
+  echo "  ✓ $BIN/$cmd"
+done
+
+# The site was called Picture to DMC until August 2026. Leaving `ptd-panel` on
+# the box would leave two commands doing one job, one of them pointed at a
+# library this script is about to delete.
+for old in ptd-panel ptd-users ptd-space; do
+  if [ -e "$BIN/$old" ]; then
+    rm -f "$BIN/$old"
+    echo "  ✓ retiré $BIN/$old (ancien nom)"
+  fi
+done
+rm -rf /usr/local/lib/ptd-panel
 
 # The panel is a Python package: replace the directory wholesale so a module
 # deleted between two versions does not linger and get imported.

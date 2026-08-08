@@ -17,7 +17,7 @@ themselves from the site whatever they send to it. Banning is the same story: th
 column has been in the schema since the first release and nothing has ever set it
 — this is what sets it.
 
-Run it with `sudo ptd-panel` (it needs the database and the systemd journal).
+Run it with `sudo vallee-panel` (it needs the database and the systemd journal).
 
 Same shape and the same keys as emoji-art's `ea-panel` on this box, on purpose:
 two panels on one server should not need two sets of habits.
