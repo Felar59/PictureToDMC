@@ -155,9 +155,14 @@ export default function Convert() {
    * The sample the home page offers, arriving as `/convert?exemple=fraise`.
    *
    * The hero shows a strawberry and the chart it produced; this is the link between
-   * the two. It loads that photograph with the settings that made that chart — 74
+   * the two. It loads that photograph with the settings that made that chart — 76
    * wide, 9 threads, vivid — and converts on arrival, so someone who has no
    * photograph to hand can still see the thing the front page promised.
+   *
+   * 76 rather than 74: on 14-count aida that is a hair under 14 cm, which lands on
+   * a size somebody would actually stitch and frame. The number here is a
+   * suggestion made to a stranger with no photograph of their own, so it may as
+   * well be a good one.
    *
    * A query parameter rather than router state so the link survives being shared,
    * bookmarked, or opened in a new tab.
@@ -178,7 +183,7 @@ export default function Convert() {
         if (cancelled) return
         setSettings((prev) => ({
           ...prev,
-          stitchWidth: 74,
+          stitchWidth: 76,
           colorCount: 9,
           vividness: SAMPLE_VIVIDNESS,
           rotation: 0,
