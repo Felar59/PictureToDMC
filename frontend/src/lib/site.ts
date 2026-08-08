@@ -11,12 +11,21 @@
 /**
  * Where the site actually lives.
  *
- * Still the sslip.io address, and it has to be the *dashed* form: the dotted one
- * falls through nginx to another site on the same box. This is the one line to
- * change when there is a real domain — see ROADMAP.md §0, which is blocked on
- * choosing a name.
+ * This is what makes a domain *canonical*, and it is worth being explicit about
+ * because nothing at the registrar says which of several names is the real one.
+ * Three things do, and two of them read from here: the 301 in nginx (an alias
+ * never serves a page, it only points), the `<link rel="canonical">` on every
+ * page, and everything the site says about itself — sitemap, Open Graph, llms.txt.
+ *
+ * `www.vallee-points-de-croix.fr`, `cross-stitch-valley.com` and the old
+ * `164-132-99-194.sslip.io` all resolve here and all redirect to this name. The
+ * sslip address is kept in that list rather than switched off: it is the address
+ * this site was reachable at for its first months, so it is what any existing
+ * link and any already-crawled URL still points to.
+ *
+ * See deploy/enable-https.sh, which holds the other half of the arrangement.
  */
-export const ORIGIN = "https://164-132-99-194.sslip.io"
+export const ORIGIN = "https://vallee-points-de-croix.fr"
 
 /**
  * The name, long and short.

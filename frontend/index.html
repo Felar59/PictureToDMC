@@ -16,25 +16,31 @@
     JS so it sees the per-page version. A plain `curl`, and several social scrapers,
     do not — so what is here has to be a sensible answer for the site as a whole
     rather than a placeholder waiting to be replaced.
+
+    The absolute URLs below are the one thing here that is NOT generated: they are
+    written by hand and must match ORIGIN in src/lib/site.ts. They were missed when
+    the site moved off its sslip.io address, which is the failure mode to watch —
+    the generated sitemap said one thing while the shell every non-JS reader gets
+    said another.
   -->
   <title>Photo en grille de point de croix — gratuit, vrais fils DMC</title>
   <meta name="description"
     content="Transformez une photo en grille de point de croix imprimable, avec les vraies références de fils DMC et le nombre de points de chacun. Gratuit, sans compte, et votre photo ne quitte jamais votre navigateur." />
-  <link rel="canonical" href="https://164-132-99-194.sslip.io/" />
+  <link rel="canonical" href="https://vallee-points-de-croix.fr/" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="La Vallée des Points de Croix" />
   <meta property="og:title" content="Photo en grille de point de croix — gratuit, vrais fils DMC" />
   <meta property="og:description"
     content="Transformez une photo en grille de point de croix imprimable, avec les vraies références de fils DMC et le nombre de points de chacun." />
-  <meta property="og:url" content="https://164-132-99-194.sslip.io/" />
+  <meta property="og:url" content="https://vallee-points-de-croix.fr/" />
   <!-- A real chart, because a link preview showing actual cross-stitch says what
        this is faster than any words next to it. -->
-  <meta property="og:image" content="https://164-132-99-194.sslip.io/og.png" />
+  <meta property="og:image" content="https://vallee-points-de-croix.fr/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="https://164-132-99-194.sslip.io/og.png" />
+  <meta name="twitter:image" content="https://vallee-points-de-croix.fr/og.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
   <!--
