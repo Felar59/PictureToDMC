@@ -323,7 +323,7 @@ export function convertGraph(t: Copy): object {
   return graph(
     application(t.head.convert.description, t.head.features),
     breadcrumb([
-      { name: SITE_NAME, path: paths.home },
+      { name: t.site.short, path: paths.home },
       { name: t.nav.convert, path: paths.convert },
     ]),
   )
@@ -357,12 +357,12 @@ export function galleryGraph(
     breadcrumb(
       photos
         ? [
-            { name: SITE_NAME, path: paths.home },
+            { name: t.site.short, path: paths.home },
             { name: t.nav.gallery, path: paths.gallery },
             { name: t.gallery.tabs.finished, path: paths.galleryStitches },
           ]
         : [
-            { name: SITE_NAME, path: paths.home },
+            { name: t.site.short, path: paths.home },
             { name: t.nav.gallery, path: paths.gallery },
           ],
     ),
@@ -382,7 +382,7 @@ export function faqGraph(t: Copy): object {
       ),
     },
     breadcrumb([
-      { name: SITE_NAME, path: paths.home },
+      { name: t.site.short, path: paths.home },
       { name: t.nav.faq, path: paths.faq },
     ]),
   )
@@ -404,7 +404,7 @@ export function guideGraph(t: Copy): object {
       })),
     },
     breadcrumb([
-      { name: SITE_NAME, path: paths.home },
+      { name: t.site.short, path: paths.home },
       { name: t.nav.guide, path: paths.guide },
     ]),
   )
@@ -427,7 +427,7 @@ export function privacyGraph(t: Copy): object {
       publisher: { "@id": ORG_ID },
     },
     breadcrumb([
-      { name: SITE_NAME, path: paths.home },
+      { name: t.site.short, path: paths.home },
       { name: t.privacyPage.title, path: paths.privacy },
     ]),
   )
@@ -442,7 +442,7 @@ export function aboutGraph(t: Copy): object {
       mainEntity: { "@id": ORG_ID },
     },
     breadcrumb([
-      { name: SITE_NAME, path: paths.home },
+      { name: t.site.short, path: paths.home },
       { name: t.nav.about, path: paths.about },
     ]),
   )
@@ -479,7 +479,7 @@ export function articleGraph(t: Copy, lang: string, which: ArticleKey): object {
       articleSection: copy.sections.map((s) => s.heading),
     },
     breadcrumb([
-      { name: SITE_NAME, path: paths.home },
+      { name: t.site.short, path: paths.home },
       { name: t.guide.title, path: paths.guide },
       { name: copy.title, path: ARTICLES[which].path },
     ]),

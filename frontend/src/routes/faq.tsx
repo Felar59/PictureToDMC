@@ -3,7 +3,6 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
-import { SITE_SHORT } from "@/lib/site"
 import { paths } from "@/lib/routes"
 import { faqGraph } from "@/lib/schema"
 
@@ -26,7 +25,7 @@ export default function Faq() {
   const { t } = useI18n()
 
   useHead({
-    title: `${t.faqPage.title} · ${t.nav.faq} — ${SITE_SHORT}`,
+    title: `${t.faqPage.title} · ${t.nav.faq} — ${t.site.short}`,
     description: t.faqPage.lead,
     /**
      * This used to say a FAQPage is drawn with its questions expanded in a

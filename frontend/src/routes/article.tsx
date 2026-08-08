@@ -3,7 +3,6 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
-import { SITE_SHORT } from "@/lib/site"
 import { ARTICLES, type ArticleKey } from "@/lib/articles"
 import { paths } from "@/lib/routes"
 import { articleGraph } from "@/lib/schema"
@@ -28,7 +27,7 @@ export default function Article({ which }: { which: ArticleKey }) {
   const copy = t.articles[which]
 
   useHead({
-    title: `${copy.title} — ${SITE_SHORT}`,
+    title: `${copy.title} — ${t.site.short}`,
     description: copy.lead,
     canonicalPath: meta.path,
     jsonLd: articleGraph(t, lang, which),

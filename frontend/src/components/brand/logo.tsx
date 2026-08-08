@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-import { SITE_NAME_LINES } from "@/lib/site"
+import { useI18n } from "@/i18n"
 
 /** Natural aspect of Icon.png (888 x 913) — keeps the hoop from squashing. */
 const MARK_RATIO = 913 / 888
@@ -64,45 +64,64 @@ export function Wordmark({
   lines = 2,
   className,
 }: {
-  /** Cap size of the first line. The second is derived, never set. */
+  /** Cap size of the display line. The other is derived, never set. */
   size?: number
   /** 1 drops the descriptor. Not a truncation — the short name is a real name. */
   lines?: 1 | 2
   className?: string
 }) {
+  const { t } = useI18n()
+  const site = t.site
+
+  /*
+   * The descriptor goes above the place in English and below it in French, and
+   * that is the entire difference between the two lockups.
+   *
+   * French leads with the place and follows with what is in it — LA VALLÉE / des
+   * points de croix. English puts the modifier in front of the noun, so "Cross
+   * Stitch Valley" reads as cross stitch / VALLEY: the handwritten line moves on
+   * top, reading order still spells the name, and the big word is still the
+   * place. Translating the French structure instead would have given "THE VALLEY
+   * / of cross stitch", which is a chapter heading, not a sign.
+   */
+  const place = (
+    <span
+      key="place"
+      className="font-display font-semibold text-ink"
+      style={{ fontSize: size, letterSpacing: ".06em", lineHeight: 0.95 }}
+    >
+      {site.place}
+    </span>
+  )
+
   return (
     <span className={cn("inline-flex flex-col justify-center whitespace-nowrap", className)}>
-      <span
-        className="font-display font-semibold text-ink"
-        style={{ fontSize: size, letterSpacing: ".06em", lineHeight: 0.95 }}
-      >
-        {SITE_NAME_LINES.place}
-      </span>
-      {lines === 2 && (
-        /*
-         * 0.42 of the first line, but never below 12px.
-         *
-         * The ratio alone put this at 9.2px in the header, which is a script face
-         * asking to be decoded rather than read — and a good share of the people
-         * this site is for are sixty-five and reading it on a laptop screen at
-         * arm's length. Everywhere else on the site the handwritten voice sits at
-         * 13–15px; the floor is what keeps this the same bet rather than a new one.
-         *
-         * The floor only binds in the header. At card and hero sizes the ratio is
-         * already well clear of it, so the lockup keeps its proportions where it
-         * has room and trades them for legibility only where it does not.
-         */
-        <span
-          className="font-hand text-quill"
-          style={{
-            fontSize: Math.max(12, size * 0.42),
-            lineHeight: 1.15,
-            letterSpacing: ".01em",
-          }}
-        >
-          {SITE_NAME_LINES.of}
-        </span>
-      )}
+      {lines === 2 && site.ofFirst && <Descriptor size={size} text={site.of} />}
+      {place}
+      {lines === 2 && !site.ofFirst && <Descriptor size={size} text={site.of} />}
+    </span>
+  )
+}
+
+/**
+ * The handwritten line.
+ *
+ * 0.42 of the display line, but never below 12px. The ratio alone put this at
+ * 9.2px in the header, which is a script face asking to be decoded rather than
+ * read — and a good share of the people this site is for are sixty-five and
+ * reading it on a laptop at arm's length. Everywhere else the handwritten voice
+ * sits at 13–15px; the floor is what keeps this the same bet rather than a new
+ * one. It only binds in the header: card and hero sizes are already clear of it,
+ * so the lockup keeps its proportions where it has room and trades them for
+ * legibility only where it does not.
+ */
+function Descriptor({ size, text }: { size: number; text: string }) {
+  return (
+    <span
+      className="font-hand text-quill"
+      style={{ fontSize: Math.max(12, size * 0.42), lineHeight: 1.15, letterSpacing: ".01em" }}
+    >
+      {text}
     </span>
   )
 }

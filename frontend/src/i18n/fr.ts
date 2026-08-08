@@ -5,10 +5,31 @@
 // donc jamais l'anglais.
 import type { Copy } from "./copy"
 
-import { SITE_SHORT } from "../lib/site"
+/**
+ * Le nom, dans cette langue.
+ *
+ * Il vit ici et pas dans `lib/site.ts` parce qu'il se traduit — ce que la version
+ * précédente de ce fichier affirmait le contraire. `lib/site.ts` garde la forme
+ * française comme forme canonique : c'est elle que le serveur rend, elle qui part
+ * dans `og:site_name`, et elle qui figure dans le sitemap et `llms.txt`. Une page
+ * n'a qu'une adresse et qu'un nom canonique ; ce qu'on lit à l'écran suit la
+ * langue.
+ */
+const NAME = "La Vall\u00e9e des Points de Croix"
+const SHORT = "La Vall\u00e9e"
 
 export const fr: Copy = {
   lang: { label: "Langue", fr: "Français", en: "English", switchTo: "Switch to English" },
+
+  /**
+   * Le nom, et les deux lignes du logo.
+   *
+   * `ofFirst` dit lequel des deux vient en premier. En français le lieu mène et le
+   * complément suit ; en anglais le complément précède le nom (« Cross Stitch
+   * Valley »), donc l'ordre s'inverse. C'est la seule différence entre les deux
+   * logos : mêmes deux voix, même hiérarchie — le lieu reste le grand mot.
+   */
+  site: { name: NAME, short: SHORT, place: "LA VALL\u00c9E", of: "des points de croix", ofFirst: false },
 
   nav: {
     gallery: "Galerie",
@@ -293,7 +314,7 @@ export const fr: Copy = {
       * porte déjà trois chiffres.
       */
     legendTitle: (colours: number, stitches: number, w: number, h: number) =>
-      `${SITE_SHORT} · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
+      `${SHORT} · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
     countSuffix: "pts",
     threads: (n: number) => (n === 1 ? "1 fil à acheter" : `${n} fils à acheter`),
     isolate: {
@@ -310,7 +331,7 @@ export const fr: Copy = {
       downloadHint: "une feuille par écheveau — pratique pour deux teintes qui se ressemblent",
       // Ici « DMC » reste : c'est la référence du fil, pas une marque empruntée.
       legendTitle: (num: string, stitches: number, w: number, h: number) =>
-        `${SITE_SHORT} · DMC ${num} seul · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
+        `${SHORT} · DMC ${num} seul · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
     },
   },
 

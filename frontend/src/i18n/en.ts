@@ -1,4 +1,16 @@
-import { SITE_SHORT } from "../lib/site"
+/**
+ * The name, in this language. See the note on the French copy.
+ *
+ * "Cross Stitch Valley" rather than a translation of the French, because it is the
+ * name an English speaker would give the same place — and because "The Valley of
+ * Cross Stitch" reads like a chapter heading.
+ *
+ * No separate short form: nineteen characters already fits a browser tab and the
+ * line printed across a chart, so inventing one would be a second name to keep in
+ * step for no gain.
+ */
+const NAME = "Cross Stitch Valley"
+const SHORT = NAME
 
 // La copie anglaise, et la référence pour le jeu de clés.
 //
@@ -14,6 +26,17 @@ import { SITE_SHORT } from "../lib/site"
 
 export const en = {
   lang: { label: "Language", fr: "Français", en: "English", switchTo: "Passer en français" },
+
+  /**
+   * The name, and the wordmark's two lines.
+   *
+   * `ofFirst` is true here and false in French, and that is the whole difference
+   * between the two lockups. French leads with the place and follows with what is
+   * in it; English puts the modifier in front of the noun. So the handwritten line
+   * moves above the display line, reading order still gives "cross stitch valley",
+   * and the big word is still the place.
+   */
+  site: { name: NAME, short: SHORT, place: "VALLEY", of: "cross stitch", ofFirst: true },
 
   nav: {
     gallery: "Gallery",
@@ -288,7 +311,7 @@ export const en = {
     backstitchHint: "Outlines the colour zones — the line you sew over the top",
     outlineColor: "Outline colour",
     legendTitle: (colours: number, stitches: number, w: number, h: number) =>
-      `${SITE_SHORT} · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
+      `${SHORT} · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
     countSuffix: "st",
     threads: (n: number) => (n === 1 ? "1 thread to buy" : `${n} threads to buy`),
     isolate: {
@@ -310,7 +333,7 @@ export const en = {
       // Its own title, because the chart's would say "1 colour" and read as though
       // the whole piece took one thread.
       legendTitle: (num: string, stitches: number, w: number, h: number) =>
-        `${SITE_SHORT} · DMC ${num} alone · ${stitches.toLocaleString("en")} stitches · grid ${w} x ${h}`,
+        `${SHORT} · DMC ${num} alone · ${stitches.toLocaleString("en")} stitches · grid ${w} x ${h}`,
     },
   },
 
@@ -527,7 +550,7 @@ export const en = {
     kicker: "who is behind this",
     title: "Qui sommes-nous",
     lead:
-      "La Vallée des Points de Croix is a small, free tool made by two people who kept wanting a chart from a photo and kept not finding one that was honest about the threads.",
+      "Cross Stitch Valley is a small, free tool made by two people who kept wanting a chart from a photo and kept not finding one that was honest about the threads.",
     blocks: [
       {
         heading: "It started with one photograph",
@@ -1000,7 +1023,7 @@ export const en = {
           ? `The chart ${maker} shared in the gallery. Free to take, with its DMC thread list.`
           : `The ${pieces} charts ${maker} shared in the gallery. Free to take, with their DMC thread lists.`,
       /** When the member has published nothing yet. */
-      empty: (maker: string) => `${maker} hasn't shared anything in the La Vallée gallery yet.`,
+      empty: (maker: string) => `${maker} hasn't shared anything in the Cross Stitch Valley gallery yet.`,
     },
     /** What the tool does, for the SoftwareApplication graph. Short: these are
      *  labels a machine reads, not a sales page. */

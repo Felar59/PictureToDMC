@@ -13,7 +13,6 @@ import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
 import { breadcrumb, collection, graph } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
 
 const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
 
@@ -135,12 +134,12 @@ export default function Gallery() {
       breadcrumb(
         photos
           ? [
-              { name: SITE_NAME, path: paths.home },
+              { name: t.site.short, path: paths.home },
               { name: t.nav.gallery, path: paths.gallery },
               { name: t.gallery.tabs.finished, path: paths.galleryStitches },
             ]
           : [
-              { name: SITE_NAME, path: paths.home },
+              { name: t.site.short, path: paths.home },
               { name: t.nav.gallery, path: paths.gallery },
             ],
       ),

@@ -12,7 +12,6 @@ import * as api from "@/lib/community"
 import { useHead } from "@/lib/head"
 import { paths } from "@/lib/routes"
 import { breadcrumb, graph, profile as profileNodes } from "@/lib/schema"
-import { SITE_NAME } from "@/lib/site"
 
 type Profile = {
   user: api.PublicUser
@@ -80,7 +79,7 @@ export default function ProfilePage() {
             pieces: profile.posts,
           }),
           breadcrumb([
-            { name: SITE_NAME, path: paths.home },
+            { name: t.site.short, path: paths.home },
             { name: t.nav.gallery, path: paths.gallery },
             { name: maker, path: paths.maker(userId) },
           ]),

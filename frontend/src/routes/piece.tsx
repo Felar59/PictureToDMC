@@ -19,7 +19,7 @@ import * as api from "@/lib/community"
 import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
 import { breadcrumb, graph, person, piece } from "@/lib/schema"
-import { ORIGIN, SITE_NAME } from "@/lib/site"
+import { ORIGIN } from "@/lib/site"
 
 /**
  * One published piece: the work, then what you can do with it, then what people
@@ -280,7 +280,7 @@ export default function Piece() {
           }),
           person(post.author.id, post.author.displayName),
           breadcrumb([
-            { name: SITE_NAME, path: paths.home },
+            { name: t.site.short, path: paths.home },
             { name: t.nav.gallery, path: homeGallery },
             { name: post.title, path: paths.piece(post.id) },
           ]),
