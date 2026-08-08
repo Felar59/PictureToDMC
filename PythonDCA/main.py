@@ -230,6 +230,29 @@ _CLIENT_ROUTES = {
     "account",
     "reports",
     "lab",
+    # The French paths the site was built on. They are redirects now, handled by the
+    # router (`legacyRedirects` in frontend/src/lib/routes.ts) — but a redirect the
+    # client performs only runs if the client is given a page to run it in, and
+    # without these entries each one answered 404 first.
+    #
+    # That turned into a real problem the day the site moved off its sslip.io
+    # address: every URL a crawler had already seen was a French one, so the chain
+    # went old-host -> 301 -> new-host -> 404, and the 301 we had just built led
+    # nowhere. Worth upgrading to a server-side 301 eventually, which is a stronger
+    # signal than a redirect performed in JavaScript; this is the fix that stops the
+    # bleeding without keeping a second copy of the mapping here.
+    "convertir-photo-point-de-croix",
+    "galerie",
+    "galerie/broderies",
+    "qui-sommes-nous",
+    "comment-faire-une-grille-de-point-de-croix",
+    "comment-lire-une-grille-de-point-de-croix",
+    "quelle-photo-pour-le-point-de-croix",
+    "quelle-toile-pour-le-point-de-croix",
+    "confidentialite",
+    "compte",
+    "signalements",
+    "atelier",
 }
 
 #: The English paths that shipped first, and where they now go.
