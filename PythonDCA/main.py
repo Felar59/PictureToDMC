@@ -90,6 +90,22 @@ class SinglePageFiles(StaticFiles):
         if clean in ("", ".", "index.html"):
             return await self._shell("/", 200)
 
+        # The sitemap, built from the live table rather than served from the build.
+        #
+        # The static one could only ever list the eight fixed pages, because a piece
+        # is a database row and the build has none — so every piece and every member
+        # page was absent from the one file whose entire job is to say what exists.
+        # A failure here falls through to that static file, which is a worse answer
+        # than this one but a better answer than none.
+        if clean == "sitemap.xml":
+            built = await run_in_threadpool(prerender.sitemap_xml)
+            if built is not None:
+                return Response(
+                    built,
+                    media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600"},
+                )
+
         # The old English URLs, moved permanently rather than rendered as missing.
         moved = _LEGACY.get(clean.rstrip("/"))
         if moved:

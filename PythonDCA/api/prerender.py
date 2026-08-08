@@ -665,3 +665,100 @@ def _render(manifest: Any, shell: str, path: str) -> tuple[str, bool] | None:
 #: so a change to that markup fails visibly here instead of silently skipping the
 #: body on every page.
 _ROOT = '<div id="root"></div>'
+
+
+# ------------------------------------------------------------------- sitemap
+#
+# Built here rather than at build time, because the interesting half of this site
+# is rows in a database and the build has none.
+
+#: A cap well under the 50 000 the format allows, and under it for a different
+#: reason: past a few thousand URLs a sitemap wants splitting into an index, and
+#: this gallery is nowhere near that. Raise it when it bites.
+SITEMAP_PIECES = 5000
+
+
+def _iso_date(ms: int) -> str:
+    from datetime import datetime, timezone
+
+    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+
+
+def sitemap_xml() -> str | None:
+    """Every URL worth crawling, including the ones that did not exist at build time.
+
+    The static version listed eight fixed pages and nothing else. Pieces were left
+    out deliberately — the note in routes.ts reasons that they come and go, and that
+    a sitemap listing URLs which 404 next week is worse than one that never
+    mentioned them. Both halves of that are answered now rather than accepted: this
+    is generated per request from the live table, so a deleted piece is absent the
+    moment it is deleted, and a new one appears the moment it is published.
+
+    Members are included only when they have published something. A profile with no
+    pieces is a name and an empty grid, which is the definition of a thin page, and
+    volunteering thin pages to a crawler is how a small site trains an engine to
+    ignore it.
+    """
+    loaded = _cache.get()
+    if loaded is None:
+        return None
+    manifest, _ = loaded
+
+    # The fixed pages last changed when this build was made — that is what their
+    # lastmod honestly is, and the manifest's own mtime is exactly that moment.
+    try:
+        built = _iso_date(os.path.getmtime(MANIFEST_PATH) * 1000)
+    except OSError:
+        return None
+
+    out = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+
+    def url(loc: str, lastmod: str, changefreq: str, priority: str) -> None:
+        out.append("  <url>")
+        out.append(f"    <loc>{html.escape(loc, quote=False)}</loc>")
+        out.append(f"    <lastmod>{lastmod}</lastmod>")
+        out.append(f"    <changefreq>{changefreq}</changefreq>")
+        out.append(f"    <priority>{priority}</priority>")
+        out.append("  </url>")
+
+    for route in manifest["routes"]:
+        url(_abs(manifest, route["path"]), built, route["changefreq"], route["priority"])
+
+    conn = db.connect()
+    for row in conn.execute(
+        """
+        SELECT id, created_at FROM posts
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?
+        """,
+        (SITEMAP_PIECES,),
+    ):
+        # A published piece does not change after publication — the grid, the title
+        # and the thread list are fixed at that moment — so "monthly" would be a
+        # promise of churn that never comes. Comments are the only thing that moves.
+        url(
+            _abs(manifest, f"/piece/{row['id']}"),
+            _iso_date(row["created_at"]),
+            "monthly",
+            "0.6",
+        )
+
+    for row in conn.execute(
+        """
+        SELECT u.id, MAX(p.created_at) AS latest
+        FROM users u JOIN posts p ON p.author_id = u.id
+        WHERE u.banned_at IS NULL
+        GROUP BY u.id
+        ORDER BY latest DESC
+        LIMIT ?
+        """,
+        (SITEMAP_PIECES,),
+    ):
+        # A member's page changes whenever they publish, which is what `latest` is.
+        url(_abs(manifest, f"/brodeur/{row['id']}"), _iso_date(row["latest"]), "weekly", "0.4")
+
+    out.append("</urlset>")
+    return "\n".join(out) + "\n"

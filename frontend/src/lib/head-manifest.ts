@@ -30,7 +30,7 @@
 
 import { fr } from "../i18n/fr"
 
-import { paths } from "./routes"
+import { indexable, paths } from "./routes"
 import {
   PIECE_GENRE,
   aboutGraph,
@@ -291,6 +291,21 @@ export function headManifest() {
       descriptionMany: template(t.head.maker.description(S.maker, S.pieces)),
       empty: template(t.head.maker.empty(S.maker)),
     },
+    /**
+     * The fixed pages, for the sitemap the *server* now builds.
+     *
+     * It used to be written at build time and shipped as a static file, which
+     * meant it could only ever list these eight — a piece is a database row, and
+     * the build has no database. So the pieces were left out on the reasoning that
+     * "the gallery links to every one of them", which was true only once
+     * JavaScript had run. The server has the rows, so it merges them in and drops
+     * them again when somebody deletes their work.
+     */
+    routes: indexable.map((r) => ({
+      path: r.path,
+      changefreq: r.changefreq,
+      priority: r.priority,
+    })),
     /**
      * The few loose values the server needs to build the two graphs it cannot be
      * handed ready-made — a piece and a member, whose contents are rows in a

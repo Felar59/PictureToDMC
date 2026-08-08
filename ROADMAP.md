@@ -368,8 +368,18 @@ That is what made this more than a filter:
   `routes.ts`, and worth revisiting once there is anything to look at.
 - Nothing sends an e-mail when something is reported. The queue has to be visited.
   Fine for two people; not fine for twenty.
-- Photo posts are not in the sitemap individually, like every other piece — see the
-  note at the end of `routes.ts` for why.
+- ~~Photo posts are not in the sitemap individually, like every other piece.~~ —
+  **réglé, et pas seulement pour les photos.** `sitemap.xml` n'est plus un fichier
+  produit au build : il est construit par le serveur à chaque requête depuis la table
+  (`PythonDCA/api/prerender.py`, `sitemap_xml`). Le build ne pouvait lister que les
+  huit pages fixes — une pièce est une ligne de base de données, et le build n'en a
+  pas — donc *aucune* pièce et *aucun* membre n'y figurait.
+
+  Les deux objections d'origine tombent d'elles-mêmes : une pièce supprimée disparaît
+  du sitemap à l'instant où elle est supprimée, et une nouvelle y entre à l'instant où
+  elle est publiée. Un membre n'y entre que s'il a publié quelque chose — une page de
+  profil vide est une page mince, et en proposer à un moteur est la meilleure façon de
+  lui apprendre à ignorer le site.
 
 ---
 

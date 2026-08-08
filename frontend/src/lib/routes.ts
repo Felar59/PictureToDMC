@@ -85,9 +85,18 @@ export const indexable: ReadonlyArray<{
 ]
 
 /**
- * Note on individual pieces, now that each one carries its own head and its own share
- * card: they are still deliberately absent above. There are four today and there could
- * be four thousand, they come and go as people delete them, and a sitemap listing URLs
- * that 404 next week is worse than one that never mentioned them. The gallery links to
- * every one of them, which is how a crawler is meant to find them.
+ * Note on individual pieces: they are absent from `indexable` above, and that is now
+ * a statement about *this* file rather than about the sitemap.
+ *
+ * The old reasoning was that pieces come and go, and that a sitemap listing URLs which
+ * 404 next week is worse than one that never mentioned them — with the gallery left to
+ * do the linking. The second half turned out to be false: the gallery is a list built
+ * by `fetch`, so a crawler that runs no JavaScript found nothing there, and pieces were
+ * reachable from nowhere at all. See ROADMAP.md §1.
+ *
+ * Both halves are answered by building the sitemap on the server instead
+ * (`PythonDCA/api/prerender.py`, `sitemap_xml`): it reads the live table per request,
+ * so a deleted piece is absent the moment it is deleted and a new one appears the
+ * moment it is published. This list is what the *fixed* pages are, and the server
+ * merges the rows in.
  */
