@@ -365,6 +365,7 @@ export const fr: Copy = {
       pets: "Animaux",
       flowers: "Fleurs",
       landscapes: "Paysages",
+      other: "Autre chose",
     },
     by: (who: string) => `par ${who}`,
     stitches: (w: number, h: number) => `${w} × ${h} pts`,

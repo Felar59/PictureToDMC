@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MemberMark } from "./member-mark"
 import { Chevron } from "@/components/brand/icons"
 import { MARK_GROUPS, MARK_PREFIX, type MarkGroup } from "@/components/brand/marks"
 import { useI18n } from "@/i18n"
@@ -24,12 +24,12 @@ import { cn } from "@/lib/utils"
  * wrong one is worse than no caption. The groups are named because the groups are
  * true.
  *
- * The drawn mark — the woven motif seeded from the account — is not among the
- * choices. Every member now has a picture, given at signup or backfilled at boot,
- * so offering the drawn one would be offering a second kind of thing that nobody
- * has. `StitchAvatar` still knows how to draw it: it is the fallback when a mark
- * is withdrawn or a row somehow has none, which is a rendering concern rather
- * than a choice.
+ * The drawn mark — the woven motif seeded from the account — is gone entirely,
+ * here and everywhere else. Every member has a picture, given at signup or
+ * backfilled at boot, so it was a second kind of thing nobody had; and while it
+ * survived as a fallback it kept surfacing, because the trigger below asked for it
+ * by passing an account id whenever nothing was chosen yet. `MemberMark` answers
+ * the same question with a picture in every case.
  */
 export function MarkPicker({
   userId,
@@ -62,15 +62,7 @@ export function MarkPicker({
     return () => document.removeEventListener("keydown", onKey)
   }, [open])
 
-  const Option = ({
-    icon,
-    seed,
-    label,
-  }: {
-    icon: string | null
-    seed: string | number
-    label: string
-  }) => {
+  const Option = ({ icon, label }: { icon: string; label: string }) => {
     const selected = value === icon
     return (
       <label
@@ -88,8 +80,8 @@ export function MarkPicker({
           onChange={() => onChange(icon)}
           className="peer sr-only"
         />
-        <StitchAvatar
-          seed={seed}
+        <MemberMark
+          user={{ id: userId, icon }}
           size={48}
           className={cn(
             "transition-shadow",
@@ -120,8 +112,11 @@ export function MarkPicker({
         )}
       >
         {/* The mark you have now, at the size it appears on a card, so the
-            preview is the thing rather than a description of it. */}
-        <StitchAvatar seed={value ?? userId} size={40} />
+            preview is the thing rather than a description of it. `value` may be
+            null for a moment — a member who has not chosen yet — and MemberMark
+            answers that with the picture their id lands on rather than with a
+            different kind of mark, which is what used to appear here. */}
+        <MemberMark user={{ id: userId, icon: value }} size={40} />
         <span className="flex-1 min-w-0">
           <span className="block text-[14.5px] font-bold text-ink">
             {t.account.marks.heading}
@@ -150,7 +145,6 @@ export function MarkPicker({
                   <Option
                     key={slug}
                     icon={`${MARK_PREFIX}${slug}`}
-                    seed={`${MARK_PREFIX}${slug}`}
                     label={t.account.marks.option(t.account.marks.groups[group], i + 1)}
                   />
                 ))}

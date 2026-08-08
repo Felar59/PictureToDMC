@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MemberMark } from "./member-mark"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { paths } from "@/lib/routes"
@@ -43,8 +43,14 @@ export function UserMenu({ className }: { className?: string }) {
 
   return (
     <Link to={paths.account} title={t.account.panel} className={cn("group", className)}>
-      <span className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 transition-colors group-hover:border-taupe">
-        <StitchAvatar seed={user.icon ?? user.id} size={28} />
+      {/* `pl-1.5`, not `pl-1`, and it is geometry rather than taste. The pill is a
+          stadium, so its left cap is a semicircle of radius 18px; a 26px square set
+          5px from the bounding box still needs 18 − √(18² − 13²) = 5.55px of
+          clearance where its corners are, and so it clipped the border by half a
+          pixel. 6px clears it, and the mark's own hem of cloth absorbs what is
+          left. */}
+      <span className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1.5 pr-3 py-1 transition-colors group-hover:border-taupe">
+        <MemberMark user={user} size={26} />
         <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">
           {user.displayName}
         </span>

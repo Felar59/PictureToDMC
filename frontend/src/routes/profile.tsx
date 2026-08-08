@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom"
 import { AdminFlower } from "@/community/admin-flower"
 import { GalleryCard } from "@/community/gallery-card"
 import { useAuth } from "@/community/auth-context"
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MemberMark } from "@/community/member-mark"
 import { Button } from "@/components/ui/button"
 import { Tag } from "@/components/ui/pill"
 import { useI18n } from "@/i18n"
@@ -137,11 +137,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-20 py-10">
       <header className="flex items-center gap-5 flex-wrap pb-8 border-b-2 border-dashed border-edge-2">
-        <StitchAvatar
-          seed={profile.user.icon ?? profile.user.id}
-          size={80}
-          className="shadow-soft"
-        />
+        <MemberMark user={profile.user} size={80} className="shadow-soft" />
         <div className="flex-1 min-w-[200px]">
           {/* Here the badge says the word: this page exists to answer "who is
               this", and there is room beside a 34px name for the answer. */}

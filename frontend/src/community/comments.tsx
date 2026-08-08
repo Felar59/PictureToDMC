@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MemberMark } from "./member-mark"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import * as api from "@/lib/community"
@@ -141,7 +141,7 @@ export function Comments({ postId }: { postId: number }) {
             return (
               <li key={c.id} className="bg-blanc rounded-card shadow-soft p-4 flex gap-3.5">
                 <Link to={`/brodeur/${c.author.id}`} className="shrink-0">
-                  <StitchAvatar seed={c.author.id} size={36} />
+                  <MemberMark user={c.author} size={36} />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2.5 flex-wrap">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MemberMark } from "@/community/member-mark"
 import { ProductDialog } from "@/components/showcase/product-dialog"
 import { Button } from "@/components/ui/button"
 import { AdminFlower } from "@/community/admin-flower"
@@ -346,7 +346,7 @@ export default function Piece() {
               to={`/brodeur/${post.author.id}`}
               className="inline-flex items-center gap-2.5 min-h-11 group shrink-0"
             >
-              <StitchAvatar seed={post.author.id} size={36} />
+              <MemberMark user={post.author} size={36} />
               <span className="text-[15.5px] font-bold text-cocoa group-hover:text-coral-deep transition-colors">
                 {t.gallery.by(post.author.displayName)}
               </span>

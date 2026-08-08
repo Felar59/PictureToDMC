@@ -14,7 +14,10 @@ import { paths } from "@/lib/routes"
 import { useHead } from "@/lib/head"
 import { breadcrumb, collection, graph } from "@/lib/schema"
 
-const FILTER_KEYS = ["all", "pets", "flowers", "landscapes"] as const
+// `other` is last and included: it is where a good half of what people publish
+// actually lands, and without a pill for it the only way to see any of it was to
+// browse everything.
+const FILTER_KEYS = ["all", "pets", "flowers", "landscapes", "other"] as const
 
 /**
  * The two galleries, in one page and under one entry in the navigation bar.

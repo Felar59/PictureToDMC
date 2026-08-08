@@ -357,6 +357,11 @@ export const en = {
       pets: "Pets",
       flowers: "Flowers",
       landscapes: "Landscapes",
+      /** A real category, and it needed a real word. Both publish dialogs used to
+       *  label it "All", so people chose what looked like "no category in
+       *  particular" and stored `other` — and the gallery had no pill for it, so
+       *  what they published could only be found under "All". */
+      other: "Something else",
     },
     by: (who: string) => `by ${who}`,
     stitches: (w: number, h: number) => `${w} × ${h} st`,

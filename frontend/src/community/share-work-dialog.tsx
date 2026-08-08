@@ -95,7 +95,7 @@ export function ShareWorkDialog({
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((key) => (
               <Pill key={key} selected={category === key} onClick={() => setCategory(key)}>
-                {key === "other" ? t.gallery.filters.all : t.gallery.filters[key]}
+                {t.gallery.filters[key]}
               </Pill>
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MemberMark } from "./member-mark"
 import { labDist2 } from "@/engine/color"
 import { findThread, type Thread } from "@/engine/dmc"
 import { threadName } from "@/engine/dmc-names-fr"
@@ -125,7 +125,7 @@ export function GalleryCard({
             className="shrink-0 size-11 -m-1 flex items-center justify-center"
             aria-label={post.author.displayName}
           >
-            <StitchAvatar seed={post.author.id} size={36} />
+            <MemberMark user={post.author} size={36} />
           </Link>
           <div className="flex-1 min-w-0">
             <Link to={`/piece/${post.id}`} className="block">
