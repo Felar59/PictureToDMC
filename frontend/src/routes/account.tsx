@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 
-import { StitchAvatar } from "@/components/brand/stitch-avatar"
+import { MarkPicker } from "@/community/mark-picker"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/community/auth-context"
 import { DeleteAccountDialog } from "@/community/delete-account-dialog"
@@ -35,6 +35,8 @@ export default function Account() {
 
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
+  // null is the mark drawn from the account, which is what everybody starts with.
+  const [icon, setIcon] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   // The message itself, not a boolean: a reserved name and a dropped connection
   // are both "it didn't save", and only one of them is worth trying again.
@@ -48,6 +50,7 @@ export default function Account() {
     if (!user || seeded) return
     setName(user.displayName)
     setBio(user.bio ?? "")
+    setIcon(user.icon ?? null)
     setSeeded(true)
   }, [user, seeded])
 
@@ -71,7 +74,7 @@ export default function Account() {
     setFailed(null)
     setSaved(false)
     try {
-      await updateProfile({ displayName: trimmed, bio: bio.trim() })
+      await updateProfile({ displayName: trimmed, bio: bio.trim(), icon })
       // Straight into the gallery on the way in; on a later edit, stay put and
       // say it worked, because there is nowhere better to be.
       if (welcome) void navigate(paths.gallery, { replace: true })
@@ -135,15 +138,16 @@ export default function Account() {
           </span>
         </label>
 
-        {/* The mark is shown but not yet chosen: the column, the endpoint and the
-            renderer all take it, the set to choose from does not exist. Better to
-            say so than to leave people hunting for it. */}
-        <div className="flex items-center gap-4 bg-linen rounded-chip px-4 py-3.5">
-          <StitchAvatar seed={user.icon ?? user.id} size={52} />
-          <span className="min-w-0">
-            <span className="block text-[14px] font-bold text-cocoa">{t.account.iconLabel}</span>
-            <span className="block text-[13px] text-stone">{t.account.iconSoon}</span>
-          </span>
+        {/* The mark, now actually choosable. It saves with the rest of the form
+            rather than on click: a mark is a matter of taste, and a picker that
+            commits the moment you touch it is one you cannot browse. */}
+        <div className="bg-linen rounded-chip px-4 py-4">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+            <span className="text-[14px] font-bold text-cocoa">{t.account.marks.heading}</span>
+            <span className="text-[13px] text-stone">{t.account.marks.lead}</span>
+          </div>
+          <MarkPicker userId={user.id} value={icon} onChange={setIcon} disabled={saving} />
+          <p className="font-hand text-[13px] text-sand m-0 mt-3">{t.account.marks.note}</p>
         </div>
 
         {failed && (

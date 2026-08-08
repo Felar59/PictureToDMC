@@ -145,7 +145,15 @@ export const en = {
     bioHint: "Optional. It shows on your page.",
     bioPlaceholder: "What you stitch, how long you've been at it…",
     iconLabel: "Your mark",
-    iconSoon: "For now it's drawn from your account. Marks to choose from are coming.",
+    /** See the note on the French copy: the groups are named, the marks are not. */
+    marks: {
+      heading: "Your mark",
+      lead: "It appears on your pieces and your comments.",
+      mine: "The one from your account",
+      groups: { flowers: "Flowers", animals: "Animals" },
+      option: (group: string, n: number) => `${group}, mark ${n}`,
+      note: "Every mark is a photograph reduced to 56 stitches and converted to real DMC threads — stitchable, like everything else here.",
+    },
     saveFailed: "That wasn't saved. Try again.",
     saving: "Saving…",
     saved: "saved",

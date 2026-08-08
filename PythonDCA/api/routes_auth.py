@@ -117,6 +117,32 @@ def logout(request: Request) -> Response:
     return response
 
 
+#: The picture marks this server ships, and the prefix that marks one.
+#:
+#: Generated from frontend/public/marks by scripts/export-marks.py, so the list
+#: cannot claim a file that is not there — the failure otherwise is a member
+#: choosing a mark that 404s on every page they appear on.
+MARK_PREFIX = "m:"
+MARK_SLUGS = {
+    "mikegz",
+    "wyxina",
+    "reinis",
+    "marta",
+    "tarikulraana",
+    "badesaba",
+    "berlinerlights",
+    "cacito",
+    "di",
+    "cafer",
+    "lucas",
+    "paulo",
+    "rumeysasurucu",
+    "vinnyanugraha",
+    "adrijana",
+    "ellie",
+    "ponvintage",
+}
+
 MAX_NAME = 40
 MAX_BIO = 300
 
@@ -210,6 +236,13 @@ async def update_me(request: Request) -> JSONResponse:
     if "icon" in body:
         icon = str(body.get("icon") or "").strip()
         if len(icon) > 32:
+            raise HTTPException(422, "Unknown mark")
+        # A picture mark names a file this server hands out, so it is checked
+        # against the list rather than trusted for its shape. Without that, `icon`
+        # is a free string that ends up inside an <img src> on every card the
+        # member has ever posted on, and "m:../../something" is a request the
+        # browser would happily make.
+        if icon.startswith(MARK_PREFIX) and icon[len(MARK_PREFIX):] not in MARK_SLUGS:
             raise HTTPException(422, "Unknown mark")
         sets.append("icon = ?")
         values.append(icon or None)

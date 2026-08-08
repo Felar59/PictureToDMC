@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 
 import { MARK_PALETTE as PALETTE } from "./mark-palette"
+import { markSlug, markSrc } from "./marks"
 import { cn } from "@/lib/utils"
 
 /**
@@ -82,6 +83,19 @@ export function StitchAvatar({
   size?: number
   className?: string
 }) {
+  /*
+   * A chosen picture, or the mark drawn from the account.
+   *
+   * Checked before the hash rather than after, and by an allow-list rather than
+   * by shape: `users.icon` is a free string a member can set, so treating
+   * anything that looks like a path as one would let somebody point this <img>
+   * wherever they liked. `markSlug` returns null for anything not in the shipped
+   * set, and a null falls through to the drawn mark — which is also what happens
+   * to a mark that is later withdrawn, rather than a broken image on every card
+   * that member ever posted on.
+   */
+  const picture = markSlug(typeof seed === "string" ? seed : null)
+
   const mark = useMemo(() => {
     const h = hash(String(seed))
     const motif = MOTIFS[h % MOTIFS.length]
@@ -99,6 +113,26 @@ export function StitchAvatar({
 
     return { motif, a: a.hex, b: b.hex }
   }, [seed])
+
+  if (picture) {
+    return (
+      <img
+        src={markSrc(picture)}
+        alt=""
+        aria-hidden="true"
+        width={size}
+        height={size}
+        draggable={false}
+        decoding="async"
+        // The same soft square as the drawn mark, so the two kinds sit together
+        // in a list of comments without one looking like a different species.
+        className={cn("shrink-0 select-none rounded-[18%] bg-aida object-cover", className)}
+        // 56 squares shown at 36 is under a pixel each; smoothing them turns
+        // cloth back into a photograph, which is the one thing these are not.
+        style={{ width: size, height: size, imageRendering: "pixelated" }}
+      />
+    )
+  }
 
   return (
     <svg

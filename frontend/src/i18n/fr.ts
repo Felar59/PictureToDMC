@@ -138,7 +138,23 @@ export const fr: Copy = {
     bioHint: "Facultatif. Ça s'affiche sur votre page.",
     bioPlaceholder: "Ce que vous brodez, depuis combien de temps…",
     iconLabel: "Votre marque",
-    iconSoon: "Pour l'instant elle est tirée de votre compte. Des marques à choisir arrivent.",
+    /**
+     * Le choix de la marque.
+     *
+     * Aucune marque n'est nommée individuellement : à 56 carreaux une fleur est
+     * une fleur, mais la différence entre une pivoine et un aster a disparu, et
+     * une légende qui se trompe de fleur est pire que pas de légende. Les groupes,
+     * eux, sont vrais, donc eux sont nommés.
+     */
+    marks: {
+      heading: "Votre marque",
+      lead: "Elle apparaît sur vos ouvrages et vos commentaires.",
+      mine: "Celle de votre compte",
+      groups: { flowers: "Fleurs", animals: "Animaux" },
+      option: (group: string, n: number) => `${group}, marque ${n}`,
+      /** Ce qu'elles sont, parce que ça se remarque et que c'est le sujet du site. */
+      note: "Chaque marque est une photo réduite à 56 points et convertie en vrais fils DMC — brodable, comme le reste.",
+    },
     saveFailed: "Ça n'a pas été enregistré. Réessayez.",
     saving: "Enregistrement…",
     saved: "enregistré",
