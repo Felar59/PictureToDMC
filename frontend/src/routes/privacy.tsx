@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
+import { SITE_SHORT } from "@/lib/site"
 import { paths } from "@/lib/routes"
 import { privacyGraph } from "@/lib/schema"
 
@@ -28,7 +29,7 @@ export default function Privacy() {
   const { t } = useI18n()
 
   useHead({
-    title: `${t.privacyPage.title} — Picture to DMC`,
+    title: `${t.privacyPage.title} — ${SITE_SHORT}`,
     description: t.privacyPage.lead,
     jsonLd: privacyGraph(t),
   })

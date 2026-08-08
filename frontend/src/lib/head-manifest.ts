@@ -43,7 +43,7 @@ import {
   guideGraph,
   homeGraph,
 } from "./schema"
-import { ORIGIN, SITE_NAME } from "./site"
+import { ORIGIN, SITE_NAME, SITE_SHORT } from "./site"
 
 const LANG = "fr"
 
@@ -366,7 +366,10 @@ export function headManifest() {
       makerPrefix: MAKER_PREFIX,
       privatePaths: [paths.account, paths.atelier, paths.reports],
       legacy: Object.fromEntries(legacyRedirects),
-      crumbHome: SITE_NAME,
+      // The short name in a breadcrumb: the trail is read as a path, and
+      // 'La Vallée des Points de Croix › Galerie › fleureux' spends most of its
+      // width before it says anything about this page.
+      crumbHome: SITE_SHORT,
       crumbGallery: t.nav.gallery,
       galleryPath: paths.gallery,
       stitchesPath: paths.galleryStitches,

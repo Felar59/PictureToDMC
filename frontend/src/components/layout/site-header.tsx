@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 import { UserMenu } from "@/community/user-menu"
 import { PIECE_PREFIX, paths } from "@/lib/routes"
+import { SITE_NAME } from "@/lib/site"
 import { LanguageSwitch } from "./language-switch"
 
 type NavItem = { to: string; label: string }
@@ -76,7 +77,7 @@ export function SiteHeader() {
   return (
     <header className="bg-blanc border-b-2 border-dashed border-edge-2 sticky top-0 z-40">
       <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-11 py-4 flex items-center justify-between gap-4">
-        <Link to="/" aria-label="Picture to DMC" className="shrink-0">
+        <Link to="/" aria-label={SITE_NAME} className="shrink-0">
           <Logo variant="nav" />
         </Link>
 

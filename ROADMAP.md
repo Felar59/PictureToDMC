@@ -8,14 +8,38 @@ that makes the work cheapest, which is not always the order of importance.
 
 ---
 
-## 0. The name — everything else waits on this
+## 0. Le nom — trouvé
 
-The site has no name. "Picture to DMC" is a description of what it does, "DMC" is
-somebody else's trademark, and the domain is still an IP address with `sslip.io`
-bolted on.
+**« La Vallée des Points de Croix »**, forme courte **« La Vallée »**. Décidé le
+8 août 2026.
 
-This is first because it is a **blocker for five other items**, not because it is
-urgent on its own:
+Les deux vivent dans `frontend/src/lib/site.ts` — `SITE_NAME` et `SITE_SHORT` — et
+nulle part ailleurs. Le nom complet là où il y a la place et là où quelqu'un
+rencontre le site pour la première fois (og:site_name, le manifeste, la page « qui
+sommes-nous ») ; le court là où 29 caractères ne rentrent pas (l'onglet, le fil
+d'Ariane, la ligne imprimée en haut d'une grille).
+
+Ce que ça débloque, et qui est fait :
+
+- **La ligne d'en-tête des grilles imprimées.** Elle commençait par « DMC · ». Elle
+  dit maintenant `La Vallée · 12 couleurs · 4 292 points · 58 x 74`. C'était la
+  signature du site sur un objet qu'on imprime, qu'on garde, et qu'on pose dans un
+  tambour pendant quinze jours — offerte jusqu'ici à un fabricant de fil.
+- **Le logo.** Deux lignes, et elles diffèrent par la *voix* et pas seulement par
+  la taille : `LA VALLÉE` en Fredoka capitales, `des points de croix` en Shantell,
+  l'écriture manuscrite que le site emploie déjà pour ses apartés. C'est l'idée de
+  l'ancien logo (« Picture *to* DMC », dont le mot du milieu était manuscrit)
+  reprise plutôt que jetée avec le nom. Le liseré corail a disparu du mot-symbole :
+  le corail est la seule couleur autorisée à demander un clic, et la dépenser dans
+  un logo affaiblit chaque vrai bouton.
+- **Le problème de marque déposée est réglé.** « DMC » ne reste que là où c'est un
+  fait — la référence d'un fil qu'on achète.
+
+Reste : **le nom de domaine**, qui bloque encore Search Console (§3) et la
+publicité (§4). `lavalleedespointsdecroix.fr` fait 28 caractères ; quelque chose
+comme `lavallee.fr` ou `valleepointdecroix.fr` se dicte au téléphone.
+
+Ce qui restait bloqué dessus, et où ça en est :
 
 | Blocked | Why |
 |---|---|

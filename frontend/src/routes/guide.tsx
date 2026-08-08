@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { useHead } from "@/lib/head"
+import { SITE_SHORT } from "@/lib/site"
 import { ARTICLE_KEYS, ARTICLES } from "@/lib/articles"
 import { paths } from "@/lib/routes"
 import { guideGraph } from "@/lib/schema"
@@ -24,7 +25,7 @@ export default function Guide() {
   const { t } = useI18n()
 
   useHead({
-    title: `${t.guide.title} — Picture to DMC`,
+    title: `${t.guide.title} — ${SITE_SHORT}`,
     description: t.guide.lead,
     /**
      * HowTo earns nothing from Google — those rich results were removed in

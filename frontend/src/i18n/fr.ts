@@ -5,6 +5,8 @@
 // donc jamais l'anglais.
 import type { Copy } from "./copy"
 
+import { SITE_SHORT } from "../lib/site"
+
 export const fr: Copy = {
   lang: { label: "Langue", fr: "Français", en: "English", switchTo: "Switch to English" },
 
@@ -282,8 +284,16 @@ export const fr: Copy = {
     backstitch: "Point de piqûre",
     backstitchHint: "Cerne les zones de couleur — le fil qu'on brode par-dessus",
     outlineColor: "Couleur du liseré",
+    /**
+      * La ligne imprimée en haut de la grille.
+      *
+      * Elle commençait par « DMC ». C'était la signature du site sur un objet que
+      * quelqu'un imprime, garde, et pose dans un tambour pendant quinze jours — et
+      * elle était offerte à un fabricant de fil. Le nom court, parce que la ligne
+      * porte déjà trois chiffres.
+      */
     legendTitle: (colours: number, stitches: number, w: number, h: number) =>
-      `DMC · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
+      `${SITE_SHORT} · ${colours} ${colours === 1 ? "couleur" : "couleurs"} · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
     countSuffix: "pts",
     threads: (n: number) => (n === 1 ? "1 fil à acheter" : `${n} fils à acheter`),
     isolate: {
@@ -298,8 +308,9 @@ export const fr: Copy = {
       download: (num: string) => `Télécharger le DMC ${num} seul`,
       saving: "Préparation…",
       downloadHint: "une feuille par écheveau — pratique pour deux teintes qui se ressemblent",
+      // Ici « DMC » reste : c'est la référence du fil, pas une marque empruntée.
       legendTitle: (num: string, stitches: number, w: number, h: number) =>
-        `DMC ${num} seul · ${stitches.toLocaleString("fr")} points · grille ${w} x ${h}`,
+        `${SITE_SHORT} · DMC ${num} seul · ${stitches.toLocaleString("fr")} points · ${w} x ${h}`,
     },
   },
 
@@ -506,7 +517,7 @@ export const fr: Copy = {
     kicker: "qui est derrière tout ça",
     title: "Qui sommes-nous",
     lead:
-      "Picture to DMC est un petit outil gratuit, fait par deux personnes qui voulaient une grille à partir d'une photo et qui n'en trouvaient pas une seule honnête sur les fils.",
+      "La Vallée des Points de Croix est un petit outil gratuit, fait par deux personnes qui voulaient une grille à partir d'une photo et qui n'en trouvaient pas une seule honnête sur les fils.",
     blocks: [
       {
         heading: "Ça a commencé avec une photo",
@@ -979,7 +990,7 @@ export const fr: Copy = {
           : `Les ${pieces} grilles que ${maker} a partag\u00e9es dans la galerie. \u00c0 r\u00e9cup\u00e9rer gratuitement, avec leur liste de fils DMC.`,
       /** Quand le membre n'a encore rien publi\u00e9. */
       empty: (maker: string) =>
-        `${maker} n'a encore rien partag\u00e9 dans la galerie de Picture to DMC.`,
+        `${maker} n'a encore rien partag\u00e9 dans la galerie de La Vallée.`,
     },
     /** Ce que fait l'outil, pour le graphe SoftwareApplication. Court : ce sont des
      *  \u00e9tiquettes lues par une machine, pas une page de vente. */

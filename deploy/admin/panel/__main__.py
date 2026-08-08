@@ -1,4 +1,4 @@
-"""Picture to DMC admin panel — four panes.
+"""La Vallée des Points de Croix — admin panel — four panes.
 
     ┌ JOURNAL ──────────────┬ COMPTES ──────────────┐
     │ dernières lignes      │ du plus récent,       │

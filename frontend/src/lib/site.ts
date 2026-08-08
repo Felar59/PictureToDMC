@@ -18,8 +18,31 @@
  */
 export const ORIGIN = "https://164-132-99-194.sslip.io"
 
-/** The name in a title bar, a share card and the chart's own header. */
-export const SITE_NAME = "Picture to DMC"
+/**
+ * The name, long and short.
+ *
+ * `SITE_NAME` is the full one and belongs wherever there is room and wherever it
+ * is the *first* time somebody meets the site: the og:site_name, the manifest,
+ * the about page. `SITE_SHORT` is what people will actually say, and belongs
+ * wherever 29 characters do not fit — a browser tab, the header line printed
+ * across the top of a chart, a breadcrumb.
+ *
+ * Both live here rather than in the dictionaries because the name is not
+ * translated: it is the same in French and in English, and a site whose name
+ * changed with the language toggle would be two sites.
+ */
+export const SITE_NAME = "La Vallée des Points de Croix"
+export const SITE_SHORT = "La Vallée"
+
+/**
+ * The wordmark's two lines, split where the mark splits them.
+ *
+ * Kept apart from `SITE_NAME` on purpose: joining them back together with a space
+ * is how the full name is spelled, but the mark needs to know where the break
+ * falls, and deriving that by splitting on " des " would break the day the name
+ * gains or loses a preposition.
+ */
+export const SITE_NAME_LINES = { place: "LA VALL\u00c9E", of: "des points de croix" }
 
 /** No trailing slash, no double slash. */
 export function absolute(path: string): string {

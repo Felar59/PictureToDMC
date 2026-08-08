@@ -1,3 +1,5 @@
+import { SITE_SHORT } from "../lib/site"
+
 // La copie anglaise, et la référence pour le jeu de clés.
 //
 // Dans son propre fichier parce qu'elle est chargée à la demande : les deux
@@ -286,7 +288,7 @@ export const en = {
     backstitchHint: "Outlines the colour zones — the line you sew over the top",
     outlineColor: "Outline colour",
     legendTitle: (colours: number, stitches: number, w: number, h: number) =>
-      `DMC · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
+      `${SITE_SHORT} · ${colours} ${colours === 1 ? "colour" : "colours"} · ${stitches.toLocaleString("en")} stitches · ${w} x ${h}`,
     countSuffix: "st",
     threads: (n: number) => (n === 1 ? "1 thread to buy" : `${n} threads to buy`),
     isolate: {
@@ -308,7 +310,7 @@ export const en = {
       // Its own title, because the chart's would say "1 colour" and read as though
       // the whole piece took one thread.
       legendTitle: (num: string, stitches: number, w: number, h: number) =>
-        `DMC ${num} alone · ${stitches.toLocaleString("en")} stitches · grid ${w} x ${h}`,
+        `${SITE_SHORT} · DMC ${num} alone · ${stitches.toLocaleString("en")} stitches · grid ${w} x ${h}`,
     },
   },
 
@@ -525,7 +527,7 @@ export const en = {
     kicker: "who is behind this",
     title: "Qui sommes-nous",
     lead:
-      "Picture to DMC is a small, free tool made by two people who kept wanting a chart from a photo and kept not finding one that was honest about the threads.",
+      "La Vallée des Points de Croix is a small, free tool made by two people who kept wanting a chart from a photo and kept not finding one that was honest about the threads.",
     blocks: [
       {
         heading: "It started with one photograph",
@@ -998,7 +1000,7 @@ export const en = {
           ? `The chart ${maker} shared in the gallery. Free to take, with its DMC thread list.`
           : `The ${pieces} charts ${maker} shared in the gallery. Free to take, with their DMC thread lists.`,
       /** When the member has published nothing yet. */
-      empty: (maker: string) => `${maker} hasn't shared anything in the Picture to DMC gallery yet.`,
+      empty: (maker: string) => `${maker} hasn't shared anything in the La Vallée gallery yet.`,
     },
     /** What the tool does, for the SoftwareApplication graph. Short: these are
      *  labels a machine reads, not a sales page. */
