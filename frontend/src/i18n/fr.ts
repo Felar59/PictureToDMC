@@ -150,7 +150,6 @@ export const fr: Copy = {
       heading: "Votre marque",
       lead: "Elle apparaît sur vos ouvrages et vos commentaires.",
       change: "Choisir une autre",
-      mine: "Celle de votre compte",
       groups: { flowers: "Fleurs", animals: "Animaux" },
       option: (group: string, n: number) => `${group}, marque ${n}`,
       /** Ce qu'elles sont, parce que ça se remarque et que c'est le sujet du site. */

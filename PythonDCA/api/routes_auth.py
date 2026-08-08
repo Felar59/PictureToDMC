@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from . import auth, config, google
 from .db import connect, now_ms
+from .marks import MARK_PREFIX, MARK_SLUGS
 
 router = APIRouter(prefix="/api/auth")
 
@@ -154,31 +155,6 @@ def logout(request: Request) -> Response:
     return response
 
 
-#: The picture marks this server ships, and the prefix that marks one.
-#:
-#: Generated from frontend/public/marks by scripts/export-marks.py, so the list
-#: cannot claim a file that is not there — the failure otherwise is a member
-#: choosing a mark that 404s on every page they appear on.
-MARK_PREFIX = "m:"
-MARK_SLUGS = {
-    "mikegz",
-    "wyxina",
-    "reinis",
-    "marta",
-    "tarikulraana",
-    "badesaba",
-    "berlinerlights",
-    "cacito",
-    "di",
-    "cafer",
-    "lucas",
-    "paulo",
-    "rumeysasurucu",
-    "vinnyanugraha",
-    "adrijana",
-    "ellie",
-    "ponvintage",
-}
 
 MAX_NAME = 40
 MAX_BIO = 300

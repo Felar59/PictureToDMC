@@ -22,7 +22,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MARKS_DIR = os.path.join(ROOT, "frontend", "public", "marks")
 MANIFEST = os.path.join(ROOT, "frontend", "src", "components", "brand", "marks.ts")
-API = os.path.join(ROOT, "PythonDCA", "api", "routes_auth.py")
+API = os.path.join(ROOT, "PythonDCA", "api", "marks.py")
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -63,7 +63,7 @@ def main() -> int:
     src = io.open(API, encoding="utf-8").read()
     current = re.search(r"MARK_SLUGS = \{.*?\n\}", src, re.S)
     if not current:
-        raise SystemExit("MARK_SLUGS not found in routes_auth.py")
+        raise SystemExit("MARK_SLUGS not found in marks.py")
 
     if current.group(0) == block:
         print(f"in step: {len(listed)} marks")

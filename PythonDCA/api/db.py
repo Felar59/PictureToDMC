@@ -27,6 +27,7 @@ import base64
 import binascii
 import json
 import os
+import secrets
 import sqlite3
 import threading
 import time
@@ -187,6 +188,34 @@ CREATE INDEX IF NOT EXISTS idx_reports_new ON reports(created_at DESC);
 """
 
 
+def _give_everyone_a_mark(conn: sqlite3.Connection) -> None:
+    """A picture mark for anybody who signed up before there were any.
+
+    New accounts are given one at creation, which left everyone who joined before
+    that wearing the drawn mark — and once the drawn mark stopped being offered in
+    the picker, those members were wearing something they could not have chosen and
+    could not choose again. Two states for one thing, and the older one invisible
+    to the person in it.
+
+    Runs at every boot and matches nothing once it has. A different mark per
+    member: one UPDATE would have given the whole backlog the same avatar, which
+    is precisely the sameness the random assignment exists to avoid.
+    """
+    from .marks import MARK_PREFIX, MARK_SLUGS
+
+    rows = conn.execute("SELECT id FROM users WHERE icon IS NULL").fetchall()
+    if not rows:
+        return
+    pool = sorted(MARK_SLUGS)
+    with conn:
+        for row in rows:
+            conn.execute(
+                "UPDATE users SET icon = ? WHERE id = ?",
+                (MARK_PREFIX + secrets.choice(pool), row["id"]),
+            )
+    print(f"[ptd] gave a mark to {len(rows)} member(s) who had none", flush=True)
+
+
 def init() -> None:
     conn = connect()
     # Before SCHEMA, not after: SCHEMA now creates an index on posts.kind, and on a
@@ -195,6 +224,7 @@ def init() -> None:
     _migrate_posts_shape(conn)
     conn.executescript(SCHEMA)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    _give_everyone_a_mark(conn)
     # Nothing reads `avatar_url` any more: members are shown a stitched mark
     # drawn from their id. Holding on to a Google profile photo we never display
     # would be keeping a face for no reason, so it goes. Matches no rows once it

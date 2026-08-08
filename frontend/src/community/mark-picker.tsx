@@ -23,6 +23,13 @@ import { cn } from "@/lib/utils"
  * the difference between a dahlia and a peony is gone, and a caption naming the
  * wrong one is worse than no caption. The groups are named because the groups are
  * true.
+ *
+ * The drawn mark — the woven motif seeded from the account — is not among the
+ * choices. Every member now has a picture, given at signup or backfilled at boot,
+ * so offering the drawn one would be offering a second kind of thing that nobody
+ * has. `StitchAvatar` still knows how to draw it: it is the fallback when a mark
+ * is withdrawn or a row somehow has none, which is a rendering concern rather
+ * than a choice.
  */
 export function MarkPicker({
   userId,
@@ -133,13 +140,6 @@ export function MarkPicker({
           ref={panelRef}
           className="mt-2 bg-blanc border-2 border-edge-3 rounded-card p-4 flex flex-col gap-4 max-h-[340px] overflow-y-auto"
         >
-          <div>
-            <div className="text-[13px] font-bold text-cocoa mb-2">{t.account.marks.mine}</div>
-            <div className="flex flex-wrap gap-1.5">
-              <Option icon={null} seed={userId} label={t.account.marks.mine} />
-            </div>
-          </div>
-
           {(["flowers", "animals"] as MarkGroup[]).map((group) => (
             <div key={group}>
               <div className="text-[13px] font-bold text-cocoa mb-2">

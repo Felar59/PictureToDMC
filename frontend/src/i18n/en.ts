@@ -150,7 +150,6 @@ export const en = {
       heading: "Your mark",
       lead: "It appears on your pieces and your comments.",
       change: "Choose another",
-      mine: "The one from your account",
       groups: { flowers: "Flowers", animals: "Animals" },
       option: (group: string, n: number) => `${group}, mark ${n}`,
       note: "Every mark is a photograph reduced to 56 stitches and converted to real DMC threads — stitchable, like everything else here.",
