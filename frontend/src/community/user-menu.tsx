@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { StitchAvatar } from "@/components/brand/stitch-avatar"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
+import { paths } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { useAuth } from "./auth-context"
 
@@ -41,7 +42,7 @@ export function UserMenu({ className }: { className?: string }) {
   }
 
   return (
-    <Link to="/compte" title={t.account.panel} className={cn("group", className)}>
+    <Link to={paths.account} title={t.account.panel} className={cn("group", className)}>
       <span className="flex items-center gap-2 rounded-full border-[1.5px] border-edge-3 bg-linen pl-1 pr-3 py-1 transition-colors group-hover:border-taupe">
         <StitchAvatar seed={user.icon ?? user.id} size={28} />
         <span className="text-[13.5px] font-bold text-cocoa max-w-[110px] truncate">

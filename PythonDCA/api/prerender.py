@@ -149,8 +149,8 @@ def _crumbs(manifest: Any, trail: list[tuple[str, str]]) -> dict:
 def _piece_graph(manifest: Any, row: Any, description: str) -> dict:
     origin = manifest["origin"]
     dyn = manifest["dynamic"]
-    url = f"{origin}/piece/{row['id']}"
-    author = {"@id": f"{origin}/brodeur/{row['author_id']}#person"}
+    url = f"{origin}{dyn['piecePrefix']}{row['id']}"
+    author = {"@id": f"{origin}{dyn['makerPrefix']}{row['author_id']}#person"}
     image_path = f"/api/posts/{row['id']}/share.png"
     iso = _iso(row["created_at"])
 
@@ -186,9 +186,9 @@ def _piece_graph(manifest: Any, row: Any, description: str) -> dict:
     }
     person = {
         "@type": "Person",
-        "@id": f"{origin}/brodeur/{row['author_id']}#person",
+        "@id": f"{origin}{dyn['makerPrefix']}{row['author_id']}#person",
         "name": row["display_name"],
-        "url": f"{origin}/brodeur/{row['author_id']}",
+        "url": f"{origin}{dyn['makerPrefix']}{row['author_id']}",
     }
     # A photo post lives in the other gallery, and its crumb has to say so — the
     # same branch the piece page itself makes.
@@ -204,7 +204,7 @@ def _piece_graph(manifest: Any, row: Any, description: str) -> dict:
                 [
                     (dyn["crumbHome"], "/"),
                     (dyn["crumbGallery"], gallery),
-                    (row["title"], f"/piece/{row['id']}"),
+                    (row["title"], f"{dyn['piecePrefix']}{row['id']}"),
                 ],
             ),
         ],
@@ -214,7 +214,7 @@ def _piece_graph(manifest: Any, row: Any, description: str) -> dict:
 def _maker_graph(manifest: Any, user: Any, posts: list) -> dict:
     origin = manifest["origin"]
     dyn = manifest["dynamic"]
-    url = f"{origin}/brodeur/{user['id']}"
+    url = f"{origin}{dyn['makerPrefix']}{user['id']}"
     person: dict[str, Any] = {
         "@type": "Person",
         "@id": f"{url}#person",
@@ -235,9 +235,9 @@ def _maker_graph(manifest: Any, user: Any, posts: list) -> dict:
                 "hasPart": [
                     {
                         "@type": "CreativeWork",
-                        "@id": f"{origin}/piece/{p['id']}#work",
+                        "@id": f"{origin}{dyn['piecePrefix']}{p['id']}#work",
                         "name": p["title"],
-                        "url": f"{origin}/piece/{p['id']}",
+                        "url": f"{origin}{dyn['piecePrefix']}{p['id']}",
                     }
                     for p in posts
                 ],
@@ -248,7 +248,7 @@ def _maker_graph(manifest: Any, user: Any, posts: list) -> dict:
                 [
                     (dyn["crumbHome"], "/"),
                     (dyn["crumbGallery"], dyn["galleryPath"]),
-                    (user["display_name"], f"/brodeur/{user['id']}"),
+                    (user["display_name"], f"{dyn['makerPrefix']}{user['id']}"),
                 ],
             ),
         ],
@@ -272,6 +272,7 @@ def _iso(ms: int) -> str:
 
 
 def _piece_head(manifest: Any, post_id: int) -> dict | None:
+    dyn = manifest["dynamic"]
     row = db.connect().execute(
         """
         SELECT p.id, p.title, p.kind, p.width, p.height, p.thread_codes,
@@ -314,7 +315,7 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
     return {
         "title": title,
         "description": description,
-        "canonical": f"/piece/{row['id']}",
+        "canonical": f"{dyn['piecePrefix']}{row['id']}",
         "image": f"/api/posts/{row['id']}/share.png",
         # A pattern post's share image is drawn by sharecard.py at a known size. A
         # photo post's is the member's uploaded JPEG, returned verbatim by
@@ -325,7 +326,7 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
         "imageAlt": title,
         "type": "article",
         "publishedTime": _iso(row["created_at"]),
-        "authorUrl": f"{manifest['origin']}/brodeur/{row['author_id']}",
+        "authorUrl": f"{manifest['origin']}{dyn['makerPrefix']}{row['author_id']}",
         "jsonLd": json.dumps(_piece_graph(manifest, row, description), ensure_ascii=False),
         # The picture is the page, and a crawler cannot see a canvas that has not
         # been drawn — so what it gets instead is the piece named, described,
@@ -335,7 +336,7 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
             row["title"],
             description,
             [
-                (f"/brodeur/{row['author_id']}", row["display_name"]),
+                (f"{dyn['makerPrefix']}{row['author_id']}", row["display_name"]),
                 (gallery, manifest["dynamic"]["crumbGallery"]),
             ],
         ),
@@ -343,6 +344,7 @@ def _piece_head(manifest: Any, post_id: int) -> dict | None:
 
 
 def _maker_head(manifest: Any, user_id: int) -> dict | None:
+    dyn = manifest["dynamic"]
     conn = db.connect()
     user = conn.execute(
         "SELECT id, display_name, bio FROM users WHERE id = ? AND banned_at IS NULL",
@@ -374,7 +376,7 @@ def _maker_head(manifest: Any, user_id: int) -> dict | None:
     return {
         "title": _fill(shape["title"], values),
         "description": description,
-        "canonical": f"/brodeur/{user['id']}",
+        "canonical": f"{dyn['makerPrefix']}{user['id']}",
         "jsonLd": json.dumps(_maker_graph(manifest, user, posts), ensure_ascii=False),
         # Their pieces as real links: this is the page that makes every piece
         # reachable without JavaScript, the gallery being a list built by fetch.
@@ -422,8 +424,9 @@ def _body(manifest: Any, heading: str, lead: str, links: list[tuple[str, str]]) 
 GALLERY_LINKS = 60
 
 
-def _gallery_links(kind: str) -> list[tuple[str, str]]:
+def _gallery_links(manifest: Any, kind: str) -> list[tuple[str, str]]:
     """The newest pieces in one gallery, as (href, title)."""
+    dyn = manifest["dynamic"]
     rows = db.connect().execute(
         """
         SELECT id, title FROM posts
@@ -433,7 +436,7 @@ def _gallery_links(kind: str) -> list[tuple[str, str]]:
         """,
         (kind, GALLERY_LINKS),
     ).fetchall()
-    return [(f"/piece/{r['id']}", r["title"]) for r in rows]
+    return [(f"{dyn['piecePrefix']}{r['id']}", r["title"]) for r in rows]
 
 
 def _gallery_body(manifest: Any, base_body: str | None, kind: str) -> str | None:
@@ -449,7 +452,7 @@ def _gallery_body(manifest: Any, base_body: str | None, kind: str) -> str | None
     """
     if not base_body:
         return base_body
-    links = _gallery_links(kind)
+    links = _gallery_links(manifest, kind)
     if not links:
         return base_body
     items = "".join(
@@ -464,9 +467,9 @@ def _gallery_body(manifest: Any, base_body: str | None, kind: str) -> str | None
     return base_body.replace(marker, listing + marker, 1) if marker in base_body else base_body + listing
 
 
-#: Routes that exist but have no business being in an index — someone's account
-#: page, the moderation queue, the internal tuning bench.
-PRIVATE = {"/compte", "/atelier", "/signalements"}
+# The private routes and the two id-bearing prefixes used to be spelled here, in
+# eight places between them. They come from the manifest now — renaming a path is
+# an edit to routes.ts and nothing else, which is what the manifest is for.
 
 
 def head_for(path: str) -> dict | None:
@@ -496,7 +499,7 @@ def head_for(path: str) -> dict | None:
             "body": body,
         }
 
-    if clean in PRIVATE:
+    if clean in set(manifest["dynamic"]["privatePaths"]):
         return {
             "title": manifest["siteName"],
             "description": manifest["fixed"]["/"]["description"],
@@ -504,7 +507,11 @@ def head_for(path: str) -> dict | None:
             "noindex": True,
         }
 
-    for prefix, lookup in (("/piece/", _piece_head), ("/brodeur/", _maker_head)):
+    dyn = manifest["dynamic"]
+    for prefix, lookup in (
+        (dyn["piecePrefix"], _piece_head),
+        (dyn["makerPrefix"], _maker_head),
+    ):
         if clean.startswith(prefix):
             rest = clean[len(prefix) :]
             if not rest.isdigit():
@@ -699,6 +706,18 @@ def sitemap_xml() -> str | None:
     volunteering thin pages to a crawler is how a small site trains an engine to
     ignore it.
     """
+    try:
+        return _sitemap_xml()
+    except Exception:
+        # Same rule as the head: a sitemap is not worth a 500. main.py falls back to
+        # the static file from the build, which lists the fixed pages and no rows —
+        # thinner than this, and far better than an error where a crawler expected
+        # a list of every page on the site.
+        traceback.print_exc()
+        return None
+
+
+def _sitemap_xml() -> str | None:
     loaded = _cache.get()
     if loaded is None:
         return None
@@ -711,6 +730,7 @@ def sitemap_xml() -> str | None:
     except OSError:
         return None
 
+    dyn = manifest["dynamic"]
     out = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -740,7 +760,7 @@ def sitemap_xml() -> str | None:
         # and the thread list are fixed at that moment — so "monthly" would be a
         # promise of churn that never comes. Comments are the only thing that moves.
         url(
-            _abs(manifest, f"/piece/{row['id']}"),
+            _abs(manifest, f"{dyn['piecePrefix']}{row['id']}"),
             _iso_date(row["created_at"]),
             "monthly",
             "0.6",
@@ -758,7 +778,7 @@ def sitemap_xml() -> str | None:
         (SITEMAP_PIECES,),
     ):
         # A member's page changes whenever they publish, which is what `latest` is.
-        url(_abs(manifest, f"/brodeur/{row['id']}"), _iso_date(row["latest"]), "weekly", "0.4")
+        url(_abs(manifest, f"{dyn['makerPrefix']}{row['id']}"), _iso_date(row["latest"]), "weekly", "0.4")
 
     out.append("</urlset>")
     return "\n".join(out) + "\n"

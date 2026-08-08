@@ -19,59 +19,71 @@
  */
 export const paths = {
   home: "/",
-  convert: "/convertir-photo-point-de-croix",
-  gallery: "/galerie",
+  convert: "/convert",
+  gallery: "/gallery",
   /**
    * The second gallery: photos of finished work, chart or no chart.
    *
-   * A sub-path of /galerie rather than a sibling, because it is the same page with
-   * the other tab selected — and because /galerie keeps the charts. That URL is the
-   * one already indexed and already linked, and on the day this shipped the photo
-   * gallery was empty: handing the indexed URL to an empty page would have been a
-   * choice made for the tidiness of the code rather than for anyone reading it.
-   * When the photos outnumber the charts, swapping the default is one line.
+   * A sub-path of /gallery rather than a sibling, because it is the same page with
+   * the other tab selected — and because /gallery keeps the charts, which is the
+   * URL already linked. When the photos outnumber the charts, swapping the default
+   * is one line.
    */
-  galleryStitches: "/galerie/broderies",
-  about: "/qui-sommes-nous",
-  /**
-   * What the site knows about you.
-   *
-   * French, like its neighbours, and spelled the way somebody would search for it
-   * — "politique de confidentialité" is what a French reader looks for, and
-   * /privacy would be the one English word left in a French path set.
-   */
-  privacy: "/confidentialite",
+  galleryStitches: "/gallery/stitched",
+  about: "/about",
   faq: "/faq",
-  guide: "/comment-faire-une-grille-de-point-de-croix",
-
-  /**
-   * The content pages.
-   *
-   * Flat French slugs rather than a `/guides/…` prefix, for the same reason the rest
-   * of this table is French: the path is read by a person deciding whether to click,
-   * and it is the one part of a search result that is neither the title nor the
-   * description. A directory segment would spend characters on a word nobody types.
-   *
-   * Each answers one whole question. That is deliberate: the guide walks the journey
-   * end to end, which is what somebody who already knows this site wants — these are
-   * what somebody types before they know it exists.
-   */
-  readChart: "/comment-lire-une-grille-de-point-de-croix",
-  choosePhoto: "/quelle-photo-pour-le-point-de-croix",
-  fabric: "/quelle-toile-pour-le-point-de-croix",
-  account: "/compte",
-  atelier: "/atelier",
+  /** The guide, and the hub the three articles hang under. */
+  guide: "/guide",
+  readChart: "/guide/reading-a-chart",
+  choosePhoto: "/guide/choosing-a-photo",
+  fabric: "/guide/fabric-and-size",
+  privacy: "/privacy",
+  account: "/account",
+  /** The internal tuning bench. Not linked, and noindex. */
+  atelier: "/lab",
   /** Not linked for anyone but an admin, and noindex — the moderation queue. */
-  reports: "/signalements",
+  reports: "/reports",
   piece: (id: number | string) => `/piece/${id}`,
-  maker: (id: number | string) => `/brodeur/${id}`,
+  maker: (id: number | string) => `/maker/${id}`,
 } as const
 
+/** The prefixes the two id-bearing routes use, so the server can be told rather
+ *  than made to guess. See head-manifest.ts. */
+export const PIECE_PREFIX = "/piece/"
+export const MAKER_PREFIX = "/maker/"
+
 /** The old English paths, and where they now go. */
+/**
+ * Every address this site has ever handed out, and where it goes now.
+ *
+ * The paths were French for a while, on the reasoning that a French audience types
+ * French and that the URL is the one line of a search result that is neither title
+ * nor description. That reasoning is not wrong, but it is worth very little —
+ * keywords in a URL are a famously weak signal — and it bought it at the price of
+ * addresses like `/comment-faire-une-grille-de-point-de-croix`, which is fifteen
+ * words nobody can read aloud, paste into a message, or type from memory.
+ *
+ * So: short, English, and stable. English also happens to be the neutral choice the
+ * day there are `/fr/` and `/en/` variants, since neither language then owns the
+ * base path.
+ *
+ * These are permanent redirects, not deletions. Some of them are in a browser
+ * history or a message by now, and a 301 moves whatever standing they had to the
+ * new address rather than throwing it away.
+ */
 export const legacyRedirects: ReadonlyArray<readonly [string, string]> = [
-  ["/convert", paths.convert],
-  ["/gallery", paths.gallery],
-  ["/about", paths.about],
+  ["/convertir-photo-point-de-croix", paths.convert],
+  ["/galerie", paths.gallery],
+  ["/galerie/broderies", paths.galleryStitches],
+  ["/qui-sommes-nous", paths.about],
+  ["/comment-faire-une-grille-de-point-de-croix", paths.guide],
+  ["/comment-lire-une-grille-de-point-de-croix", paths.readChart],
+  ["/quelle-photo-pour-le-point-de-croix", paths.choosePhoto],
+  ["/quelle-toile-pour-le-point-de-croix", paths.fabric],
+  ["/confidentialite", paths.privacy],
+  ["/compte", paths.account],
+  ["/signalements", paths.reports],
+  ["/atelier", paths.atelier],
 ]
 
 /**

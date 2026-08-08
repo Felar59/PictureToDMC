@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useI18n } from "@/i18n"
 import { cn } from "@/lib/utils"
 import { UserMenu } from "@/community/user-menu"
-import { paths } from "@/lib/routes"
+import { PIECE_PREFIX, paths } from "@/lib/routes"
 import { LanguageSwitch } from "./language-switch"
 
 type NavItem = { to: string; label: string }
@@ -71,7 +71,7 @@ export function SiteHeader() {
    * "Start a pattern" points at the page you are already on.
    */
   const onConverter = pathname === paths.convert
-  const ctaVariant = pathname.startsWith("/piece/") ? "secondary" : "primary"
+  const ctaVariant = pathname.startsWith(PIECE_PREFIX) ? "secondary" : "primary"
 
   return (
     <header className="bg-blanc border-b-2 border-dashed border-edge-2 sticky top-0 z-40">

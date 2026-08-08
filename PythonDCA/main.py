@@ -106,10 +106,19 @@ class SinglePageFiles(StaticFiles):
                     headers={"Cache-Control": "public, max-age=3600"},
                 )
 
-        # The old English URLs, moved permanently rather than rendered as missing.
+        # The addresses this site used to hand out, moved permanently rather than
+        # answered as missing.
         moved = _LEGACY.get(clean.rstrip("/"))
         if moved:
             return RedirectResponse(moved, status_code=301)
+
+        # And the one that carries an id. `/brodeur/12` was a real, linked, indexed
+        # URL for every member — it is in the sitemap that is live right now — so
+        # letting it 404 would throw away every member page the site has ever had.
+        # An exact-path map cannot express this; a prefix can.
+        for was, now in _LEGACY_PREFIXES.items():
+            if clean.startswith(was):
+                return RedirectResponse(now + clean[len(was) :], status_code=301)
 
         try:
             response = await super().get_response(path, scope)
@@ -208,19 +217,19 @@ class SinglePageFiles(StaticFiles):
 #: the first time anyone opens it, and caught by the deploy's smoke test.
 _CLIENT_ROUTES = {
     "",
-    "convertir-photo-point-de-croix",
-    "galerie",
-    "galerie/broderies",
-    "qui-sommes-nous",
+    "convert",
+    "gallery",
+    "gallery/stitched",
+    "about",
     "faq",
-    "confidentialite",
-    "comment-faire-une-grille-de-point-de-croix",
-    "comment-lire-une-grille-de-point-de-croix",
-    "quelle-photo-pour-le-point-de-croix",
-    "quelle-toile-pour-le-point-de-croix",
-    "compte",
-    "signalements",
-    "atelier",
+    "guide",
+    "guide/reading-a-chart",
+    "guide/choosing-a-photo",
+    "guide/fabric-and-size",
+    "privacy",
+    "account",
+    "reports",
+    "lab",
 }
 
 #: The English paths that shipped first, and where they now go.
@@ -238,13 +247,25 @@ _CLIENT_ROUTES = {
 #: standing to the new one instead of discarding it. Kept in step with
 #: `legacyRedirects` in frontend/src/lib/routes.ts.
 _LEGACY = {
-    "convert": "/convertir-photo-point-de-croix",
-    "gallery": "/galerie",
-    "about": "/qui-sommes-nous",
+    "convertir-photo-point-de-croix": "/convert",
+    "galerie": "/gallery",
+    "galerie/broderies": "/gallery/stitched",
+    "qui-sommes-nous": "/about",
+    "comment-faire-une-grille-de-point-de-croix": "/guide",
+    "comment-lire-une-grille-de-point-de-croix": "/guide/reading-a-chart",
+    "quelle-photo-pour-le-point-de-croix": "/guide/choosing-a-photo",
+    "quelle-toile-pour-le-point-de-croix": "/guide/fabric-and-size",
+    "confidentialite": "/privacy",
+    "compte": "/account",
+    "signalements": "/reports",
+    "atelier": "/lab",
 }
 
+#: The id-bearing prefix that moved. Same reasoning as `_LEGACY`, one level down.
+_LEGACY_PREFIXES = {"brodeur/": "/maker/"}
+
 #: Prefixes with an id after them.
-_CLIENT_PREFIXES = ("piece/", "brodeur/")
+_CLIENT_PREFIXES = ("piece/", "maker/")
 
 
 def _is_client_route(path: str) -> bool:

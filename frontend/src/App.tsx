@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/layout/site-header"
 import { useAuth } from "@/community/auth-context"
 import { AuthProvider } from "@/community/auth-provider"
 import { I18nProvider } from "@/i18n/provider"
-import { legacyRedirects, paths } from "@/lib/routes"
+import { MAKER_PREFIX, PIECE_PREFIX, legacyRedirects, paths } from "@/lib/routes"
 import Home from "@/routes/home"
 
 // Split per route. /convert drags in the whole engine — k-means, the Lab
@@ -45,8 +45,8 @@ function AccountSetup() {
 
   useEffect(() => {
     if (!user || user.setUp) return
-    if (pathname === "/compte") return
-    void navigate("/compte?bienvenue", { replace: true })
+    if (pathname === paths.account) return
+    void navigate(`${paths.account}?bienvenue`, { replace: true })
   }, [user, pathname, navigate])
 
   return null
@@ -106,8 +106,8 @@ export default function App() {
                 <Route path={paths.atelier} element={<Atelier />} />
                 <Route path={paths.account} element={<Account />} />
                 <Route path={paths.reports} element={<Reports />} />
-                <Route path="/piece/:id" element={<Piece />} />
-                <Route path="/brodeur/:id" element={<Profile />} />
+                <Route path={`${PIECE_PREFIX}:id`} element={<Piece />} />
+                <Route path={`${MAKER_PREFIX}:id`} element={<Profile />} />
 
                 {/* The English paths that shipped first. They are in browser
                     histories, and a redirect costs three lines where a 404 costs

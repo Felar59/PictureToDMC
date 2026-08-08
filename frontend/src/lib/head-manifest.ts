@@ -31,7 +31,7 @@
 import { fr } from "../i18n/fr"
 
 import { ARTICLE_KEYS, ARTICLES } from "./articles"
-import { indexable, paths } from "./routes"
+import { MAKER_PREFIX, PIECE_PREFIX, indexable, legacyRedirects, paths } from "./routes"
 import {
   PIECE_GENRE,
   aboutGraph,
@@ -358,6 +358,14 @@ export function headManifest() {
      */
     dynamic: {
       genre: PIECE_GENRE,
+      // The two id-bearing prefixes, and the pages that must never be indexed.
+      // The server used to spell all of these itself, in eight places, which is
+      // eight chances to miss one the day a path is renamed — and renaming paths
+      // is exactly what just happened.
+      piecePrefix: PIECE_PREFIX,
+      makerPrefix: MAKER_PREFIX,
+      privatePaths: [paths.account, paths.atelier, paths.reports],
+      legacy: Object.fromEntries(legacyRedirects),
       crumbHome: SITE_NAME,
       crumbGallery: t.nav.gallery,
       galleryPath: paths.gallery,
